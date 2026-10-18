@@ -1,0 +1,14 @@
+{
+  "source": "type Props = {}; export function Screen(props: Props) { return <main><div id=\"screen\"/><Button id=\"probe\">Responsive canvas</Button></main>; }",
+  "language": "tsx",
+  "stylesheet": {
+    "mode": "css",
+    "entry": "screen.css",
+    "bridge_theme": false,
+    "files": {
+      "screen.css": "html,body{margin:0;background:white}#screen{width:clamp(200px,50vw,600px);height:50vh}#probe{width:120px;height:40px;background:rgb(220,40,60);color:white}@media(min-width:400px){#probe{width:220px;background:rgb(12,34,56)}}"
+    }
+  },
+  "viewport": {"width":1000,"height":600,"dark":false},
+  "screen_element": "screen"
+}

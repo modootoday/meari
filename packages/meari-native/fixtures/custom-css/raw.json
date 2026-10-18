@@ -1,0 +1,15 @@
+{
+  "source": "type Props = {}; export function CustomCss(props: Props) { return <main><div id=\"panel\" className=\"panel\" data-active=\"yes\">Direct custom CSS</div></main>; }",
+  "language": "tsx",
+  "stylesheet": {
+    "mode": "css",
+    "entry": "app.css",
+    "bridge_theme": false,
+    "files": {
+      "app.css": "@import \"./tokens.css\"; @import \"./components/panel.css\"; body{margin:0;padding:16px;background:white} @media(min-width:600px){.panel{width:240px}}",
+      "tokens.css": ":root{--panel-color:rgb(12,34,56);--panel-height:64px}",
+      "components/panel.css": ".panel{width:120px;height:var(--panel-height);background:var(--panel-color);color:white;padding:8px;box-sizing:border-box;&[data-active=\"yes\"]{border:2px solid rgb(220,40,60)}}"
+    }
+  },
+  "viewport": {"width":800,"height":300,"dark":false}
+}

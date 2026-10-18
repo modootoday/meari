@@ -1,0 +1,38 @@
+[package]
+name = "meari"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "MIT OR Apache-2.0"
+description = "Meari UI framework core: typed UI IR, Rust/TSX conversion and WASM adapters"
+repository = "https://github.com/modootoday/meari"
+readme = "../../README.md"
+include = ["src/**", "tests/**", "fixtures/**", "Cargo.toml"]
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[features]
+wasm = ["dep:wasm-bindgen", "dep:web-sys"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+syn = { version = "=2.0.117", features = ["full", "parsing"] }
+proc-macro2 = { version = "1", features = ["span-locations"] }
+oxc_allocator = "=0.154.0"
+oxc_ast = "=0.154.0"
+oxc_parser = "=0.154.0"
+oxc_span = "=0.154.0"
+oxc_syntax = "=0.154.0"
+wasm-bindgen = { version = "=0.2.129", optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-sys = { version = "=0.3.106", features = ["Window", "MediaQueryList"], optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen-test = "=0.3.79"
+
+[[bin]]
+name = "meari-cli"
+path = "src/main.rs"

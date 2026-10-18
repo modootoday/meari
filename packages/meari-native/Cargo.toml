@@ -1,0 +1,58 @@
+[package]
+name = "meari-native"
+version = "0.1.0"
+edition = "2024"
+publish = false
+default-run = "meari-native"
+license = "MIT OR Apache-2.0"
+description = "Native CSS, rendering and OS adapters for Meari"
+repository = "https://github.com/modootoday/meari"
+include = ["src/**", "tests/**", "fixtures/**", "assets/**", "Cargo.toml", "README.md"]
+
+[features]
+gl = ["dep:anyrender_skia", "dep:skia-safe", "dep:glutin", "dep:glow", "dep:raw-window-handle"]
+window = ["dep:blitz-shell", "dep:winit", "dep:accesskit_xplat", "anyrender_vello_cpu/softbuffer_window_renderer"]
+
+[dependencies]
+meari = { workspace = true }
+blitz-dom = { version = "=0.3.0-beta.4", default-features = false, features = ["accessibility", "system-fonts", "svg", "complex-scripts"] }
+blitz-html = "=0.3.0-beta.4"
+blitz-paint = "=0.3.0-beta.4"
+blitz-traits = "=0.3.0-beta.4"
+blitz-shell = { version = "=0.3.0-beta.4", optional = true, default-features = false, features = ["clipboard"] }
+winit = { version = "=0.31.0-beta.3", optional = true }
+accesskit_xplat = { version = "=0.2.0", optional = true, default-features = false }
+accesskit = { version = "=0.25.1", features = ["serde"] }
+keyboard-types = "=0.8.3"
+anyrender = "=0.14.0"
+anyrender_vello_cpu = { version = "=0.18.0", features = ["filters"] }
+anyrender_skia = { version = "=0.12.0", optional = true }
+skia-safe = { version = "=0.153.3", features = ["gl", "textlayout"], optional = true }
+glutin = { version = "=0.32.3", default-features = false, features = ["wgl"], optional = true }
+glow = { version = "=0.16.0", optional = true }
+raw-window-handle = { version = "=0.6.2", optional = true }
+dioxus-shadcn-primitives = { version = "=0.6.6", features = ["dialog", "dropdown", "select", "runtime"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+png = "=0.18.1"
+sha2 = "0.10"
+regex = "1"
+rfd = { version = "=0.17.2", default-features = false }
+cssparser = "=0.38.0"
+style = { package = "stylo", version = "=0.22.0" }
+style_traits = { package = "stylo_traits", version = "=0.22.0" }
+oxc_allocator = "=0.154.0"
+oxc_ast = "=0.154.0"
+oxc_parser = "=0.154.0"
+oxc_span = "=0.154.0"
+
+[[bin]]
+name = "meari-kitchen-sink"
+path = "src/bin/kitchen_sink.rs"
+
+[[bin]]
+name = "meari-native"
+path = "src/main.rs"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "=0.62.2", features = ["Win32_UI_Accessibility", "Win32_UI_WindowsAndMessaging", "Win32_System_Com", "Win32_System_Ole", "Win32_System_Variant", "Win32_System_LibraryLoader"] }

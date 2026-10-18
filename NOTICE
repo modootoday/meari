@@ -1,0 +1,11 @@
+This project is licensed under MIT OR Apache-2.0, as declared in Cargo.toml.
+Dependencies retain their own copyrights and licenses. Cargo.lock records
+resolved package versions; no dependency source is relicensed by this notice.
+
+The optional native adapter uses published Rust interfaces to external Skia.
+Redistributed executable bundles require their own complete dependency and
+font/asset license review before release.
+
+Collected upstream examples, internal research, generated captures, local
+compiler executables and runtime downloads are not public source assets.
+Library-authored fixtures and canonical SVG icons remain part of the source.

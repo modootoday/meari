@@ -1,0 +1,16 @@
+{
+  "source": "type Props = {}; export function CustomTailwind(props: Props) { return <main className=\"flex flex-col gap-4 p-4\"><div id=\"themed\" data-active=\"yes\" className=\"custom-size bg-brand active:h-12\">Custom theme + utility + variant</div><div id=\"applied\" className=\"applied\">Apply</div><div id=\"responsive\" className=\"w-16 tablet:w-40 h-8 bg-brand\">Responsive</div></main>; }",
+  "language": "tsx",
+  "stylesheet": {
+    "mode": "tailwind",
+    "entry": "app.css",
+    "bridge_theme": false,
+    "files": {
+      "app.css": "@import \"tailwindcss\" source(none); @import \"./tokens.css\"; @reference \"./reference.css\"; @import \"./components.css\" layer(components); @custom-variant active (&[data-active=\"yes\"]); @utility custom-size{width:120px;height:40px;} body{background:white} @source inline(\"border-brand\");",
+      "tokens.css": "@theme {--color-brand:rgb(12,34,56);--breakpoint-tablet:600px;--spacing:4px;}",
+      "reference.css": "@theme{--color-reference:rgb(70,80,90)} .reference-must-not-emit{width:999px}",
+      "components.css": ".applied{@apply w-20 h-10 bg-reference;@variant active {border-width:2px;}}"
+    }
+  },
+  "viewport": {"width":800,"height":300,"dark":false}
+}

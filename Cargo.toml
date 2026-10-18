@@ -1,0 +1,8 @@
+[workspace]
+members = ["packages/meari", "packages/meari-native"]
+default-members = ["packages/meari"]
+exclude = ["verification/native-hmr"]
+resolver = "3"
+
+[workspace.dependencies]
+meari = { path = "packages/meari", version = "0.1.0" }
