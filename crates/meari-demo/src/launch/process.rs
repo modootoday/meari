@@ -35,12 +35,7 @@ impl Drop for Owned {
     }
 }
 
-#[cfg(unix)]
 fn terminate(pid: u32) {
-    let _ = std::process::Command::new("kill")
-        .args(["-TERM", &pid.to_string()])
-        .status();
+    use meari_platform::OsPolicy;
+    meari_platform::current().request_terminate(pid);
 }
-
-#[cfg(not(unix))]
-fn terminate(_pid: u32) {}
