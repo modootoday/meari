@@ -1,3 +1,11 @@
+---
+id: sot:meari/native-boolean
+title: Native 제어형 Boolean 위젯
+status: active
+created: 2026-10-29
+updated: 2026-10-29
+verify: manual
+---
 # Native 제어형 Boolean 위젯
 
 Native module 문서는 다음 프로필을 지원합니다. 전체 React/shadcn API나 Web 위젯 지원을 의미하지 않습니다.

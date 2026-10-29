@@ -1,0 +1,15 @@
+# old	new-id  (written by spec import; frozen afterwards)
+docs/consumer-integration.md	guide:meari/consuming-meari-from-a-rust-application
+consumer-integration	guide:meari/consuming-meari-from-a-rust-application
+docs/history/refactor-log.md	plan:meari/20261029124634
+refactor-log	plan:meari/20261029124634
+docs/meari-redesign-2026-10-29.md	plan:meari/20261029135912
+meari-redesign-2026-10-29	plan:meari/20261029135912
+docs/architecture.md	sot:meari/architecture-and-support-boundaries
+architecture	sot:meari/architecture-and-support-boundaries
+docs/native-controlled-widgets.md	sot:meari/native-boolean
+native-controlled-widgets	sot:meari/native-boolean
+docs/name.md	sot:meari/the-name
+name	sot:meari/the-name
+docs/runtime-lifecycle.md	sot:meari/runtime-lifecycle-and-verification-boundaries
+runtime-lifecycle	sot:meari/runtime-lifecycle-and-verification-boundaries

@@ -1,3 +1,10 @@
+---
+id: guide:meari/consuming-meari-from-a-rust-application
+title: Consuming Meari from a Rust application
+status: active
+created: 2026-10-29
+updated: 2026-10-29
+---
 # Consuming Meari from a Rust application
 
 Meari accepts bounded TSX UI declarations and canonical Rust construction code. Parsing TSX does not run a JavaScript module, npm React, arbitrary component functions or a browser React reconciler. Keep product use cases and policies in the consuming Rust SDK; keep UI declaration, tokens/assets and event-to-use-case adapters in presentation modules.

@@ -2,7 +2,10 @@
 **/target/
 **/node_modules/
 **/.git/
-**/.spec/
+/*/**/.spec/
+!/spec.toml
+!/.spec/
+!/.spec/**
 **/.agents/
 **/__pycache__/
 **/.env

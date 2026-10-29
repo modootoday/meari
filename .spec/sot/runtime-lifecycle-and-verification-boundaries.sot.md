@@ -1,3 +1,11 @@
+---
+id: sot:meari/runtime-lifecycle-and-verification-boundaries
+title: Runtime lifecycle and verification boundaries
+status: active
+created: 2026-10-29
+updated: 2026-10-29
+verify: manual
+---
 # Runtime lifecycle and verification boundaries
 
 The portable core owns component instances, typed state, source schema, responsive revisions and build identity. Native and Web hosts own their renderer and event resources. A host must keep source replacement, DOM commit, rendered frame and coordinated Native/Web acknowledgement as separate stages.
