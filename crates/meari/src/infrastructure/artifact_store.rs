@@ -85,15 +85,9 @@ fn write_new(path: &Path, bytes: &[u8]) -> Result<(), String> {
 }
 fn verify_file(path: &Path, expected: &OutputFile) -> Result<(), String> {
     normal(path, false)?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let mode = fs::metadata(path).map_err(io)?.permissions().mode();
-        if mode & 0o7000 != 0
-            || (expected.role == OutputRole::NativeExecutable && mode & 0o111 == 0)
-        {
-            return Err("artifact executable permissions differ from its role".into());
-        }
+    let executable = expected.role == OutputRole::NativeExecutable;
+    if !super::platform::executable_mode_matches(path, executable).map_err(io)? {
+        return Err("artifact executable permissions differ from its role".into());
     }
     if expected.length > MAX_ARTIFACT || fs::metadata(path).map_err(io)?.len() != expected.length {
         return Err("artifact file length/budget mismatch".into());
@@ -304,11 +298,8 @@ impl ArtifactStore for FsArtifactStore {
                 .unwrap_or(("", path.as_str()));
             let directory = directories(&staging, &format!("files/{parent}"), true)?;
             write_new(&directory.join(name), bytes)?;
-            #[cfg(unix)]
             if bundle.manifest.outputs[path].role == OutputRole::NativeExecutable {
-                use std::os::unix::fs::PermissionsExt;
-                fs::set_permissions(directory.join(name), fs::Permissions::from_mode(0o755))
-                    .map_err(io)?;
+                super::platform::mark_executable(&directory.join(name)).map_err(io)?;
             }
         }
         write_new(&staging.join("manifest.json"), &manifest)?;

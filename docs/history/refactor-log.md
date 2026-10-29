@@ -55,3 +55,10 @@ clippy는 `-D warnings -A deprecated`로 실행: 의존 크레이트 blitz-paint
 - `meari::presentation`(변환 CLI)과 `meari_builder::presentation`을 bin 전용 모듈에서 lib 모듈로 이동(추가 공개 경로만, 기존 API 불변).
 - 기존 바이너리 `meari-cli`, `meari-native`, `meari-builder`는 호환 별칭으로 유지(동작 동일, 테스트가 CARGO_BIN_EXE_*로 참조).
 - `has_pending_turn`: window feature 없을 때 dead_code → `cfg_attr(not(feature="window"), allow(dead_code))`.
+
+### 1단계: 플랫폼 분리 (cfg 격리)
+- `meari/infrastructure/platform/{unix,portable}.rs`: 아티팩트 실행 권한 검사·설정(`executable_mode_matches`, `mark_executable`). artifact_store.rs의 `cfg(unix)` 블록 제거.
+- `meari-builder/infrastructure/platform/{unix,windows}.rs`: `is_link`(Windows reparse point / Unix symlink). files.rs 의 cfg 제거.
+- `meari-native/infrastructure/window/actions.rs` → `actions/mod.rs` + `actions/observation/{windows,portable}.rs`(Win32 창 상태 관찰, 코드 그대로 이동).
+- 남은 OS cfg(의도적 유지): native `uia_probe` 모듈 게이트, `parent_client` 좌표 변환 블록, `startup/owner.rs` winit any_thread, native CLI `probe` 명령 — 창 호스트(기능 쪽 영역)라 이번엔 미변경.
+- 기존 문제(미수정): `--features window` 테스트 빌드에서 timers/testing.rs dead_code 3건(clippy -D 시 실패), 본 변경과 무관.
