@@ -1,5 +1,5 @@
 //! Meari development tasks.
-//! Usage: `cargo xtask lint-structure [--strict]` | `cargo xtask visual-test [--out DIR] [...]` | `cargo xtask spec-check [...]`.
+//! Usage: `cargo xtask lint-structure [--strict]` | `cargo xtask visual-test [--out DIR] [...]` | `cargo xtask spec-check [...]` | `cargo xtask demo [FIXTURE] [...]`.
 
 mod spec_check;
 mod structure;
@@ -23,22 +23,28 @@ fn main() -> ExitCode {
         }
         Some("visual-test") => {
             // Native (offscreen CPU) vs Web (headless Chrome) pixel comparison; see crates/meari-visual.
-            let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".into());
-            let status = std::process::Command::new(cargo)
-                .args(["run", "-q", "-p", "meari-visual", "--"])
-                .args(&args[1..])
-                .status();
-            match status {
-                Ok(s) if s.success() => ExitCode::SUCCESS,
-                _ => ExitCode::FAILURE,
-            }
+            run_package("meari-visual", &args[1..])
         }
         Some("spec-check") => spec_check::run(&args[1..]),
+        Some("demo") => run_package("meari-demo", &args[1..]),
         _ => {
             eprintln!(
-                "usage: cargo xtask lint-structure [--strict] | cargo xtask visual-test [--out DIR] | cargo xtask spec-check [ARGS]"
+                "usage: cargo xtask lint-structure [--strict] | cargo xtask visual-test [--out DIR] | cargo xtask spec-check [ARGS] | cargo xtask demo [FIXTURE] [--list] [--seconds N]"
             );
             ExitCode::from(2)
         }
+    }
+}
+
+/// `cargo run -p <package> -- <args>`; used by visual-test and the side-by-side demo.
+fn run_package(package: &str, args: &[String]) -> ExitCode {
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".into());
+    let status = std::process::Command::new(cargo)
+        .args(["run", "-q", "-p", package, "--"])
+        .args(args)
+        .status();
+    match status {
+        Ok(s) if s.success() => ExitCode::SUCCESS,
+        _ => ExitCode::FAILURE,
     }
 }

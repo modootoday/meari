@@ -1,5 +1,6 @@
 //! Per-fixture run and summary report (report.md, index.html side-by-side sheet).
-use crate::{compare, fixtures::Fixture, fixtures::Kind, native, sheet, style, web};
+use crate::render::{native, style, web};
+use crate::{compare, fixtures::Fixture, fixtures::Kind, sheet};
 use std::path::Path;
 
 pub struct Row {

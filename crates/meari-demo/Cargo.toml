@@ -1,0 +1,12 @@
+[package]
+name = "meari-demo"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "MIT OR Apache-2.0"
+description = "Side-by-side demo: one TSX fixture in a meari-native window and in a Chrome window, for human comparison on a desktop (Linux/X11 first)."
+
+[dependencies]
+meari = { workspace = true }
+meari-native = { path = "../meari-native", version = "0.1.0", features = ["window"] }
+meari-visual = { path = "../meari-visual", version = "0.1.0" }

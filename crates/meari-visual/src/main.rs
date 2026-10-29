@@ -1,20 +1,6 @@
-//! Visual regression harness: one TSX fixture set, two renderers, one pixel diff.
-//!
-//! Native: `meari-native` InteractiveDocument -> blitz layout -> vello CPU raster (offscreen, no window).
-//! Web: the same portable DOM plan the WASM `WebDocument` adapter mounts (`bind_with_scope` ->
-//! `StateProgram::project` -> `dom::prepare`), serialized to HTML and screenshotted by headless Chrome.
-mod compare;
-mod fixtures;
-mod native;
-mod report;
-mod sheet;
-mod style;
-mod web;
-
+//! `cargo xtask visual-test`: run every fixture through both renderers and write the report.
+use meari_visual::{compare, fixtures, report};
 use std::path::PathBuf;
-
-pub const WIDTH: u32 = 480;
-pub const HEIGHT: u32 = 320;
 
 fn main() {
     let mut args = std::env::args().skip(1);
