@@ -4,7 +4,9 @@
 pub mod adapter;
 pub mod port;
 
-pub use port::{ClientArea, ClientAreaError, HostFallbacks, OsFamily, OsPolicy, PlatformHost};
+pub use port::{
+    ClientArea, ClientAreaError, HostFallbacks, OsFamily, OsPolicy, PlatformHost, WindowState,
+};
 
 #[cfg(windows)]
 type Live = adapter::windows::WindowsHost;
@@ -64,6 +66,9 @@ impl OsPolicy for CurrentOs {
         tabs: bool,
     ) -> Option<Result<serde_json::Value, String>> {
         LiveOs::default().ui_automation_probe(pid, tabs)
+    }
+    fn window_state(&self, handle: port::RawWindowHandle) -> Option<WindowState> {
+        LiveOs::default().window_state(handle)
     }
 }
 

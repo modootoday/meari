@@ -23,3 +23,5 @@ impl PlatformHost for WindowsHost {
 pub mod sys;
 #[cfg(windows)]
 mod uia_probe;
+#[cfg(windows)]
+mod window_state;

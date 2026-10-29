@@ -1,5 +1,5 @@
 //! Windows OS policy: reparse points, Win32 client-area readback, UI Automation probe.
-use crate::port::{ClientArea, ClientAreaError, OsPolicy, RawWindowHandle};
+use crate::port::{ClientArea, ClientAreaError, OsPolicy, RawWindowHandle, WindowState};
 use std::{fs, io, os::windows::fs::MetadataExt, path::Path};
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -57,6 +57,9 @@ impl OsPolicy for WindowsOs {
         } else {
             super::uia_probe::verify(pid)
         })
+    }
+    fn window_state(&self, handle: RawWindowHandle) -> Option<WindowState> {
+        super::window_state::probe(handle)
     }
 }
 
