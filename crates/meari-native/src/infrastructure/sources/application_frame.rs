@@ -1,4 +1,4 @@
-use super::document::InteractiveDocument;
+use super::super::document::InteractiveDocument;
 use crate::application::Renderer;
 use meari::{application::app_bundle::AppBuildStamp, domain::build::ContentHash};
 

@@ -1,9 +1,9 @@
 //! Apply a fully prepared native keyed tree while retaining owned DOM identities.
-use super::document::InteractiveDocument;
+use super::super::document::InteractiveDocument;
 use crate::application::markup::{Element, Markup};
 use std::collections::BTreeMap;
 
-pub(super) fn remap<T: Clone>(
+pub(in super::super) fn remap<T: Clone>(
     values: &BTreeMap<String, T>,
     old: &[Element],
     next: &[Element],
@@ -26,7 +26,7 @@ pub(super) fn remap<T: Clone>(
 }
 
 impl InteractiveDocument {
-    pub(super) fn patch_keyed(&mut self, next: Markup) -> Result<(), String> {
+    pub(in super::super) fn patch_keyed(&mut self, next: Markup) -> Result<(), String> {
         self.renderer
             .validate_asset_references(next.elements.iter().flat_map(|element| {
                 ["src", "poster"]
@@ -50,8 +50,12 @@ impl InteractiveDocument {
                 inputs.remove(&element.path);
             }
         }
-        let prepared =
-            super::keyed_patch::prepare(&self.renderer.document, &self.elements, &next, &inputs)?;
+        let prepared = super::super::keyed_patch::prepare(
+            &self.renderer.document,
+            &self.elements,
+            &next,
+            &inputs,
+        )?;
         // prepare() completed every fallible tree/control validation before this mutation.
         prepared.apply(&mut self.renderer.document.mutate());
         self.input_values = inputs;
@@ -73,7 +77,7 @@ impl InteractiveDocument {
                 {
                     self.renderer.document.mutate().set_attribute(
                         node,
-                        super::document::name("value"),
+                        super::super::document::name("value"),
                         value,
                     );
                 }

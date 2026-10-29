@@ -2,14 +2,14 @@ use crate::application::markup::Element;
 use blitz_dom::NodeId;
 use blitz_html::HtmlDocument;
 
-pub(super) struct TextPatch {
+pub(in super::super) struct TextPatch {
     parent: NodeId,
     anchor: Option<NodeId>,
     node: Option<NodeId>,
     value: String,
 }
 
-pub(super) fn prepare(
+pub(in super::super) fn prepare(
     document: &HtmlDocument,
     previous: &[Element],
     next: &[Element],
@@ -80,7 +80,7 @@ pub(super) fn prepare(
     Ok(updates)
 }
 
-pub(super) fn apply(document: &mut HtmlDocument, updates: Vec<TextPatch>) {
+pub(in super::super) fn apply(document: &mut HtmlDocument, updates: Vec<TextPatch>) {
     for update in updates {
         let mut mutation = document.mutate();
         if let Some(node) = update.node {

@@ -1,4 +1,4 @@
-use super::{PreparedSourceReplacement, document::InteractiveDocument};
+use super::super::{PreparedSourceReplacement, document::InteractiveDocument};
 use meari::application::app_bundle::{AppBuildStamp, ApplicationDefinition};
 
 pub struct PreparedApplicationReplacement {

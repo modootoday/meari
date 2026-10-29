@@ -9,14 +9,14 @@ enum Data {
     Text(String),
     Comment(String),
 }
-pub(super) struct Prepared {
+pub(in super::super) struct Prepared {
     existing: Option<NodeId>,
     data: Data,
     children: Vec<Prepared>,
     clear: Vec<QualName>,
 }
 
-pub(super) fn prepare(
+pub(in super::super) fn prepare(
     document: &HtmlDocument,
     old: &[Element],
     next: &Markup,
@@ -126,7 +126,7 @@ pub(super) fn prepare(
                         .attributes
                         .iter()
                         .map(|(name, value)| Attribute {
-                            name: super::document::name(name),
+                            name: super::super::document::name(name),
                             value: value.clone(),
                         })
                         .collect();
@@ -137,7 +137,7 @@ pub(super) fn prepare(
                             attribute.name.local != blitz_dom::local_name!("value")
                         });
                         attrs.push(Attribute {
-                            name: super::document::name("value"),
+                            name: super::super::document::name("value"),
                             value: value.clone(),
                         });
                     }
@@ -232,7 +232,7 @@ pub(super) fn prepare(
 }
 
 impl Prepared {
-    pub(super) fn apply(self, mutation: &mut DocumentMutator<'_>) -> NodeId {
+    pub(in super::super) fn apply(self, mutation: &mut DocumentMutator<'_>) -> NodeId {
         let node = match self.data {
             Data::Element(name, attrs) => {
                 if let Some(node) = self.existing {

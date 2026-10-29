@@ -1,4 +1,4 @@
-use super::document::InteractiveDocument;
+use super::super::document::InteractiveDocument;
 use meari::{
     application::{
         media::MediaChange,

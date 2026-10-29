@@ -1,4 +1,4 @@
-use super::document::InteractiveDocument;
+use super::super::document::InteractiveDocument;
 use crate::domain::{Viewport, widgets::Action};
 use meari::{
     application::source_modules::{ModuleDiagnostic, ModuleProgram, ModuleProjection},
@@ -74,7 +74,7 @@ impl InteractiveDocument {
         }
         let mut document =
             Self::new_with_optional_assets(projection.component.clone(), css, viewport, assets)?;
-        let mut callbacks = super::source_callbacks::CallbackSession::new(
+        let mut callbacks = super::super::source_callbacks::CallbackSession::new(
             export(scope.clone())?,
             &scope,
             projection.callback_bindings(),
@@ -103,7 +103,7 @@ impl InteractiveDocument {
             .ok_or("document has no module graph")?
             .clone();
         let projection = program.update_props(props).map_err(message)?;
-        let mut callbacks = super::source_callbacks::CallbackSession::new(
+        let mut callbacks = super::super::source_callbacks::CallbackSession::new(
             export,
             &scope,
             projection.callback_bindings(),
@@ -295,7 +295,7 @@ impl InteractiveDocument {
         self.commit_module_projection(program, projection)
     }
 
-    pub(super) fn dispatch_module_event(
+    pub(in super::super) fn dispatch_module_event(
         &mut self,
         action: &Action,
     ) -> Result<Option<bool>, String> {
@@ -351,7 +351,7 @@ impl InteractiveDocument {
         Ok(Some(true))
     }
 
-    pub(super) fn dispatch_module_input(
+    pub(in super::super) fn dispatch_module_input(
         &mut self,
         path: &str,
         payload: &meari::domain::input_event::InputPayload,
@@ -365,7 +365,7 @@ impl InteractiveDocument {
         Ok(true)
     }
 
-    pub(super) fn commit_module_projection(
+    pub(in super::super) fn commit_module_projection(
         &mut self,
         program: ModuleProgram,
         projection: ModuleProjection,

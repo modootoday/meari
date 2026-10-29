@@ -1,4 +1,4 @@
-use super::document::InteractiveDocument;
+use super::super::document::InteractiveDocument;
 use crate::{
     application::{markup, state_program},
     domain::widgets::Session,

@@ -4,7 +4,7 @@ use crate::domain::graphics::FrameTicket;
 use anyrender::{PaintScene, Scene, WindowRenderer};
 use blitz_dom::BaseDocument;
 
-pub(super) struct PreparedScene {
+pub(in super::super) struct PreparedScene {
     ticket: FrameTicket,
     width: u32,
     height: u32,
@@ -13,7 +13,7 @@ pub(super) struct PreparedScene {
 }
 
 /// A successful renderer submission is distinct from OS presentation/readback.
-pub(super) struct SceneSubmission {
+pub(in super::super) struct SceneSubmission {
     pub surface_trace: Option<blitz_paint::SurfacePaintTrace>,
     pub ticket: FrameTicket,
     pub width: u32,

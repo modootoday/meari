@@ -1,4 +1,4 @@
-use super::engine::NativeRenderer;
+use super::super::engine::NativeRenderer;
 use meari::{application::responsive::ResponsiveRenderer, domain::host::HostEnvironment};
 
 impl ResponsiveRenderer for NativeRenderer {

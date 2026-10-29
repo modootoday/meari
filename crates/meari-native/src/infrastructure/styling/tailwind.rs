@@ -31,7 +31,7 @@ impl crate::application::StylesheetProjectCompiler for TailwindCompiler {
         if project.mode != StylesheetMode::Tailwind {
             return Err("Tailwind compiler requires tailwind mode".into());
         }
-        super::stylesheet::validate(project)?;
+        super::super::stylesheet::validate(project)?;
         if project.bridge_theme {
             theme.validate()?;
         }
@@ -53,7 +53,7 @@ impl crate::application::StylesheetProjectCompiler for TailwindCompiler {
             css_string(classes)
         );
         let css = self.run(&scratch.0, &input)?;
-        Ok(super::stylesheet::receipt(
+        Ok(super::super::stylesheet::receipt(
             project,
             css,
             &format!("tailwindcss-{VERSION}-{}", self.artifact),

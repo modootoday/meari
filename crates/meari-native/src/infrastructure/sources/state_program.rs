@@ -1,7 +1,7 @@
-use super::document::InteractiveDocument;
+use super::super::document::InteractiveDocument;
 use crate::domain::widgets::{Action, Session};
 
-pub(super) fn mount(
+pub(in super::super) fn mount(
     source: meari::domain::Component,
 ) -> Result<meari::application::state_program::StateProgram, String> {
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -82,7 +82,10 @@ impl InteractiveDocument {
             .snapshot()
     }
 
-    pub(super) fn dispatch_state(&mut self, action: &Action) -> Result<Option<bool>, String> {
+    pub(in super::super) fn dispatch_state(
+        &mut self,
+        action: &Action,
+    ) -> Result<Option<bool>, String> {
         if self.source_input_poisoned {
             return Err("source input document requires remount after failed recovery".into());
         }
@@ -117,7 +120,7 @@ impl InteractiveDocument {
         Ok(Some(true))
     }
 
-    pub(super) fn commit_state_projection(
+    pub(in super::super) fn commit_state_projection(
         &mut self,
         program: meari::application::state_program::StateProgram,
         projection: meari::application::state_program::StateProjection,
@@ -129,7 +132,7 @@ impl InteractiveDocument {
         Ok(())
     }
 
-    pub(super) fn commit_component_projection(
+    pub(in super::super) fn commit_component_projection(
         &mut self,
         component: meari::domain::Component,
     ) -> Result<(), String> {
@@ -214,12 +217,21 @@ impl InteractiveDocument {
         let previous_inputs = std::mem::take(&mut self.input_values);
         let previous_checked = std::mem::take(&mut self.checked_values);
         let previous_files = std::mem::take(&mut self.file_values);
-        self.input_values =
-            super::keyed_document::remap(&previous_inputs, &self.elements, &next_markup.elements);
-        self.checked_values =
-            super::keyed_document::remap(&previous_checked, &self.elements, &next_markup.elements);
-        self.file_values =
-            super::keyed_document::remap(&previous_files, &self.elements, &next_markup.elements);
+        self.input_values = super::super::keyed_document::remap(
+            &previous_inputs,
+            &self.elements,
+            &next_markup.elements,
+        );
+        self.checked_values = super::super::keyed_document::remap(
+            &previous_checked,
+            &self.elements,
+            &next_markup.elements,
+        );
+        self.file_values = super::super::keyed_document::remap(
+            &previous_files,
+            &self.elements,
+            &next_markup.elements,
+        );
         let previous_source = std::mem::replace(&mut self.source, component);
         let previous_session = std::mem::replace(&mut self.session, next_session);
         if let Err(error) = self

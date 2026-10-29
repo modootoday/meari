@@ -9,7 +9,7 @@ use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 
 #[derive(Debug)]
-pub(super) struct Import {
+pub(in super::super) struct Import {
     pub start: usize,
     pub end: usize,
     pub target: String,
@@ -34,7 +34,7 @@ fn target(parser: &mut Parser<'_>) -> Result<String, String> {
     }
 }
 
-pub(super) fn imports(css: &str, mode: StylesheetMode) -> Result<Vec<Import>, String> {
+pub(in super::super) fn imports(css: &str, mode: StylesheetMode) -> Result<Vec<Import>, String> {
     fn visit(
         parser: &mut Parser<'_>,
         mode: StylesheetMode,
@@ -148,7 +148,7 @@ pub(super) fn imports(css: &str, mode: StylesheetMode) -> Result<Vec<Import>, St
     Ok(found)
 }
 
-pub(super) fn resolve(file: &str, target: &str) -> Result<String, String> {
+pub(in super::super) fn resolve(file: &str, target: &str) -> Result<String, String> {
     if target.contains([':', '\\', '?', '#', '\0']) || target.starts_with('/') {
         return Err(format!(
             "external/absolute stylesheet dependency is not in portable bundle: {target}"
@@ -171,7 +171,7 @@ pub(super) fn resolve(file: &str, target: &str) -> Result<String, String> {
     Ok(parts.join("/"))
 }
 
-pub(super) fn validate(project: &StylesheetProject) -> Result<(), String> {
+pub(in super::super) fn validate(project: &StylesheetProject) -> Result<(), String> {
     project.validate()?;
     fn visit(
         project: &StylesheetProject,
@@ -215,7 +215,7 @@ pub(super) fn validate(project: &StylesheetProject) -> Result<(), String> {
     Ok(())
 }
 
-pub(super) fn receipt(
+pub(in super::super) fn receipt(
     project: &StylesheetProject,
     css: String,
     compiler: &str,

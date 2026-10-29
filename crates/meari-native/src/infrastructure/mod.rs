@@ -1,44 +1,43 @@
 pub mod accessibility;
-pub mod artifacts;
-#[cfg(any(feature = "window", test))]
-mod checked_scene;
+pub use self::verification::artifacts;
 #[cfg(feature = "window")]
-mod checked_window;
+use self::verification::checked_window;
 mod controlled_focus;
 mod disclosure;
 pub mod document;
 pub mod engine;
-pub mod file_picker;
+pub use self::environment::file_picker;
 #[cfg(all(feature = "gl", windows))]
 pub mod gl;
 #[cfg(feature = "window")]
 pub mod host;
-mod keyed_document;
-mod keyed_patch;
-mod media;
-mod media_state;
+use self::patching::keyed_document;
+use self::patching::keyed_patch;
 pub mod native_host;
 pub mod navigation;
-pub(crate) mod placeholder_css;
+pub(crate) use self::styling::placeholder_css;
 mod range_input;
-mod responsive;
-mod source_reload;
-pub use source_reload::PreparedSourceReplacement;
-mod application_reload;
-pub use application_reload::{CommittedApplicationReplacement, PreparedApplicationReplacement};
-mod application_frame;
+use self::sources::application_frame;
+use self::sources::application_reload;
+use self::sources::source_reload;
 pub use application_frame::ApplicationFrameReceipt;
+pub use application_reload::{CommittedApplicationReplacement, PreparedApplicationReplacement};
+pub use source_reload::PreparedSourceReplacement;
 mod asset_provider;
 mod source_callbacks;
-mod source_modules;
+use self::sources::state_program;
+pub use self::styling::stylesheet;
 pub use source_callbacks::PendingCallback;
-mod state_program;
-pub mod stylesheet;
 pub mod stylesheet_assets;
-pub use asset_provider::{AssetLoadReport, AssetRejection};
-pub mod tailwind;
-mod text_patch;
+use self::patching::text_patch;
+pub use self::styling::tailwind;
 #[cfg(windows)]
-pub mod uia_probe;
+pub use self::verification::uia_probe;
+pub use asset_provider::{AssetLoadReport, AssetRejection};
+mod environment;
+mod patching;
+mod sources;
+mod styling;
+mod verification;
 #[cfg(feature = "window")]
 pub mod window;

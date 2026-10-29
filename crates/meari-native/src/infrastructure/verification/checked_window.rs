@@ -15,9 +15,9 @@ use std::{
 };
 use winit::window::WindowId;
 
-pub(super) struct WindowFrames {
+pub(in super::super) struct WindowFrames {
     authority: Rc<Cell<bool>>,
-    retained: Option<super::native_host::RetainedFrameProof>,
+    retained: Option<super::super::native_host::RetainedFrameProof>,
     context: String,
     generation: u64,
     sequence: u64,
@@ -25,13 +25,17 @@ pub(super) struct WindowFrames {
     target: Option<(u32, u32)>,
 }
 impl WindowFrames {
-    pub(super) fn retained(&self) -> Option<super::native_host::RetainedFrameProof> {
+    pub(in super::super) fn retained(
+        &self,
+    ) -> Option<super::super::native_host::RetainedFrameProof> {
         self.retained.clone()
     }
-    pub(super) fn submission(&self) -> Option<super::window::NativeFrameSubmission> {
+    pub(in super::super) fn submission(
+        &self,
+    ) -> Option<super::super::window::NativeFrameSubmission> {
         self.last
             .as_ref()
-            .map(|last| super::window::NativeFrameSubmission {
+            .map(|last| super::super::window::NativeFrameSubmission {
                 ticket: last.ticket.clone(),
                 width: last.width,
                 height: last.height,
@@ -85,15 +89,15 @@ impl Wake for PollWake {
     }
 }
 
-pub(super) fn render(
+pub(in super::super) fn render(
     view: &mut View<VelloCpuWindowRenderer>,
     frames: &mut WindowFrames,
     resume: bool,
 ) -> Result<(), String> {
-    match super::native_host::access::with(view.doc.as_ref(), |document| {
+    match super::super::native_host::access::with(view.doc.as_ref(), |document| {
         document.renderer.invalidate_surface_paint()
     }) {
-        Ok(()) | Err(super::native_host::HostAccessError::Invalid(_)) => {}
+        Ok(()) | Err(super::super::native_host::HostAccessError::Invalid(_)) => {}
         Err(error) => return Err(error.to_string()),
     }
     if resume {
@@ -116,20 +120,20 @@ pub(super) fn render(
         return Ok(());
     }
     let time = view.current_animation_time();
-    let settled = match super::native_host::access::with_mut(view.doc.as_mut(), |document| {
+    let settled = match super::super::native_host::access::with_mut(view.doc.as_mut(), |document| {
         document.renderer.resolve_assets(time)
     }) {
         Ok(result) => {
             result?;
             true
         }
-        Err(super::native_host::HostAccessError::Invalid(_)) => false,
+        Err(super::super::native_host::HostAccessError::Invalid(_)) => false,
         Err(error) => return Err(error.to_string()),
     };
-    let source = super::native_host::access::handle(view.doc.as_ref())
+    let source = super::super::native_host::access::handle(view.doc.as_ref())
         .and_then(|handle| handle.stamp().ok());
     let surface_scope = source.as_ref().and_then(|stamp| {
-        super::native_host::access::with(view.doc.as_ref(), |document| {
+        super::super::native_host::access::with(view.doc.as_ref(), |document| {
             document.renderer.surface_render_scope(stamp)
         })
         .ok()
@@ -185,7 +189,7 @@ pub(super) fn render(
     // Keep document and view exclusively borrowed through submission. FrameTicket
     // is a correlation DTO; asynchronous use would require a fresh owner check.
     let mut submitted = prepared.submit(&ticket, (width, height), &mut view.renderer)?;
-    let placement = super::engine::surface_slots::RendererClientPlacement {
+    let placement = super::super::engine::surface_slots::RendererClientPlacement {
         viewport: (width, height),
         insets: [insets.left, insets.top, insets.right, insets.bottom],
         target: frames
@@ -194,19 +198,20 @@ pub(super) fn render(
     };
     drop(document);
     if let (Some(scope), Some(trace)) = (surface_scope, submitted.surface_trace.take()) {
-        let current = super::native_host::access::handle(view.doc.as_ref())
+        let current = super::super::native_host::access::handle(view.doc.as_ref())
             .and_then(|handle| handle.stamp().ok());
         if current.as_ref() == Some(&scope.document) {
-            let committed = super::native_host::access::with(view.doc.as_ref(), |document| {
-                document.renderer.commit_surface_paint(
-                    scope,
-                    submitted.ticket.clone(),
-                    trace,
-                    Some(placement),
-                )
-            });
+            let committed =
+                super::super::native_host::access::with(view.doc.as_ref(), |document| {
+                    document.renderer.commit_surface_paint(
+                        scope,
+                        submitted.ticket.clone(),
+                        trace,
+                        Some(placement),
+                    )
+                });
             if !matches!(committed, Ok(Ok(()))) {
-                super::native_host::access::with(view.doc.as_ref(), |document| {
+                super::super::native_host::access::with(view.doc.as_ref(), |document| {
                     document.renderer.invalidate_surface_paint()
                 })
                 .map_err(|error| error.to_string())?;
@@ -215,7 +220,7 @@ pub(super) fn render(
     }
     frames.sequence = submitted.ticket.scene_generation;
     frames.retained = match (
-        super::native_host::access::handle(view.doc.as_ref()),
+        super::super::native_host::access::handle(view.doc.as_ref()),
         source,
     ) {
         (Some(handle), Some(stamp)) => Some(
