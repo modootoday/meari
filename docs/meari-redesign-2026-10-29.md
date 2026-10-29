@@ -1,0 +1,112 @@
+# Meari 재설계안 (kinekino 컨벤션 적용) — 2026-10-29 KST, 읽기 전용 분석
+
+컨벤션 정본: /workspace/kinekino-redesign.md (Rust/Cargo 표준 > 4대 원칙 > 네이밍 > 운영규칙)
+
+## 1. A/B 관계
+- A = /workspace/meari (GitHub modootoday/meari, 커밋 26805a9, 히스토리 1개, 원격 main도 26805a9). 크레이트: meari, meari-native.
+- B = oink-player/packages/meari (vendored, 별도 .git 없음). 크레이트: meari, meari-native, meari-native-tools, meari-builder (+exclude된 meari-paint, `[patch.crates-io] blitz-paint` 대체).
+- diff: B에만 215개, A에만 2개(meari-native/src/main.rs, src/bin — B는 meari-native-tools로 분리), 공통 52개 내용 상이. 버전은 둘 다 0.1.0(버전으로 구분 불가).
+- HANDOFF.md: "Meari 기준 0844f6c… 위에 선택된 로컬 overlay를 vendor". 0844f6c는 A에 존재하지 않음 → B의 기반은 A에 올라간 적 없는 로컬(원 Windows 호스트) Meari 저장소 히스토리.
+- docs/continuation/wip/meari-tracked.patch(27개 파일 diff)는 다른 담당의 미반영 WIP — 일괄 적용 금지 명시.
+- 결론: **B가 기능상 최신(상위집합)이며 A에 반영되지 않음.** A는 초기 공개 스냅샷. 진짜 정본(0844f6c 히스토리)은 원 호스트 로컬에만 있고 box에는 없음. 실무 정본 후보 = B 소스(+ 필요시 wip 패치 검토).
+- B/AGENTS.md: "이 디렉토리는 자체 Git 히스토리 소유, 소비자는 pinned gitlink로 참조, 소스 스테이징 금지, 원격 URL 창작 금지". HANDOFF/루트 AGENTS: Meari push 금지, Meari 담당 소유권 유지.
+
+## 2. 현재 구조 통계 (B 기준, .rs 473개)
+### Rust/Cargo 표준 위반
+- 워크스페이스 멤버를 `packages/`에 둠 → 표준 관례 `crates/`.
+- meari-paint가 exclude인데 patch로 경로 참조 → 워크스페이스 멤버 불일치.
+- packages/meari에 lib.rs+main.rs 공존(라이브러리 크레이트에 CLI 혼재), meari-native-tools는 main.rs와 src/bin 동시 → 바이너리 위치 혼란.
+- 모듈 스타일 혼재: `x.rs`+`x/` 병존 77곳, mod.rs 19곳.
+- meari-native/src/docs (.rs 15개) — 문서를 src 모듈로 둠.
+- verification/native-hmr: 워크스페이스 밖 검증 프로젝트 → `examples/` 또는 `xtask` 시나리오.
+### 4대 원칙 위반
+- 직속 .rs 상위: meari/tests 50, meari-native/src/infrastructure 30, meari-native/tests 29, meari/src/domain 25, meari/src/application 23, meari-native/src/docs 15, native/infrastructure/window 13, web_document 12, meari-paint/src 11, native/application 11 (기준 8 초과 10곳).
+- 800줄 초과 11개: meari-paint render.rs 1395, native document.rs 1086, window.rs 1066, source_modules/program.rs 1030, render/background.rs 1020, window_lifecycle/coordinator.rs 924, markup.rs 871, generate.rs 862, kurbo_css/css_box.rs 847, 테스트 2개(838, 823).
+- 금지 이름: tests/shared_font_catalog.rs 1개(`shared`).
+- Windows cfg: 8곳(소수) — window/startup, parent_client, actions, presentation/cli, builder files.rs 등.
+
+## 3. 크레이트 네이밍
+- `meari-*` 유지(독립 브랜드, kinekino 접두사 금지). 규칙: `meari-<맥락>`, 바이너리는 `meari`, env `MEARI_*`.
+- 변경: meari → meari-core(라이브러리) + meari-cli(현 main.rs·builder 바이너리 통합), meari-native-tools → meari-cli 하위 명령 흡수, meari-paint 유지(정식 멤버), meari-builder 유지(라이브러리화).
+- blitz-paint patch는 vendor/blitz-paint 로 분리하고 사유 명시.
+
+## 4. 목표 트리
+```
+meari/
+  Cargo.toml (workspace만)  rust-toolchain.toml  AGENTS.md  docs/{adr,architecture,guides}
+  crates/
+    meari-core/      src/{lib.rs, component/, hooks/, router/, design/{tokens,icons,fonts}/, validation/, viewport/}
+    meari-web/       src/{lib.rs, document/, wasm/, hmr/}            # web_document, wasm.rs
+    meari-builder/   src/{lib.rs, transform/, source_modules/, generate/}
+    meari-native/    src/{lib.rs, markup/, window/{lifecycle,surface,startup}/, document/, callbacks/}
+    meari-paint/     src/{lib.rs, render/{background,…}/, css_box/, text/, layers/}
+    meari-platform/  src/{lib.rs, windows/, unix/}                    # cfg는 여기만
+    meari-cli/       src/main.rs + commands/                          # 유일한 bin `meari`
+  vendor/blitz-paint (필요 시)
+  examples/native-hmr/
+  xtask/  (kinekino와 동일 lint 규칙)
+  tests는 각 크레이트 tests/<맥락>/main.rs 형태로 묶음
+```
+모듈 스타일: kinekino 결정과 동일하게 `foo/mod.rs` 단일.
+
+## 5. 매핑 요약
+| 현재 | 신규 |
+|---|---|
+| packages/meari/src/{domain,application} | crates/meari-core/src/<맥락> (DDD 계층명 대신 맥락명) |
+| packages/meari/src/{main.rs,presentation} | crates/meari-cli |
+| packages/meari/src/{wasm.rs,infrastructure/web_document,application/hmr.rs} | crates/meari-web |
+| packages/meari/src/infrastructure/generate.rs, application/source_modules | crates/meari-builder |
+| packages/meari-native-tools | crates/meari-cli/src/commands/native |
+| packages/meari-native/src/docs | docs/guides/native |
+| packages/meari-native window/startup·parent_client 등 cfg(windows) | crates/meari-platform/src/windows |
+| packages/meari-paint | crates/meari-paint(멤버 편입) |
+| verification/native-hmr | examples/native-hmr |
+| tests/* 평면 50·29개 | tests/<맥락>/ 하위 묶음 |
+
+## 5.5 B → 새 meari 저장소 정본 이관 절차 (사용자 확정: B 정본, A stale)
+근거: B는 A의 상위집합(B만 215개, 상이 52개, A에만 2개는 B에서 meari-native-tools로 이동), HANDOFF 기준 커밋 0844f6c가 A에 없음.
+1. box에서 /workspace/meari에 새 브랜치 `import/vendored-0844f6c` 생성(A 이력 26805a9 유지).
+2. A 작업트리를 비우고 B 파일을 그대로 복사(rsync --delete, .git 제외) → 커밋 1개 "import: vendored Meari from kinekino (base 0844f6c overlay)". 메시지에 출처 경로·HANDOFF 기준 커밋·sha256 목록(selected-source-sha256.json) 기록.
+3. 원 호스트에 0844f6c 이력이 남아 있으면 그쪽을 bundle로 받아 이 커밋 앞에 graft(선택). 없으면 2번 커밋을 이력 복원 지점으로 확정.
+4. wip/meari-tracked.patch(27파일)는 별도 브랜치 `wip/handoff-meari`에 적용 시도만, 담당 검토 후 병합.
+5. 이후 6장의 구조 리팩터링을 이 브랜치 위 단계별 커밋으로 진행 → main 갱신은 사용자 승인 후 force 아닌 일반 merge(A의 기존 커밋 보존), push도 사용자 승인 후.
+### kinekino 쪽 전환 시점
+- T0(지금): kinekino는 vendored packages/meari 그대로 빌드(동결, 수정 금지 — 수정은 meari 저장소에서만).
+- T1(meari 6장 2단계 = crates/ 이동 완료, 빌드 통과): kinekino를 `vendor/meari` submodule(로컬 경로/pinned 커밋)로 교체, Cargo path를 crates/meari-* 로 변경. kinekino 리팩터링 1단계와 같은 시점에 맞춤.
+- T2(meari API 안정 + 원격 push 승인 후): submodule 원격을 modootoday/meari로 고정, 필요 시 Cargo git rev 의존으로 전환.
+
+## 6. 단계별 이전 (각 단계 fmt/check/clippy/test + xtask lint, Linux·Windows CI)
+1. 정본 확정: 원 호스트의 0844f6c 히스토리 확보 → 아니면 B를 A 위 새 브랜치로 import(커밋은 사용자 승인 후).
+2. packages→crates 이동, meari-paint 멤버화, 바이너리 정리(동작 무변경).
+3. 모듈 스타일 통일(77곳).
+4. meari-platform 분리, Linux 빌드 통과.
+5. core/web/builder 분할.
+6. 800줄 초과 분해, 직속 파일 8 이하, tests 묶기.
+7. xtask lint를 CI 강제.
+git mv 사용으로 히스토리 보존, 단계별 커밋.
+
+## 7. kinekino와의 경계
+| 방식 | 장점 | 단점 |
+|---|---|---|
+| vendor 사본(현재) | 오프라인·단순 | 분기 발생(지금 A/B 불일치의 원인), 소유권 위반 |
+| git submodule | AGENTS.md 요구(pinned gitlink)와 일치, 커밋 고정 | 갱신 절차 번거로움 |
+| Cargo git 의존(rev 고정) | Cargo 표준, Cargo.lock으로 고정 | 동시 수정 시 [patch]로 로컬 경로 필요 |
+| crates.io 공개 | 가장 깨끗한 버전 계약 | 개발 단계엔 과함 |
+**추천: 정본은 별도 저장소 modootoday/meari, kinekino는 `vendor/meari`를 git submodule(pinned)로 두고 Cargo는 path 의존** → AGENTS.md 규칙 충족, 로컬 동시 개발 가능. 안정화 후 git rev 의존 → crates.io로 전환.
+
+## 8. 2트랙 병렬 개발 규칙 (kinekino ↔ meari)
+- 트랙 분리: 작업 디렉토리 /workspace/kinekino, /workspace/meari 각각, 빌드 캐시도 분리(runtime/build-cache/native vs meari-native).
+- 동결 구간: T1 전까지 kinekino의 packages/meari는 읽기 전용.
+- 인터페이스 변경 순서: meari 먼저 커밋 → kinekino에서 pin 갱신 커밋(한 PR에 둘 섞지 않음).
+- 공통 컨벤션 변경은 xtask-lint 한 곳에서만, 양쪽 동시 bump.
+- 소유권: meari 소스는 meari 저장소에서만 수정; kinekino에서는 submodule 포인터 갱신만 커밋. 제품 전용 플러그인은 kinekino 소유(플러그인 계약만 meari).
+- 버전 계약: SemVer 0.x, 공개 API 변경은 CHANGELOG + minor bump; kinekino는 태그/커밋만 pin.
+- 전파: meari PR 머지 → 태그 → kinekino에서 submodule bump PR → CI 통과 후 머지. 역방향 요구는 meari 이슈로.
+- 공통 lint: `xtask-lint`를 별도 크레이트(예: modootoday/rust-conventions 또는 meari 저장소 내 공개 크레이트)로 두고 두 저장소 xtask가 git rev로 의존, 같은 설정 파일(conventions.toml).
+- push: 사용자 승인 없이 어느 저장소도 push 금지(기존 규칙 유지).
+
+## 9. Cross-OS
+Windows 전용 cfg 8곳 → meari-platform/src/windows 로 수렴, unix 구현 추가. meari-native의 창 수명/부모 창(parent_client) 연결이 핵심 이식 지점.
+
+## 미확인
+0844f6c 원본 히스토리, wip 패치 적용 가능성, 실제 빌드(미실행), Windows 동작, docs 재분류.
