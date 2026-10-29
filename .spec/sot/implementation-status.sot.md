@@ -48,7 +48,7 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | `cond && <El/>` | 구현됨 (lowered to `hidden`) | react-conditional, tests/jsx_text.rs |
 | literal array `.map` | 부분 (static string arrays, unique keys, ≤1024) | react-static-list-map |
 | dynamic `.map` over state | 미구현 | — |
-| useEffect | 미구현 | gaps/react-use-effect |
+| useEffect | 부분 (mount-only `[]`, setter literal/toggle/add, 0.008%) | supported/react-use-effect, meari/tests/use_effect.rs, meari-native/tests/use_effect.rs |
 | HTML form/a/code/blockquote/figure/small etc. | 구현됨 | form-tag, html-* |
 | input `defaultValue` | 구현됨 | app-form |
 | input placeholder (`::placeholder` color) | 구현됨 (meari-native projects `::placeholder{color}` onto the host as `text-decoration-color`, UA default #757575; meari-paint lays out the attribute with the editor's style when empty). Limits: only `color` from `::placeholder` (no font/opacity), placeholder layout uses system fonts only (no `@font-face`) | input-placeholder (0.349%, glyph AA), tests/input_placeholder.rs |

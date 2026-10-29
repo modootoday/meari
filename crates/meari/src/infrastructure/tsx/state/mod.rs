@@ -6,6 +6,7 @@ use crate::domain::{
 };
 use oxc_ast::ast::*;
 use oxc_syntax::operator::{BinaryOperator, UnaryOperator};
+pub(super) mod effect;
 mod expression;
 mod input;
 mod structured;
@@ -141,15 +142,19 @@ pub(super) fn event(arrow: &ArrowFunctionExpression<'_>) -> Result<Value, Diagno
     let Some(Expression::CallExpression(call)) = arrow.body.as_expression() else {
         return Err(err(arrow, "state onClick requires one setter expression"));
     };
+    Ok(Value::Event(setter_call(call)?))
+}
+
+pub(super) fn setter_call(call: &CallExpression<'_>) -> Result<StateEvent, Diagnostic> {
     let Expression::Identifier(setter) = &call.callee else {
-        return Err(err(arrow, "named state setter required"));
+        return Err(err(call, "named state setter required"));
     };
     if call.optional || call.type_arguments.is_some() || call.arguments.len() != 1 {
-        return Err(err(arrow, "setter requires one update"));
+        return Err(err(call, "setter requires one update"));
     }
     let mut argument = call.arguments[0]
         .as_expression()
-        .ok_or_else(|| err(arrow, "spread setter update unsupported"))?;
+        .ok_or_else(|| err(call, "spread setter update unsupported"))?;
     while let Expression::ParenthesizedExpression(value) = argument {
         argument = &value.expression;
     }
@@ -223,10 +228,10 @@ pub(super) fn event(arrow: &ArrowFunctionExpression<'_>) -> Result<Value, Diagno
             Err(_) => captured(argument, None)?,
         }
     };
-    Ok(Value::Event(StateEvent {
+    Ok(StateEvent {
         setter: setter.name.to_string(),
         update,
-    }))
+    })
 }
 
 pub(super) fn resolve(root: &mut Node, states: &[StateBinding]) {
