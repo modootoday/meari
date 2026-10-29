@@ -42,6 +42,15 @@ pub enum ClientAreaError {
     OsReadback(String),
 }
 
+/// Native window state read back from the OS (`None` fields are unknown).
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct WindowState {
+    pub minimized: Option<bool>,
+    pub maximized: Option<bool>,
+    /// `Some(true)` when an undecorated window covers its whole monitor; `None` if unreadable.
+    pub borderless_monitor_coverage: Option<bool>,
+}
+
 /// OS operations; implemented by the live adapter (`adapter::{unix,windows}::sys`,
 /// `adapter::portable`) and reached through [`crate::CurrentOs`].
 pub trait OsPolicy {
@@ -66,4 +75,9 @@ pub trait OsPolicy {
         pid: u32,
         tabs: bool,
     ) -> Option<Result<serde_json::Value, String>>;
+    /// Window-state probe of a live native window (UI thread only; the handle is not stored).
+    /// `None` where this OS (or this handle kind) has no window-state adapter.
+    fn window_state(&self, _handle: RawWindowHandle) -> Option<WindowState> {
+        None
+    }
 }
