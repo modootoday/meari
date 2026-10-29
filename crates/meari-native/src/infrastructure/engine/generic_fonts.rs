@@ -77,12 +77,9 @@ fn canonical_names(_: GenericFamily) -> Vec<&'static str> {
 
 #[cfg(feature = "bundled-fonts")]
 fn register_bundled(collection: &mut Collection) {
-    use meari::{
-        application::fonts::face_bytes,
-        domain::design::fonts::{FontFormat, UI_FACES},
-    };
+    use meari::{application::fonts::face_bytes, domain::design::fonts::UI_FACES};
     for face in UI_FACES {
-        let bytes: &'static [u8] = face_bytes(face, FontFormat::Truetype);
+        let bytes: &'static [u8] = face_bytes(face);
         collection.register_fonts(Blob::new(Arc::new(bytes) as _), None);
     }
 }
