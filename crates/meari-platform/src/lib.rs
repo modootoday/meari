@@ -5,7 +5,8 @@ pub mod adapter;
 pub mod port;
 
 pub use port::{
-    ClientArea, ClientAreaError, HostFallbacks, OsFamily, OsPolicy, PlatformHost, WindowState,
+    ClientArea, ClientAreaError, GlContextHost, HostFallbacks, OsFamily, OsPolicy, PlatformHost,
+    WindowState,
 };
 
 #[cfg(windows)]
@@ -26,6 +27,30 @@ type LiveOs = adapter::portable::PortableOs;
 use adapter::portable::prepare_event_loop as live_prepare_event_loop;
 #[cfg(all(feature = "window", windows))]
 use adapter::windows::sys::prepare_event_loop as live_prepare_event_loop;
+
+#[cfg(all(feature = "gl", not(windows)))]
+use adapter::portable::gl_bootstrap as live_gl_bootstrap;
+#[cfg(all(feature = "gl", windows))]
+use adapter::windows::gl::{bootstrap as live_gl_bootstrap, owned_window_count as live_gl_windows};
+
+/// Opens the GL bootstrap context for this OS (`Err` where no adapter exists).
+#[cfg(feature = "gl")]
+pub fn gl_bootstrap() -> Result<Box<dyn GlContextHost>, String> {
+    live_gl_bootstrap()
+}
+
+/// Hidden windows currently owned by the GL bootstrap adapter (0 where there is none).
+#[cfg(feature = "gl")]
+pub fn gl_owned_window_count() -> usize {
+    #[cfg(windows)]
+    {
+        live_gl_windows()
+    }
+    #[cfg(not(windows))]
+    {
+        0
+    }
+}
 
 /// [`PlatformHost`] backed by the adapter for the OS this binary was built for.
 #[derive(Debug, Default, Clone, Copy)]
@@ -114,6 +139,15 @@ mod tests {
         for host in all_adapters() {
             let fonts = host.font_fallbacks();
             assert!(!fonts.sans.is_empty() && !fonts.serif.is_empty());
+        }
+    }
+
+    #[cfg(feature = "gl")]
+    #[test]
+    fn gl_bootstrap_without_an_adapter_is_an_error_not_a_cpu_fallback() {
+        if !cfg!(windows) {
+            assert!(gl_bootstrap().is_err());
+            assert_eq!(gl_owned_window_count(), 0);
         }
     }
 }

@@ -1,7 +1,7 @@
 //! Pinned example inventory and headless native kitchen-sink execution.
 use self::catalog::builtin;
 use self::catalog::controls;
-#[cfg(all(feature = "gl", windows))]
+#[cfg(feature = "gl")]
 use self::suites::gl_suite;
 use self::verification::blockers;
 use self::verification::collect;
@@ -25,10 +25,10 @@ pub fn run() -> Result<(), String> {
     match args.first().map(String::as_str) {
         Some("library-check") if args.len()==3 => builtin::run(Path::new(&args[1]),Path::new(&args[2])),
         Some("library-check-gl") if args.len()==3 => {
-            #[cfg(all(feature="gl",windows))]
+            #[cfg(feature = "gl")]
             { let _scope=crate::infrastructure::gl::GlScope::enter()?; builtin::run(Path::new(&args[1]),Path::new(&args[2])) }
-            #[cfg(not(all(feature="gl",windows)))]
-            { Err("library-check-gl requires Windows and --features gl".into()) }
+            #[cfg(not(feature = "gl"))]
+            { Err("library-check-gl requires --features gl and a GL platform adapter (Windows WGL)".into()) }
         },
         Some("--help" | "help") => {
             println!("meari-kitchen-sink library-check TAILWIND_EXE NEW_OUTPUT_DIRECTORY\nmeari-kitchen-sink library-check-gl TAILWIND_EXE NEW_OUTPUT_DIRECTORY\nrun[-gl] CATALOG_DIRECTORY TAILWIND_EXE NEW_OUTPUT_DIRECTORY executes the complete catalog and acceptance gates. library-check executes owned stories only; it does not prove upstream coverage.");
@@ -36,19 +36,19 @@ pub fn run() -> Result<(), String> {
         },
         Some("screen-check") if args.len()==2 => screen_suite::verify(Path::new(&args[1])),
         Some("screen-check-gl") if args.len()==2 => {
-            #[cfg(all(feature="gl",windows))]
+            #[cfg(feature = "gl")]
             { let _scope=crate::infrastructure::gl::GlScope::enter()?; screen_suite::verify(Path::new(&args[1])) }
-            #[cfg(not(all(feature="gl",windows)))]
-            { Err("screen-check-gl requires Windows and --features gl".into()) }
+            #[cfg(not(feature = "gl"))]
+            { Err("screen-check-gl requires --features gl and a GL platform adapter (Windows WGL)".into()) }
         },
         Some("gl-check") if args.len()==2 => {
-            #[cfg(all(feature="gl",windows))]
+            #[cfg(feature = "gl")]
             { gl_suite::verify(Path::new(&args[1])) }
-            #[cfg(not(all(feature="gl",windows)))]
-            { Err("gl-check requires Windows and --features gl; no CPU fallback".into()) }
+            #[cfg(not(feature = "gl"))]
+            { Err("gl-check requires --features gl and a GL platform adapter (Windows WGL); no CPU fallback".into()) }
         },
         Some("run-gl") if args.len()==4 => {
-            #[cfg(all(feature="gl",windows))]
+            #[cfg(feature = "gl")]
             {
                 let windows_before=crate::infrastructure::gl::owned_window_count();
                 let scope=crate::infrastructure::gl::GlScope::enter()?;
@@ -59,8 +59,8 @@ pub fn run() -> Result<(), String> {
                 write_json(&Path::new(&args[3]).join("gl-summary.json"),&serde_json::json!({"backend":"skia-opengl-vector","suite_error":result.as_ref().err(),"lifecycle_passed":lifecycle.is_ok(),"lifecycle_error":lifecycle.as_ref().err(),"owned_windows_before":windows_before,"owned_windows_after":windows_after}))?;
                 lifecycle?; if windows_after!=windows_before {return Err("GL host scope leaked an owned window".into());} result
             }
-            #[cfg(not(all(feature="gl",windows)))]
-            { Err("run-gl requires Windows and --features gl; no CPU fallback".into()) }
+            #[cfg(not(feature = "gl"))]
+            { Err("run-gl requires --features gl and a GL platform adapter (Windows WGL); no CPU fallback".into()) }
         },
         Some("blockers") if args.len()==3 => blockers::report(Path::new(&args[1]),Path::new(&args[2])),
         Some("run") if args.len() == 4 => run_suite(

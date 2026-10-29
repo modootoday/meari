@@ -33,3 +33,9 @@ impl OsPolicy for PortableOs {
 /// No event-loop thread restriction to lift on this OS.
 #[cfg(feature = "window")]
 pub fn prepare_event_loop(_builder: &mut winit::event_loop::EventLoopBuilder) {}
+
+/// No GL bootstrap adapter on this OS; the GL paint host has no CPU fallback.
+#[cfg(feature = "gl")]
+pub fn gl_bootstrap() -> Result<Box<dyn crate::port::GlContextHost>, String> {
+    Err("GL bootstrap requires Windows (WGL); no CPU fallback".into())
+}

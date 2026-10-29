@@ -81,3 +81,11 @@ pub trait OsPolicy {
         None
     }
 }
+
+/// Current GL context with a proc-address loader, owned by the OS adapter (GL feature).
+pub trait GlContextHost {
+    /// Makes the bootstrap context current on this thread.
+    fn make_current(&self) -> Result<(), String>;
+    /// GL function address, or null when unknown.
+    fn address(&self, name: &str) -> *const std::ffi::c_void;
+}

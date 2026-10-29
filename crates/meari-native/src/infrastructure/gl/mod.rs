@@ -1,5 +1,4 @@
 //! Opt-in GL vector paint/readback host. Native handles and GPU objects never enter source IR.
-mod platform;
 use crate::{
     application::{Renderer, icons},
     domain::{
@@ -10,6 +9,7 @@ use crate::{
 };
 use anyrender_skia::{SkiaSceneCache, SkiaScenePainter};
 use glow::HasContext;
+use meari_platform::GlContextHost;
 use sha2::{Digest, Sha256};
 use skia_safe::{
     AlphaType, ColorType, ImageInfo, Surface,
@@ -22,7 +22,7 @@ fn hash(bytes: &[u8]) -> String {
 }
 static HOST_SEQUENCE: std::sync::Mutex<u64> = std::sync::Mutex::new(1);
 pub fn owned_window_count() -> usize {
-    platform::owned_window_count()
+    meari_platform::gl_owned_window_count()
 }
 
 struct CachedIcon {
@@ -42,7 +42,7 @@ pub struct GlHost {
     icons: BTreeMap<String, CachedIcon>,
     scene_cache: SkiaSceneCache,
     gpu: Option<DirectContext>,
-    platform: platform::Platform,
+    platform: Box<dyn GlContextHost>,
     generation: u64,
     identity: String,
     scene: u64,
@@ -56,7 +56,7 @@ impl GlHost {
         if generation == 0 {
             return Err("context generation must be nonzero".into());
         }
-        let platform = platform::Platform::new()?;
+        let platform = meari_platform::gl_bootstrap()?;
         let gl = unsafe { glow::Context::from_loader_function(|name| platform.address(name)) };
         let driver = unsafe {
             Driver {

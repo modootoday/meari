@@ -22,7 +22,7 @@ pub struct NativeRenderer {
     input_fonts: parley::FontContext,
     input_widths: std::collections::HashMap<(blitz_dom::NodeId, bool), String>,
     progress_fills: std::collections::HashMap<blitz_dom::NodeId, String>,
-    #[cfg(all(feature = "gl", windows))]
+    #[cfg(feature = "gl")]
     gl_host: Option<std::rc::Rc<std::cell::RefCell<super::gl::GlHost>>>,
 }
 
@@ -69,7 +69,7 @@ impl Renderer for NativeRenderer {
         // resolve() refreshes hover after clearing damage and can queue another restyle.
         // Settle that work at the same clock instant before the offscreen paint receipt.
         self.resolve_assets(self.layout_time)?;
-        #[cfg(all(feature = "gl", windows))]
+        #[cfg(feature = "gl")]
         if let Some(host) = &self.gl_host {
             let mut host = host.borrow_mut();
             let ticket = host.next_ticket()?;
@@ -127,7 +127,7 @@ impl NativeRenderer {
             input_fonts: fonts,
             input_widths: Default::default(),
             progress_fills: Default::default(),
-            #[cfg(all(feature = "gl", windows))]
+            #[cfg(feature = "gl")]
             gl_host: super::gl::current(),
         })
     }
@@ -283,7 +283,7 @@ impl NativeRenderer {
             input_fonts: fonts,
             input_widths: Default::default(),
             progress_fills: Default::default(),
-            #[cfg(all(feature = "gl", windows))]
+            #[cfg(feature = "gl")]
             gl_host: super::gl::current(),
         }
     }

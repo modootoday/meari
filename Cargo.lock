@@ -2068,7 +2068,6 @@ dependencies = [
  "cssparser",
  "dioxus-shadcn-primitives",
  "glow",
- "glutin",
  "image",
  "keyboard-types",
  "meari",
@@ -2079,7 +2078,6 @@ dependencies = [
  "oxc_span",
  "parley",
  "png",
- "raw-window-handle",
  "regex",
  "rfd",
  "roxmltree 0.21.1",
@@ -2106,6 +2104,7 @@ dependencies = [
 name = "meari-platform"
 version = "0.1.0"
 dependencies = [
+ "glutin",
  "raw-window-handle",
  "serde_json",
  "windows",
