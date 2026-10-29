@@ -1,19 +1,22 @@
 //! Pinned example inventory and headless native kitchen-sink execution.
-mod blockers;
-mod builtin;
-mod collect;
-mod completion;
-mod controls;
+use self::catalog::builtin;
+use self::catalog::controls;
 #[cfg(all(feature = "gl", windows))]
-mod gl_suite;
+use self::suites::gl_suite;
+use self::verification::blockers;
+use self::verification::collect;
+use self::verification::completion;
 mod interaction;
 mod model;
 mod reference_adapter;
-mod screen_suite;
+use self::suites::screen_suite;
 mod source_state;
-mod styles_suite;
-mod theme;
-mod verify;
+use self::catalog::theme;
+use self::suites::styles_suite;
+use self::verification::verify;
+mod catalog;
+mod suites;
+mod verification;
 
 use std::{env, fs, path::Path};
 

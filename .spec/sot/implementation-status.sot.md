@@ -33,8 +33,8 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | responsive breakpoints | 구현됨 | tw-responsive |
 | overflow clip (`overflow-hidden`) | 구현됨 | tw-scroll-overflow |
 | internal scroll (`overflow-{x,y}-{auto,scroll,hidden}`, pinned scroll offsets) | 구현됨 (clip + offset pixel-matched; idle frame) | tw-overflow-scroll-offset + `.scroll` |
-| wheel scroll, clamping, `overflow:hidden` ignores wheel | 구현됨 (blitz scroll chain) | meari-native tests/overflow_scroll.rs |
-| ring / divide / space-x | 구현됨 (spread-only box-shadow painted as solid fill; 0.161%) | supported/tw-ring-divide-space, tests/ring_shadow.rs |
+| wheel scroll, clamping, `overflow:hidden` ignores wheel | 구현됨 (blitz scroll chain) | meari-native tests/rendering/overflow_scroll.rs |
+| ring / divide / space-x | 구현됨 (spread-only box-shadow painted as solid fill; 0.161%) | supported/tw-ring-divide-space, tests/rendering/ring_shadow.rs |
 | transforms (rotate/translate/scale) | 구현됨 (0.000%) | supported/tw-transform |
 | truncate / aspect-ratio / opacity | 구현됨 (0.348%) | supported/tw-truncate-aspect |
 | scrollbars | 구현됨 (overlay, Chromium fade timing, thumb drag tested); visual test compares the idle frame with Chrome `--hide-scrollbars` — classic 15px Chrome scrollbars are not reproduced. 방침(2026-10-30): 비교 기준은 overlay(Chrome `--hide-scrollbars` idle frame)로 고정한다. 근거: meari native는 overlay 스크롤바(Chromium fade)를 정본으로 구현하고, classic 15px gutter는 layout width를 바꾸는 별도 모드라 정본이 아니다. classic 모드는 미구현으로 남긴다 | overflow_scroll.rs (opacity, thumb drag) |
@@ -50,28 +50,28 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | Feature | Status | Evidence |
 |---|---|---|
 | useState + event handlers | 구현됨 | app-counter, state-counter |
-| design components Card/Button with variant/size | 구현됨 (`asChild` rejected) | app-card-dashboard, tests/dom.rs |
-| `cond && <El/>` | 구현됨 (lowered to `hidden`) | react-conditional, tests/jsx_text.rs |
+| design components Card/Button with variant/size | 구현됨 (`asChild` rejected) | app-card-dashboard, tests/environment/dom.rs |
+| `cond && <El/>` | 구현됨 (lowered to `hidden`) | react-conditional, tests/sources/jsx_text.rs |
 | literal array `.map` | 부분 (static string arrays, unique keys, ≤1024) | react-static-list-map |
-| dynamic `.map` over state | 부분 (dense non-empty string-array state, keyed; setter with full array literal re-expands; `[...xs, "lit"]` append and `xs.filter(x => x !== "lit")` remove (direct or updater) on the setter's own state; duplicate keys after append are rejected at dispatch with state unchanged; object items, computed items (e.g. input text) and other filter predicates rejected; 0.424% / append-filter 0.794% glyph AA tolerance 0.9%) | supported/react-state-list-map, supported/react-list-append-filter, tests/state_list_map.rs |
-| ternary `cond ? <A/> : <B/>` | 구현됨 (both branches JSX elements, lowered to `hidden`; 0.040%) | supported/react-ternary, tests/ternary.rs |
+| dynamic `.map` over state | 부분 (dense non-empty string-array state, keyed; setter with full array literal re-expands; `[...xs, "lit"]` append and `xs.filter(x => x !== "lit")` remove (direct or updater) on the setter's own state; duplicate keys after append are rejected at dispatch with state unchanged; object items, computed items (e.g. input text) and other filter predicates rejected; 0.424% / append-filter 0.794% glyph AA tolerance 0.9%) | supported/react-state-list-map, supported/react-list-append-filter, tests/hooks/state_list_map.rs |
+| ternary `cond ? <A/> : <B/>` | 구현됨 (both branches JSX elements, lowered to `hidden`; 0.040%) | supported/react-ternary, tests/hooks/ternary.rs |
 | controlled input (`value` + `onChange`) | 구현됨 (0.277%) | supported/react-controlled-input |
-| useReducer | 구현됨 (부분): module-level `function reducer(state, action)`; branch chosen at compile time by literal action (`"x"` or `{ type: "x" }`) via ternary chains, `if` returns, `switch(action / action.type)` with fall-through/default; branch lowered to a state updater. Payload actions (`action.by`), non-literal dispatch, reducers reading free variables, and actions reaching `throw` are rejected (0.042% / 0.410%) | supported/react-use-reducer, supported/react-use-reducer-switch, meari-native/tests/use_reducer.rs |
+| useReducer | 구현됨 (부분): module-level `function reducer(state, action)`; branch chosen at compile time by literal action (`"x"` or `{ type: "x" }`) via ternary chains, `if` returns, `switch(action / action.type)` with fall-through/default; branch lowered to a state updater. Payload actions (`action.by`), non-literal dispatch, reducers reading free variables, and actions reaching `throw` are rejected (0.042% / 0.410%) | supported/react-use-reducer, supported/react-use-reducer-switch, meari-native/tests/hooks/use_reducer.rs |
 | useEffect with deps `[x]` or cleanup | 미구현 (거부: "only mount-only useEffect(..., []) supported" / "effect body supports only state setter calls"). 설계 한계: effects are folded into initial state at compile time; there is no runtime effect scheduler to re-run on dep change or call cleanup | parse rejection |
 | useRef / useContext / createContext | 미구현 (import rejected). 설계 한계: no ref objects (DOM handles) and no provider tree in the static lowering; needs a runtime hook layer | parse rejection |
-| useEffect | 부분 (mount-only `[]`, setter literal/toggle/add, 0.008%) | supported/react-use-effect, meari/tests/use_effect.rs, meari-native/tests/use_effect.rs |
+| useEffect | 부분 (mount-only `[]`, setter literal/toggle/add, 0.008%) | supported/react-use-effect, meari/tests/hooks/use_effect.rs, meari-native/tests/hooks/use_effect.rs |
 | HTML form/a/code/blockquote/figure/small etc. | 구현됨 | form-tag, html-* |
 | input `defaultValue` | 구현됨 | app-form |
-| input placeholder (`::placeholder` color) | 구현됨 (meari-native projects `::placeholder{color}` onto the host as `text-decoration-color`, UA default #757575; meari-paint lays out the attribute with the editor's style when empty). Limits: only `color` from `::placeholder` (no font/opacity), placeholder layout uses system fonts only (no `@font-face`) | input-placeholder (0.349%, glyph AA), tests/input_placeholder.rs |
+| input placeholder (`::placeholder` color) | 구현됨 (meari-native projects `::placeholder{color}` onto the host as `text-decoration-color`, UA default #757575; meari-paint lays out the attribute with the editor's style when empty). Limits: only `color` from `::placeholder` (no font/opacity), placeholder layout uses system fonts only (no `@font-face`) | input-placeholder (0.349%, glyph AA), tests/pages/input_placeholder.rs |
 | input intrinsic width | 구현됨 (Chromium size=20, 0.244%) | supported/input-intrinsic-width |
-| `<progress>` | 구현 (native/fallback 두 모양, 0.000%) | supported/html-progress, tests/html_progress.rs |
+| `<progress>` | 구현 (native/fallback 두 모양, 0.000%) | supported/html-progress, tests/rendering/html_progress.rs |
 
 
 ### Examples status (every fixture, run 2026-10-30)
 
 | Example (fixture) | Set | Status | Diff % | Threshold | Evidence test |
 |---|---|---|---|---|---|
-| app-card-dashboard | supported | MATCH | 0.608% | 0.800% | tests/dom.rs |
+| app-card-dashboard | supported | MATCH | 0.608% | 0.800% | tests/environment/dom.rs |
 | app-counter | supported | MATCH | 0.124% | 0.500% | visual-test pixel diff |
 | app-form | supported | MATCH | 0.867% | 1.000% | visual-test pixel diff |
 | app-list | supported | MATCH | 0.350% | 0.500% | visual-test pixel diff |
@@ -88,25 +88,25 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | html-blockquote | supported | MATCH | 0.319% | 0.500% | visual-test pixel diff |
 | html-code | supported | MATCH | 0.144% | 0.500% | visual-test pixel diff |
 | html-figure | supported | MATCH | 0.126% | 0.500% | visual-test pixel diff |
-| html-progress | supported | MATCH | 0.000% | 0.500% | tests/html_progress.rs |
+| html-progress | supported | MATCH | 0.000% | 0.500% | tests/rendering/html_progress.rs |
 | html-small | supported | MATCH | 0.113% | 0.500% | visual-test pixel diff |
 | input-intrinsic-width | supported | MATCH | 0.244% | 0.500% | visual-test pixel diff |
-| input-placeholder | supported | MATCH | 0.349% | 0.500% | tests/input_placeholder.rs |
-| react-conditional | supported | MATCH | 0.175% | 0.500% | tests/jsx_text.rs |
+| input-placeholder | supported | MATCH | 0.349% | 0.500% | tests/pages/input_placeholder.rs |
+| react-conditional | supported | MATCH | 0.175% | 0.500% | tests/sources/jsx_text.rs |
 | react-controlled-input | supported | MATCH | 0.277% | 0.500% | visual-test pixel diff |
-| react-state-list-map | supported | MATCH | 0.424% | 0.500% | meari+meari-native tests/state_list_map.rs |
+| react-state-list-map | supported | MATCH | 0.424% | 0.500% | meari+meari-native tests/hooks/state_list_map.rs |
 | react-static-list-map | supported | MATCH | 0.029% | 0.500% | visual-test pixel diff |
-| react-ternary | supported | MATCH | 0.040% | 0.500% | meari+meari-native tests/ternary.rs |
-| react-use-effect | supported | MATCH | 0.008% | 0.500% | meari+meari-native tests/use_effect.rs |
+| react-ternary | supported | MATCH | 0.040% | 0.500% | meari+meari-native tests/hooks/ternary.rs |
+| react-use-effect | supported | MATCH | 0.008% | 0.500% | meari+meari-native tests/hooks/use_effect.rs |
 | rounded-border | supported | MATCH | 0.104% | 0.500% | visual-test pixel diff |
 | solid-box | supported | MATCH | 0.000% | 0.500% | visual-test pixel diff |
 | state-counter | supported | MATCH | 0.117% | 0.500% | visual-test pixel diff |
 | tw-color-border-shadow | supported | MATCH | 0.190% | 0.500% | visual-test pixel diff |
 | tw-flex-layout | supported | MATCH | 0.000% | 0.500% | visual-test pixel diff |
 | tw-grid-layout | supported | MATCH | 0.014% | 0.500% | visual-test pixel diff |
-| tw-overflow-scroll-offset | supported | MATCH | 0.015% | 0.500% | tests/overflow_scroll.rs (wheel, clamp, thumb drag) |
+| tw-overflow-scroll-offset | supported | MATCH | 0.015% | 0.500% | tests/rendering/overflow_scroll.rs (wheel, clamp, thumb drag) |
 | tw-responsive | supported | MATCH | 0.000% | 0.500% | visual-test pixel diff |
-| tw-ring-divide-space | supported | MATCH | 0.161% | 0.500% | meari-native tests/ring_shadow.rs |
+| tw-ring-divide-space | supported | MATCH | 0.161% | 0.500% | meari-native tests/rendering/ring_shadow.rs |
 | tw-scroll-overflow | supported | MATCH | 0.008% | 0.500% | visual-test pixel diff |
 | tw-spacing-sizing | supported | MATCH | 0.000% | 0.500% | visual-test pixel diff |
 | tw-state-variants | supported | MATCH | 0.726% | 0.900% | visual-test pixel diff |
@@ -114,9 +114,9 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | tw-transform | supported | MATCH | 0.000% | 0.500% | visual-test pixel diff |
 | tw-truncate-aspect | supported | MATCH | 0.348% | 0.500% | visual-test pixel diff |
 | tw-typography | supported | MATCH | 1.430% | 1.600% | visual-test pixel diff |
-| react-list-append-filter | supported | MATCH | 0.794% | 0.900% | tests/state_list_map.rs |
-| react-use-reducer | supported | MATCH | 0.042% | 0.500% | meari-native tests/use_reducer.rs |
-| react-use-reducer-switch | supported | MATCH | 0.410% | 0.500% | meari-native tests/use_reducer.rs |
+| react-list-append-filter | supported | MATCH | 0.794% | 0.900% | tests/hooks/state_list_map.rs |
+| react-use-reducer | supported | MATCH | 0.042% | 0.500% | meari-native tests/hooks/use_reducer.rs |
+| react-use-reducer-switch | supported | MATCH | 0.410% | 0.500% | meari-native tests/hooks/use_reducer.rs |
 | tw-group-peer | supported | MATCH | 1.271% | 1.300% | visual-test pixel diff (bbox equal) |
 | tw-peer-checked | gap | KNOWN-GAP | 0.738% | 0.500% | native checkbox `:checked` not painted |
 

@@ -146,11 +146,11 @@ unmodified OTF under its original name.
 
 ## Tests
 
-- `meari/tests/font_catalog.rs`: catalog exact bytes / sha256 / media types; WOFF2-only web
+- `meari/tests/platform/font_catalog.rs`: catalog exact bytes / sha256 / media types; WOFF2-only web
   CSS and TTF-only native CSS; canonical stack order (no Arimo/Tinos/Liberation); WOFF2 header
   (`wOF2`, flavor = TTF sfnt version, length, numTables ≤ TTF — upstream drops DSIG); OFL-only
   directory scan + RFN presence + THIRD_PARTY_NOTICES content.
-- `meari-native/tests/bundled_font_catalog.rs`: native preflight, CSS delivery of all TTF faces,
+- `meari-native/tests/pages/bundled_font_catalog.rs`: native preflight, CSS delivery of all TTF faces,
   glyph counts and Hangul (all 11,172 syllables in Pretendard Variable) / Latin / kana / kanji
   coverage (kanji only via Pretendard JP).
 - `generic_fonts` unit tests: canonical generics resolve to bundled faces first, Arial-family

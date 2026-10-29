@@ -1,6 +1,6 @@
+pub use self::bundling::app_bundle;
 use crate::domain::{Component, Diagnostic, Span, validation::validate};
 use serde::{Deserialize, Serialize};
-pub mod app_bundle;
 pub mod assets;
 pub mod binding;
 pub mod builder;
@@ -8,17 +8,17 @@ pub mod component_state;
 pub mod dom;
 #[cfg(feature = "bundled-fonts")]
 pub mod fonts;
-pub mod hmr;
+pub use self::bundling::hmr;
 pub mod hook_values;
 pub mod host_callbacks;
 pub mod icons;
-pub mod media;
+pub use self::environment::media;
 pub mod module_app_bundle;
 pub mod plugins;
 pub(crate) mod radio_group;
 pub mod range_parts;
 pub mod repeat;
-pub mod responsive;
+pub use self::environment::responsive;
 pub mod screen;
 pub mod source_modules;
 pub mod state_program;
@@ -121,5 +121,7 @@ impl<'a> Converter<'a> {
         )
     }
 }
+mod bundling;
+mod environment;
 pub mod hook_document;
 pub mod hook_expression;
