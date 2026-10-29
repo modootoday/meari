@@ -4,8 +4,8 @@
 mod clean_cache;
 mod spec_check;
 mod structure;
+mod workspace;
 
-use std::path::PathBuf;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -13,7 +13,13 @@ fn main() -> ExitCode {
     match args.first().map(String::as_str) {
         Some("lint-structure") => {
             let strict = args.iter().any(|a| a == "--strict");
-            let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
+            let root = match workspace::root() {
+                Ok(root) => root,
+                Err(e) => {
+                    eprintln!("{e}");
+                    return ExitCode::FAILURE;
+                }
+            };
             let report = structure::scan(&root.join("crates"));
             structure::print(&report);
             if strict && !report.is_empty() {
@@ -27,10 +33,23 @@ fn main() -> ExitCode {
             run_package("meari-visual", &args[1..])
         }
         Some("spec-check") => spec_check::run(&args[1..]),
-        Some("clean-cache") => clean_cache::run(
-            &args[1..],
-            &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(".."),
-        ),
+        Some("clean-cache") => match workspace::root() {
+            Ok(root) => clean_cache::run(&args[1..], &root),
+            Err(e) => {
+                eprintln!("{e}");
+                ExitCode::FAILURE
+            }
+        },
+        Some("print-root") => match workspace::root() {
+            Ok(root) => {
+                println!("{}", root.display());
+                ExitCode::SUCCESS
+            }
+            Err(e) => {
+                eprintln!("{e}");
+                ExitCode::FAILURE
+            }
+        },
         Some("demo") => run_package("meari-demo", &args[1..]),
         _ => {
             eprintln!(

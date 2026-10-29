@@ -21,9 +21,7 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
         eprintln!("usage: cargo xtask clean-cache [--max-gb N] [--older-days D] [--dry-run]");
         return ExitCode::from(2);
     };
-    let target = std::env::var_os("CARGO_TARGET_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| root.join("../.cargo-target")); // mirrors .cargo/config.toml build.target-dir
+    let target = crate::workspace::target_dir(root);
     let before = size(&target);
     let mut cleaner = Cleaner {
         dry_run: options.dry_run,
