@@ -2,6 +2,7 @@
 pub mod application;
 pub mod domain;
 pub mod infrastructure;
+pub mod presentation;
 pub mod runtime;
 #[cfg(feature = "wasm")]
 pub mod wasm;

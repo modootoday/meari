@@ -19,13 +19,13 @@ use winit::{
     window::WindowId,
 };
 
-#[path = "native_child_window/lifecycle.rs"]
+#[path = "lifecycle.rs"]
 mod lifecycle;
-#[path = "native_child_window/parent.rs"]
+#[path = "parent.rs"]
 mod parent;
-#[path = "native_child_window/parent_client.rs"]
+#[path = "parent_client.rs"]
 mod parent_client;
-#[path = "native_child_window/preparation.rs"]
+#[path = "preparation.rs"]
 mod preparation;
 
 fn document() -> NativeDocumentHandle {

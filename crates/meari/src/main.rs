@@ -1,5 +1,3 @@
-mod presentation;
-
 fn main() -> std::process::ExitCode {
-    presentation::cli::run()
+    meari::presentation::cli::run()
 }

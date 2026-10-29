@@ -7,15 +7,15 @@ use meari::{
 };
 use meari_native::{domain::widgets::Action, infrastructure::document::InteractiveDocument};
 use std::collections::BTreeMap;
-#[path = "application_reload/composites.rs"]
+#[path = "composites.rs"]
 mod composites;
-#[path = "application_reload/rollback.rs"]
+#[path = "rollback.rs"]
 mod rollback;
 
 fn definition() -> ApplicationDefinition {
     ApplicationDefinition {
         component: meari::parse(
-            include_str!("../../meari/fixtures/state-counter.tsx"),
+            include_str!("../../../meari/fixtures/state-counter.tsx"),
             Language::Tsx,
         )
         .unwrap(),
@@ -43,7 +43,7 @@ fn successor(original: &ApplicationDefinition) -> ApplicationDefinition {
     next.stamp.generation += 1;
     next.stamp.graph_hash = ContentHash::of(b"next-source");
     next.component = meari::parse(
-        &include_str!("../../meari/fixtures/state-counter.tsx")
+        &include_str!("../../../meari/fixtures/state-counter.tsx")
             .replace("previous + 1", "previous + 10"),
         Language::Tsx,
     )

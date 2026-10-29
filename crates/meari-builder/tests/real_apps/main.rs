@@ -1,7 +1,7 @@
 //! Explicit integration run: invokes trusted local Rust tools and preserves private evidence.
-#[path = "real_apps/assets.rs"]
+#[path = "assets.rs"]
 mod assets;
-#[path = "real_apps/modules.rs"]
+#[path = "modules.rs"]
 mod modules;
 use meari::{application::builder::BuildFailure, domain::build::*};
 use meari_builder::{
@@ -55,7 +55,7 @@ fn real_native_and_web_apps_preserve_last_good_on_invalid_next_source() {
     std::fs::create_dir(&source).expect("fresh proof root required");
     std::fs::write(
         source.join("counter.tsx"),
-        include_str!("../../meari/fixtures/state-counter.tsx"),
+        include_str!("../../../meari/fixtures/state-counter.tsx"),
     )
     .unwrap();
     std::fs::write(source.join("styles.css"),"main {padding: 16px} button {display: block; width: 160px; height: 40px; background: #223344; color: white} input {width:200px;height:32px} p {color:#112233}").unwrap();

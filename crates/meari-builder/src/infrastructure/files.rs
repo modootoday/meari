@@ -26,15 +26,7 @@ pub struct ProjectInputs {
     root: PathBuf,
 }
 pub(super) fn is_link(metadata: &fs::Metadata) -> bool {
-    #[cfg(windows)]
-    {
-        use std::os::windows::fs::MetadataExt;
-        metadata.file_attributes() & 0x400 != 0
-    }
-    #[cfg(not(windows))]
-    {
-        metadata.file_type().is_symlink()
-    }
+    super::platform::is_link(metadata)
 }
 impl ProjectInputs {
     pub fn new(root: &Path) -> Result<Self, String> {

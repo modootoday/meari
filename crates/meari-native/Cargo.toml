@@ -23,8 +23,8 @@ gl = ["dep:anyrender_skia", "dep:skia-safe", "dep:glutin", "dep:glow", "dep:raw-
 window = ["dep:blitz-shell", "dep:winit", "dep:accesskit_xplat", "anyrender_vello_cpu/softbuffer_window_renderer"]
 
 [[test]]
-name = "shared_font_catalog"
-path = "tests/shared_font_catalog.rs"
+name = "bundled_font_catalog"
+path = "tests/bundled_font_catalog.rs"
 required-features = ["bundled-fonts"]
 
 [dependencies]

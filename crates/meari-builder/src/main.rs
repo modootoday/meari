@@ -1,4 +1,3 @@
-mod presentation;
 fn main() -> std::process::ExitCode {
-    presentation::run()
+    meari_builder::presentation::run()
 }

@@ -6,17 +6,17 @@ use meari::{
 use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);
-#[path = "browser/application_reload.rs"]
+#[path = "application_reload.rs"]
 mod application_reload;
-#[path = "browser/dom.rs"]
+#[path = "dom.rs"]
 mod dom;
-#[path = "browser/node_slots.rs"]
+#[path = "node_slots.rs"]
 mod node_slots;
-#[path = "browser/repeat.rs"]
+#[path = "repeat.rs"]
 mod repeat;
-#[path = "browser/source_callbacks/mod.rs"]
+#[path = "source_callbacks/mod.rs"]
 mod source_callbacks;
-#[path = "browser/source_modules.rs"]
+#[path = "source_modules.rs"]
 mod source_modules;
 
 #[wasm_bindgen_test]
@@ -56,8 +56,11 @@ fn browser_build_graph_uses_canonical_sha256_and_rejects_cycles() {
 #[wasm_bindgen_test]
 fn browser_state_expression_callbacks_preserve_render_closures() {
     use meari::application::state_program::StateProgram;
-    let component =
-        meari::parse(include_str!("../fixtures/state-capture.tsx"), Language::Tsx).unwrap();
+    let component = meari::parse(
+        include_str!("../../fixtures/state-capture.tsx"),
+        Language::Tsx,
+    )
+    .unwrap();
     let rust = meari::emit(&component, Language::Rust).unwrap();
     assert!(component.semantic_eq(&meari::parse(&rust.code, Language::Rust).unwrap()));
     let mut program = StateProgram::mount(component, "browser-closures".into(), 1).unwrap();
@@ -79,7 +82,7 @@ fn browser_state_expression_callbacks_preserve_render_closures() {
 #[wasm_bindgen_test]
 fn browser_source_state_roundtrip_and_functional_setters_use_shared_runtime() {
     use meari::application::state_program::StateProgram;
-    let source = include_str!("../fixtures/state-counter.tsx");
+    let source = include_str!("../../fixtures/state-counter.tsx");
     let component = meari::parse(source, Language::Tsx).unwrap();
     let rust = meari::convert(source, Language::Tsx, Language::Rust).unwrap();
     let restored = meari::parse(&rust.code, Language::Rust).unwrap();
@@ -257,7 +260,7 @@ fn browser_native_plan_uses_the_default_design_contract() {
 
 #[wasm_bindgen_test]
 fn browser_roundtrip_through_public_wasm_api() {
-    let source = include_str!("../fixtures/card.rs");
+    let source = include_str!("../../fixtures/card.rs");
     let tsx: serde_json::Value =
         serde_json::from_str(&convert_source(source, "rust", "tsx").unwrap()).unwrap();
     assert_eq!(tsx["schema_version"], 2);
@@ -298,7 +301,7 @@ fn browser_unsupported_and_syntax_errors_are_structured() {
 
 #[wasm_bindgen_test]
 fn browser_unicode_mapping_uses_utf8_bytes() {
-    let source = include_str!("../fixtures/card.rs").replace(
+    let source = include_str!("../../fixtures/card.rs").replace(
         "text(props.label.clone())",
         "text(\"한글🦀\"), text(props.label.clone())",
     );
@@ -320,8 +323,11 @@ fn browser_unicode_mapping_uses_utf8_bytes() {
 
 #[wasm_bindgen_test]
 fn browser_mixed_hook_order_survives_both_frontends_and_dispatch() {
-    let component =
-        meari::parse(include_str!("../fixtures/mixed-hooks.tsx"), Language::Tsx).unwrap();
+    let component = meari::parse(
+        include_str!("../../fixtures/mixed-hooks.tsx"),
+        Language::Tsx,
+    )
+    .unwrap();
     let rust = meari::emit(&component, Language::Rust).unwrap();
     assert!(component.semantic_eq(&meari::parse(&rust.code, Language::Rust).unwrap()));
     let mut program = meari::application::state_program::StateProgram::mount(

@@ -11,11 +11,11 @@ use std::{
     time::Duration,
 };
 
-#[path = "window_lifecycle/close.rs"]
+#[path = "close.rs"]
 mod close;
-#[path = "window_lifecycle/completion.rs"]
+#[path = "completion.rs"]
 mod completion;
-#[path = "window_lifecycle/state.rs"]
+#[path = "state.rs"]
 mod state;
 
 #[derive(Clone, Default)]

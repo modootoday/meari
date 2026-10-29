@@ -3,7 +3,7 @@ use meari::domain::{
     array_value::ArrayValue, host_callbacks::CallbackSignature, record_value::RecordValue,
 };
 
-const SOURCE: &str = include_str!("../../../meari/fixtures/record-predicates/rail.tsx");
+const SOURCE: &str = include_str!("../../../../meari/fixtures/record-predicates/rail.tsx");
 
 fn values(editable: bool) -> BTreeMap<String, Value> {
     let component = meari::parse(SOURCE, meari::application::Language::Tsx).unwrap();

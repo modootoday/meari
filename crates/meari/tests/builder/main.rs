@@ -4,9 +4,9 @@ use meari::{
     domain::build::*,
 };
 use std::collections::{BTreeMap, BTreeSet};
-#[path = "builder/runtime.rs"]
+#[path = "runtime.rs"]
 mod runtime;
-#[path = "builder/store.rs"]
+#[path = "store.rs"]
 mod store;
 
 fn path(value: &str) -> BuildPath {

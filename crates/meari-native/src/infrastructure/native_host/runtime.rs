@@ -85,6 +85,7 @@ impl<H: NativeWindowHost> NativeHostRuntime<H> {
     pub fn pending_callbacks(&self) -> usize {
         self.pending.as_ref().map_or(0, |turn| turn.callbacks.len())
     }
+    #[cfg_attr(not(feature = "window"), allow(dead_code))]
     pub(crate) fn has_pending_turn(&self) -> bool {
         self.pending.is_some()
     }

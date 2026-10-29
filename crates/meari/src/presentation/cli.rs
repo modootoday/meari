@@ -1,16 +1,14 @@
-use meari::{
-    self as application,
+use crate as application;
+use crate::{
     application::Language,
     domain::{Diagnostic, Span},
 };
 use std::{
-    env,
     io::{self, Read},
     process::ExitCode,
 };
 
-fn execute() -> Result<(), Diagnostic> {
-    let args: Vec<_> = env::args().skip(1).collect();
+fn execute(args: Vec<String>) -> Result<(), Diagnostic> {
     if args.as_slice() == ["--help"] {
         println!(
             "meari-cli <rust-to-tsx|tsx-to-rust> [--json]\nmeari-cli native-plan < request.json\nConversion schema2 includes code, mappings and tailwind-shadcn-v1 native capability diagnostics. native-plan returns a typed plan, not a rendered window.\nErrors: JSON on stderr, exit 1. See README.md."
@@ -60,7 +58,12 @@ fn execute() -> Result<(), Diagnostic> {
 }
 
 pub fn run() -> ExitCode {
-    match execute() {
+    run_with(std::env::args().skip(1).collect())
+}
+
+/// Runs this command group with explicit arguments (used by the unified `meari` CLI).
+pub fn run_with(args: Vec<String>) -> ExitCode {
+    match execute(args) {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             eprintln!(
