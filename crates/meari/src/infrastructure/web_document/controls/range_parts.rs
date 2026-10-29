@@ -1,5 +1,5 @@
 //! Scoped derived CSS lives outside the declared frame; input attributes/leases stay intact.
-use super::{
+use super::super::{
     WebDocument,
     frame::{Frame, error},
     listener::Listener,
@@ -16,7 +16,7 @@ fn id_selector(id: &str) -> String {
     }
     output
 }
-pub(super) fn sync_frame(frame: &Frame, shell: &Element) -> Result<(), String> {
+pub(in super::super) fn sync_frame(frame: &Frame, shell: &Element) -> Result<(), String> {
     let mut values = Vec::new();
     let mut ids = BTreeSet::new();
     for node in frame.nodes.values() {
@@ -92,7 +92,7 @@ pub(super) fn sync_frame(frame: &Frame, shell: &Element) -> Result<(), String> {
     Ok(())
 }
 impl WebDocument {
-    pub(super) fn install_range_parts_dispatcher(&mut self) -> Result<(), String> {
+    pub(in super::super) fn install_range_parts_dispatcher(&mut self) -> Result<(), String> {
         let weak = Rc::downgrade(&self.inner);
         self.listeners.push(Listener::capture(
             self.inner.borrow().shell.clone().unchecked_into(),
@@ -133,7 +133,7 @@ impl WebDocument {
 }
 #[cfg(test)]
 mod tests {
-    use super::id_selector;
+    use super::super::id_selector;
     #[wasm_bindgen_test::wasm_bindgen_test]
     fn css_identifier_encoding_never_interpolates_source_css() {
         assert_eq!(id_selector("x']{}"), "#\\78 \\27 \\5d \\7b \\7d ");

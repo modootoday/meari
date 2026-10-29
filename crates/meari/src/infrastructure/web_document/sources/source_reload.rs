@@ -1,4 +1,4 @@
-use super::WebDocument;
+use super::super::WebDocument;
 use crate::{
     application::{
         binding, dom,

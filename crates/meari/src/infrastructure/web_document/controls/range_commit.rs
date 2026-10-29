@@ -1,5 +1,5 @@
 //! Range commit is a separate typed event slot, never a captured draft or SDK command.
-use super::{Inner, WebDocument, listener::Listener};
+use super::super::{Inner, WebDocument, listener::Listener};
 use crate::{
     application::host_callbacks::{CallbackEventOwner, DocumentCallbacks},
     domain::{
@@ -20,7 +20,7 @@ struct Owner {
     binding: CallbackEventOwner,
 }
 #[derive(Default)]
-pub(super) struct State {
+pub(in super::super) struct State {
     interaction: RangeInteraction<Owner>,
     pending: Option<RangeValueCommit<Owner>>,
     pointer_released: bool,
@@ -41,11 +41,11 @@ impl State {
             self.cancel();
             return Ok(());
         }
-        let actual = super::source_callbacks::event_value(&owner.node)?;
+        let actual = super::super::source_callbacks::event_value(&owner.node)?;
         self.pending = self.interaction.finish(&owner, gesture, &actual)?;
         self.flush(inner)
     }
-    pub(super) fn flush(&mut self, inner: &mut Inner) -> Result<(), String> {
+    pub(in super::super) fn flush(&mut self, inner: &mut Inner) -> Result<(), String> {
         let Some(pending) = self.pending.as_ref() else {
             return Ok(());
         };
@@ -112,7 +112,7 @@ impl State {
                     self.cancel();
                     return Ok(());
                 }
-                let initial = super::source_callbacks::event_value(&owner.node)?;
+                let initial = super::super::source_callbacks::event_value(&owner.node)?;
                 self.interaction.begin(
                     owner,
                     RangeGesture::Pointer(pointer.pointer_id() as u32 as u128),
@@ -133,7 +133,7 @@ impl State {
                     return Ok(());
                 }
                 self.pointer_released = true;
-                let actual = super::source_callbacks::event_value(
+                let actual = super::super::source_callbacks::event_value(
                     &self.interaction.owner().expect("matching pointer").node,
                 )?;
                 if self.pointer_changed || !self.interaction.changed_from_initial(&actual) {
@@ -182,7 +182,7 @@ impl State {
                     self.cancel();
                     return Ok(());
                 }
-                let initial = super::source_callbacks::event_value(&owner.node)?;
+                let initial = super::super::source_callbacks::event_value(&owner.node)?;
                 self.interaction
                     .begin(owner, RangeGesture::Key(key.key()), &initial)?;
                 self.pointer_released = false;
@@ -275,7 +275,7 @@ fn valid(inner: &Inner, owner: &Owner, focused: bool) -> bool {
     true
 }
 impl WebDocument {
-    pub(super) fn install_range_commit_dispatcher(&mut self) -> Result<(), String> {
+    pub(in super::super) fn install_range_commit_dispatcher(&mut self) -> Result<(), String> {
         for kind in [
             "pointerdown",
             "pointerup",

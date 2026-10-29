@@ -1,5 +1,5 @@
 //! Resolve events against the current owned DOM, never a captured output index.
-use super::{Inner, WebDocument, listener::Listener};
+use super::super::{Inner, WebDocument, listener::Listener};
 use crate::domain::host_callbacks::CallbackSource;
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
@@ -64,10 +64,10 @@ impl Inner {
     }
 }
 impl WebDocument {
-    pub(super) fn install_click_dispatcher(&mut self) -> Result<(), String> {
+    pub(in super::super) fn install_click_dispatcher(&mut self) -> Result<(), String> {
         self.install_event_dispatcher(false)
     }
-    pub(super) fn install_input_dispatcher(&mut self) -> Result<(), String> {
+    pub(in super::super) fn install_input_dispatcher(&mut self) -> Result<(), String> {
         self.install_event_dispatcher(true)
     }
     fn install_event_dispatcher(&mut self, input: bool) -> Result<(), String> {
@@ -94,7 +94,7 @@ impl WebDocument {
                         inner.enqueue_callback(
                             &path,
                             &current,
-                            Some(&super::source_callbacks::event_value(&current)?),
+                            Some(&super::super::source_callbacks::event_value(&current)?),
                         )
                     } else {
                         inner.dispatch(&path).map(|_| ())

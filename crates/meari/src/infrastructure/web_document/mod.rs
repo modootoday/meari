@@ -1,17 +1,19 @@
 //! WASM adapter for persistent browser DOM and shared source-state programs.
 mod frame;
 mod listener;
-mod radio_group;
-mod range_parts;
-mod source_reload;
+use self::controls::radio_group;
+use self::controls::range_parts;
+use self::sources::source_reload;
 pub use source_reload::PreparedSourceReplacement;
 mod application_reload;
 mod hooks;
 mod host_observation;
-mod range_commit;
-mod source_callbacks;
-mod source_events;
-mod source_modules;
+use self::controls::range_commit;
+use self::sources::source_callbacks;
+use self::sources::source_events;
+use self::sources::source_modules;
+mod controls;
+mod sources;
 pub use application_reload::{CommittedApplicationReplacement, PreparedApplicationReplacement};
 pub use hooks::WebHookFailure;
 

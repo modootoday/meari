@@ -1,5 +1,5 @@
 //! Scoped Rust listeners and shared document callback leases; no registry calls in listeners.
-use super::{WebDocument, frame::error};
+use super::super::{WebDocument, frame::error};
 use crate::{
     application::{
         dom,
@@ -21,8 +21,8 @@ fn message(error: crate::application::source_modules::ModuleDiagnostic) -> Strin
         error.diagnostic.message
     )
 }
-impl super::Inner {
-    pub(super) fn enqueue_callback(
+impl super::super::Inner {
+    pub(in super::super) fn enqueue_callback(
         &mut self,
         path: &str,
         current: &Element,
@@ -101,7 +101,7 @@ impl super::Inner {
             .enqueue_guarded(path, text)
     }
 }
-pub(super) fn event_value(element: &Element) -> Result<String, String> {
+pub(in super::super) fn event_value(element: &Element) -> Result<String, String> {
     if let Some(input) = element.dyn_ref::<HtmlInputElement>() {
         if [
             "checkbox", "radio", "file", "button", "submit", "reset", "image", "hidden",

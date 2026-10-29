@@ -1,4 +1,4 @@
-use super::WebDocument;
+use super::super::WebDocument;
 use crate::{
     application::{
         dom,
@@ -19,8 +19,8 @@ fn message(error: ModuleDiagnostic) -> String {
     )
 }
 
-impl super::Inner {
-    pub(super) fn dispatch_module_state(&mut self, path: &str) -> Result<bool, String> {
+impl super::super::Inner {
+    pub(in super::super) fn dispatch_module_state(&mut self, path: &str) -> Result<bool, String> {
         if self.hook_document.is_some() {
             return self.dispatch_hook_module(path);
         }
@@ -71,11 +71,11 @@ impl WebDocument {
         inner
             .shell
             .set_attribute("data-meari-session", app.stamp.session.as_str())
-            .map_err(super::frame::error)?;
+            .map_err(super::super::frame::error)?;
         inner
             .shell
             .set_attribute("data-meari-generation", &app.stamp.generation.to_string())
-            .map_err(super::frame::error)?;
+            .map_err(super::super::frame::error)?;
         inner.application = Some(app.clone());
         inner.application_generation = app.stamp.generation;
         inner.source_schema = app.source_schema()?;

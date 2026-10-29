@@ -1,12 +1,15 @@
 //! Owned composite events produce inert selection requests after focus/frame admission.
-use super::{Inner, WebDocument, frame::error, listener::Listener};
+use super::super::{Inner, WebDocument, frame::error, listener::Listener};
 use crate::{application::radio_group::plan, domain::host_callbacks::CallbackSource};
 use std::rc::Rc;
 use wasm_bindgen::JsCast;
 use web_sys::{Element, Event, FocusEvent, HtmlElement, KeyboardEvent, Node};
 
 impl Inner {
-    pub(super) fn radio_event_path(&self, event: &Event) -> Result<Option<String>, String> {
+    pub(in super::super) fn radio_event_path(
+        &self,
+        event: &Event,
+    ) -> Result<Option<String>, String> {
         if self.closed || self.poisoned {
             return Ok(None);
         }
@@ -117,7 +120,7 @@ impl Inner {
         Ok(())
     }
 
-    pub(super) fn dispatch_radio(
+    pub(in super::super) fn dispatch_radio(
         &mut self,
         path: &str,
         key: Option<&str>,
@@ -212,7 +215,7 @@ impl Inner {
 }
 
 impl WebDocument {
-    pub(super) fn install_radio_focus(&mut self) -> Result<(), String> {
+    pub(in super::super) fn install_radio_focus(&mut self) -> Result<(), String> {
         for kind in ["focusin", "focusout"] {
             let weak = Rc::downgrade(&self.inner);
             let target = self.inner.borrow().shell.clone().unchecked_into();
@@ -280,7 +283,7 @@ impl WebDocument {
         Ok(())
     }
 
-    pub(super) fn install_radio_keyboard(&mut self) -> Result<(), String> {
+    pub(in super::super) fn install_radio_keyboard(&mut self) -> Result<(), String> {
         let weak = Rc::downgrade(&self.inner);
         let target = self.inner.borrow().shell.clone().unchecked_into();
         self.listeners
