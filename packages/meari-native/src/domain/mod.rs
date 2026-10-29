@@ -1,6 +1,9 @@
 use serde::Serialize;
 pub mod graphics;
+pub mod surface_slot;
 pub mod widgets;
+pub mod window_actions;
+pub mod window_lifecycle;
 
 pub use meari::domain::viewport::Viewport;
 

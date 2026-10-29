@@ -7,17 +7,28 @@ license = "MIT OR Apache-2.0"
 description = "Meari UI framework core: typed UI IR, Rust/TSX conversion and WASM adapters"
 repository = "https://github.com/modootoday/meari"
 readme = "../../README.md"
-include = ["src/**", "tests/**", "fixtures/**", "Cargo.toml"]
+include = [
+    "src/**/*.rs", "tests/**/*.rs", "fixtures/**/*.rs", "fixtures/**/*.tsx",
+    "fixtures/**/*.json", "fixtures/**/*.md", "assets/**/*.svg", "assets/**/LICENSE*",
+    "assets/fonts/**/*.ttf",
+    "Cargo.toml", "LICENSE-MIT", "LICENSE-APACHE", "NOTICE",
+    "!**/.spec/**", "!**/target/**", "!**/node_modules/**", "!**/.cache/**",
+    "!**/downloads/**", "!**/captures/**", "!**/screenshots/**", "!**/cache/**",
+    "!**/.env", "!**/.env.*", "!**/credentials.json",
+]
 
 [lib]
 crate-type = ["rlib", "cdylib"]
 
 [features]
+bundled-fonts = []
 wasm = ["dep:wasm-bindgen", "dep:web-sys"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+ryu-js = "=1.0.3"
+sha2 = "=0.10.9"
 syn = { version = "=2.0.117", features = ["full", "parsing"] }
 proc-macro2 = { version = "1", features = ["span-locations"] }
 oxc_allocator = "=0.154.0"
@@ -28,7 +39,7 @@ oxc_syntax = "=0.154.0"
 wasm-bindgen = { version = "=0.2.129", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-web-sys = { version = "=0.3.106", features = ["Window", "MediaQueryList"], optional = true }
+web-sys = { version = "=0.3.106", features = ["Window", "MediaQueryList", "VisualViewport", "Event", "KeyboardEvent", "KeyboardEventInit", "PointerEvent", "PointerEventInit", "FocusEvent", "EventTarget", "Document", "Element", "Node", "NodeList", "Text", "HtmlElement", "HtmlInputElement", "HtmlTextAreaElement", "HtmlButtonElement", "CssStyleDeclaration"], optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
 wasm-bindgen-test = "=0.3.79"

@@ -9,6 +9,7 @@ pub fn module(tag: &str) -> Option<&'static str> {
         "Input" => "input",
         "Checkbox" => "checkbox",
         "Switch" => "switch",
+        "RadioGroup" | "RadioGroupItem" => "radio-group",
         "Icon" => "icon",
         "Label" => "label",
         "Separator" => "separator",
@@ -163,6 +164,10 @@ pub fn recipe(tag: &str, variant: &str, size: &str) -> String {
             "h-9 w-full rounded-md border border-input bg-background text-foreground px-3 py-1 text-sm"
         }
         "Label" => "text-sm font-medium",
+        "RadioGroup" => "grid gap-3",
+        "RadioGroupItem" => {
+            "aspect-square h-4 w-4 shrink-0 rounded-full border border-input bg-background text-primary data-[state=checked]:border-primary data-[state=checked]:bg-primary focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50"
+        }
         "Card" => "rounded-lg border border-border bg-card text-card-foreground",
         "CardHeader" | "CardContent" | "CardFooter" => "p-6",
         "CardTitle" => "text-xl font-semibold",

@@ -10,6 +10,7 @@ mod interaction;
 mod model;
 mod reference_adapter;
 mod screen_suite;
+mod source_state;
 mod styles_suite;
 mod theme;
 mod verify;
@@ -19,6 +20,17 @@ use std::{env, fs, path::Path};
 pub fn run() -> Result<(), String> {
     let args: Vec<_> = env::args().skip(1).collect();
     match args.first().map(String::as_str) {
+        Some("library-check") if args.len()==3 => builtin::run(Path::new(&args[1]),Path::new(&args[2])),
+        Some("library-check-gl") if args.len()==3 => {
+            #[cfg(all(feature="gl",windows))]
+            { let _scope=crate::infrastructure::gl::GlScope::enter()?; builtin::run(Path::new(&args[1]),Path::new(&args[2])) }
+            #[cfg(not(all(feature="gl",windows)))]
+            { Err("library-check-gl requires Windows and --features gl".into()) }
+        },
+        Some("--help" | "help") => {
+            println!("meari-kitchen-sink library-check TAILWIND_EXE NEW_OUTPUT_DIRECTORY\nmeari-kitchen-sink library-check-gl TAILWIND_EXE NEW_OUTPUT_DIRECTORY\nrun[-gl] CATALOG_DIRECTORY TAILWIND_EXE NEW_OUTPUT_DIRECTORY executes the complete catalog and acceptance gates. library-check executes owned stories only; it does not prove upstream coverage.");
+            Ok(())
+        },
         Some("screen-check") if args.len()==2 => screen_suite::verify(Path::new(&args[1])),
         Some("screen-check-gl") if args.len()==2 => {
             #[cfg(all(feature="gl",windows))]

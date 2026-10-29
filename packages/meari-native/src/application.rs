@@ -1,11 +1,40 @@
 use crate::domain::{LayoutBox, Viewport};
+mod boolean_profile;
 pub mod file_picker;
 mod groups;
 pub mod icons;
 pub mod markup;
 pub mod media;
 pub mod screen;
+pub(crate) mod state_program;
+#[cfg(any(feature = "window", test))]
+pub(crate) mod surface_slot;
 pub(crate) mod toggles;
+pub mod window_actions;
+pub mod window_lifecycle;
+
+#[derive(Clone, Debug)]
+pub struct WindowOptions {
+    pub title: String,
+}
+impl Default for WindowOptions {
+    fn default() -> Self {
+        Self {
+            title: "Meari Native".into(),
+        }
+    }
+}
+impl WindowOptions {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.title.trim().is_empty()
+            || self.title.len() > 256
+            || self.title.chars().any(char::is_control)
+        {
+            return Err("invalid native window title".into());
+        }
+        Ok(())
+    }
+}
 
 #[derive(Clone, Debug, serde::Serialize)]
 pub struct CompiledStylesheet {
@@ -59,6 +88,7 @@ pub fn stylesheet_project(
     compiler: &dyn StylesheetProjectCompiler,
 ) -> Result<CompiledStylesheet, String> {
     let bound = bind(component, &std::collections::BTreeMap::new())?;
+    let bound = initial_state_projection(bound)?;
     let component = &bound;
     let session = crate::domain::widgets::Session::from_tree(&component.root)?;
     let markup = markup::build(component, &session)?;
@@ -79,57 +109,34 @@ pub fn stylesheet(
     compiler: &dyn StylesheetCompiler,
 ) -> Result<String, String> {
     let bound = bind(component, &std::collections::BTreeMap::new())?;
+    let bound = initial_state_projection(bound)?;
     let component = &bound;
     let session = crate::domain::widgets::Session::from_tree(&component.root)?;
     let markup = markup::build(component, &session)?;
     compiler.compile(&markup.classes, theme)
 }
 
+pub(crate) fn initial_state_projection(
+    component: meari::domain::Component,
+) -> Result<meari::domain::Component, String> {
+    state_program::validate(&component)?;
+    if component.states.is_empty() {
+        return Ok(component);
+    }
+    Ok(meari::application::state_program::StateProgram::mount(
+        component,
+        "stylesheet-projection".into(),
+        1,
+    )?
+    .project()?
+    .component)
+}
+
 pub fn bind(
     component: &meari::domain::Component,
     props: &std::collections::BTreeMap<String, meari::domain::Value>,
 ) -> Result<meari::domain::Component, String> {
-    use meari::domain::{Node, NodeKind, PropType, Value};
-    meari::domain::validation::validate(component).map_err(|e| e.message)?;
-    if props.len() != component.props.len() {
-        return Err("exact declared bindings required".into());
-    }
-    for prop in &component.props {
-        if !matches!(
-            (prop.kind, props.get(&prop.name)),
-            (PropType::String, Some(Value::String(_))) | (PropType::Bool, Some(Value::Bool(_)))
-        ) {
-            return Err(format!("invalid binding: {}", prop.name));
-        }
-    }
-    fn visit(node: &mut Node, props: &std::collections::BTreeMap<String, Value>) {
-        let bind = |v: &mut Value| {
-            if let Value::Prop(name) = v {
-                *v = props[name].clone();
-            } else if let Value::Id(name) = v {
-                *v = Value::String(meari::domain::hooks::stable_id(name));
-            }
-        };
-        match &mut node.kind {
-            NodeKind::Text(value) => bind(value),
-            NodeKind::Element {
-                attributes,
-                children,
-                ..
-            } => {
-                for attr in attributes {
-                    bind(&mut attr.value);
-                }
-                for child in children {
-                    visit(child, props);
-                }
-            }
-        }
-    }
-    let mut bound = component.clone();
-    visit(&mut bound.root, props);
-    bound.props.clear();
-    Ok(bound)
+    meari::application::binding::bind(component, props)
 }
 
 pub trait Renderer {

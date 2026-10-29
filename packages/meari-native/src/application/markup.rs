@@ -1,4 +1,6 @@
 //! Component semantics -> HTML DOM. CSS utility syntax is kept intact for Tailwind/Stylo.
+pub(crate) mod composition;
+mod mount;
 use crate::domain::widgets::{self, Family, Session};
 use meari::domain::{Component, Node, NodeKind, Value, design::components};
 use std::{
@@ -9,9 +11,36 @@ use std::{
 #[derive(Clone, Debug)]
 pub struct Element {
     pub path: String,
+    pub aliases: Vec<String>,
+    pub dom_tag: String,
     pub id: String,
     pub attributes: BTreeMap<String, String>,
     pub text_override: Option<String>,
+    pub text_runs: Vec<TextRun>,
+    pub preserve_dirty_value: bool,
+    pub controlled_checked: Option<bool>,
+}
+impl Element {
+    pub fn owns_path(&self, path: &str) -> bool {
+        self.path == path || self.aliases.iter().any(|alias| alias == path)
+    }
+    pub(crate) fn same_composition(&self, next: &Self) -> bool {
+        self.dom_tag == next.dom_tag
+            && self
+                .aliases
+                .iter()
+                .map(|alias| alias.strip_prefix(&self.path))
+                .eq(next
+                    .aliases
+                    .iter()
+                    .map(|alias| alias.strip_prefix(&next.path)))
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TextRun {
+    pub before: Option<String>,
+    pub text: String,
 }
 
 pub struct Markup {
@@ -19,35 +48,76 @@ pub struct Markup {
     pub classes: String,
     pub elements: Vec<Element>,
     panels: BTreeMap<(String, String), String>,
+    force_mounted: BTreeSet<String>,
 }
 
 pub fn build(component: &Component, session: &Session) -> Result<Markup, String> {
     fn identifiers(
         node: &Node,
         path: String,
+        identity: String,
         ids: &mut BTreeMap<String, String>,
         seen: &mut BTreeSet<String>,
     ) -> Result<(), String> {
+        let composed = composition::prepare(node, &path)?;
+        let node = composed
+            .as_ref()
+            .map(|composed| &composed.node)
+            .unwrap_or(node);
+        let content_path = composed
+            .as_ref()
+            .map(|composed| composed.child_path.as_str())
+            .unwrap_or(&path);
         if let NodeKind::Element { children, .. } = &node.kind {
+            let identity = widgets::string(node, meari::application::repeat::IDENTITY_ATTRIBUTE)
+                .map(|key| format!("key-{key}"))
+                .unwrap_or(identity);
             let id = widgets::string(node, "id")
-                .unwrap_or_else(|| format!("bridge-{}", path.replace('/', "-")));
+                .unwrap_or_else(|| format!("bridge-{}", identity.replace('/', "-")));
             if id.trim().is_empty() || !seen.insert(id.clone()) {
                 return Err(format!("empty or duplicate DOM id: {id}"));
             }
-            ids.insert(path.clone(), id);
+            ids.insert(path.clone(), id.clone());
+            if let Some(composed) = &composed {
+                ids.insert(composed.child_path.clone(), id);
+            }
+            let mut unkeyed = 0usize;
             for (index, child) in children.iter().enumerate() {
-                identifiers(child, format!("{path}/{index}"), ids, seen)?;
+                let keyed = widgets::string(child, meari::application::repeat::IDENTITY_ATTRIBUTE)
+                    .is_some();
+                let child_identity = if keyed {
+                    // A keyed root replaces this provisional identity in identifiers().
+                    identity.clone()
+                } else {
+                    let next = format!("{identity}/{unkeyed}");
+                    unkeyed += 1;
+                    next
+                };
+                identifiers(
+                    child,
+                    format!("{content_path}/{index}"),
+                    child_identity,
+                    ids,
+                    seen,
+                )?;
             }
         }
         Ok(())
     }
     let mut ids = BTreeMap::new();
-    identifiers(&component.root, "0".into(), &mut ids, &mut BTreeSet::new())?;
+    identifiers(
+        &component.root,
+        "0".into(),
+        "0".into(),
+        &mut ids,
+        &mut BTreeSet::new(),
+    )?;
     let mut markup = Markup {
         html: String::new(),
         classes: String::new(),
         elements: Vec::new(),
         panels: BTreeMap::new(),
+        force_mounted: mount::collect(&component.root)?,
     };
     fn panels(
         node: &Node,
@@ -100,6 +170,15 @@ fn visit(
     ids: &BTreeMap<String, String>,
     out: &mut Markup,
 ) -> Result<(), String> {
+    let composed = composition::prepare(node, &path)?;
+    let node = composed
+        .as_ref()
+        .map(|composed| &composed.node)
+        .unwrap_or(node);
+    let content_path = composed
+        .as_ref()
+        .map(|composed| composed.child_path.as_str())
+        .unwrap_or(&path);
     let NodeKind::Element {
         tag,
         attributes,
@@ -124,8 +203,43 @@ fn visit(
         ("id".into(), id.clone()),
         ("data-bridge-path".into(), path.clone()),
     ]);
-    let mut class = recipe(tag, node);
+    let mut class = match composed.as_ref().map(|composed| &composed.child) {
+        Some(child) => match &child.kind {
+            NodeKind::Element { tag, .. } => recipe(tag, child),
+            _ => unreachable!("composition validates its element child"),
+        },
+        None => recipe(tag, node),
+    };
     for attribute in attributes {
+        if attribute.name == "forceMount" {
+            continue; // Validated and inherited by the mount adapter before rendering.
+        }
+        if ["asChild", "forceMount"].contains(&attribute.name.as_str()) {
+            match attribute.value {
+                Value::Bool(false) => continue,
+                Value::Bool(true) => {
+                    return Err(format!(
+                        "native {tag}.{} requires its semantic adapter",
+                        attribute.name
+                    ));
+                }
+                _ => {
+                    return Err(format!(
+                        "native {tag}.{} requires bound bool",
+                        attribute.name
+                    ));
+                }
+            }
+        }
+        if ["Switch", "Checkbox"].contains(&tag.as_str()) && attribute.name == "checked" {
+            continue;
+        }
+        if ["Dialog", "AlertDialog"].contains(&tag.as_str()) && attribute.name == "open" {
+            continue; // The widget session owns this property; the root DOM is not <dialog>.
+        }
+        if tag == "RadioGroup" && attribute.name == "loop" {
+            continue;
+        }
         if tag == "Icon"
             && ["name", "size", "tone", "stroke", "label", "decorative"]
                 .contains(&attribute.name.as_str())
@@ -148,7 +262,6 @@ fn visit(
             "size",
             "defaultValue",
             "defaultOpen",
-            "open",
             "orientation",
             "decorative",
             "modal",
@@ -188,6 +301,8 @@ fn visit(
                     "required",
                     "autofocus",
                     "hidden",
+                    "inert",
+                    "open",
                 ]
                 .contains(&name) =>
             {
@@ -217,6 +332,9 @@ fn visit(
         item_value
     };
     let mut text_override = None;
+    if html_tag == "textarea" {
+        text_override = attrs.get("value").cloned();
+    }
     if super::toggles::attributes(tag, node, &mut attrs)?.is_some() {
         class.push_str(" inline-flex items-center h-5 border border-input bg-background text-foreground data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground disabled:opacity-50");
         class.push_str(if tag == "Switch" {
@@ -243,6 +361,54 @@ fn visit(
             .unwrap_or_default();
         let is_open = widget.open;
         match tag.as_str() {
+            "RadioGroup" => {
+                attrs.insert("role".into(), "radiogroup".into());
+                if widgets::boolean(node, "disabled") {
+                    attrs.insert("aria-disabled".into(), "true".into());
+                }
+                if widgets::boolean(node, "required") {
+                    attrs.insert("aria-required".into(), "true".into());
+                }
+                use meari::domain::radio_group::Orientation;
+                match widget.radio_orientation {
+                    Orientation::Horizontal => {
+                        attrs.insert("aria-orientation".into(), "horizontal".into());
+                    }
+                    Orientation::Vertical => {
+                        attrs.insert("aria-orientation".into(), "vertical".into());
+                    }
+                    Orientation::Unspecified => {}
+                }
+            }
+            "RadioGroupItem" => {
+                let item = widget
+                    .items
+                    .iter()
+                    .find(|item| item.path == path)
+                    .ok_or("radio item missing")?;
+                let selected = !widget.value.is_empty() && widget.value == item.value;
+                attrs.insert("type".into(), "button".into());
+                attrs.insert("role".into(), "radio".into());
+                attrs.insert("aria-checked".into(), selected.to_string());
+                attrs.insert(
+                    "data-state".into(),
+                    if selected { "checked" } else { "unchecked" }.into(),
+                );
+                attrs.insert("data-meari-radio-value".into(), item.value.clone());
+                attrs.insert(
+                    "tabindex".into(),
+                    if !item.disabled && widget.active.as_deref() == Some(path.as_str()) {
+                        "0"
+                    } else {
+                        "-1"
+                    }
+                    .into(),
+                );
+                if item.disabled {
+                    attrs.insert("disabled".into(), String::new());
+                    attrs.insert("aria-disabled".into(), "true".into());
+                }
+            }
             "TabsList" => {
                 attrs.insert("role".into(), "tablist".into());
                 attrs.insert(
@@ -359,11 +525,15 @@ fn visit(
                     if is_open { "open" } else { "closed" }.into(),
                 );
                 attrs.insert("tabindex".into(), "-1".into());
-                if !is_open {
+                if !is_open && !out.force_mounted.contains(&path) {
                     attrs.insert("hidden".into(), String::new());
                 }
                 if [Family::Dialog, Family::AlertDialog].contains(&widget.family) {
-                    attrs.insert("aria-modal".into(), "true".into());
+                    if widget.modal {
+                        attrs.insert("aria-modal".into(), "true".into());
+                    } else {
+                        attrs.remove("aria-modal");
+                    }
                     if let Some(title) = descendant(node, "Title", &path) {
                         attrs.insert("aria-labelledby".into(), ids[&title].clone());
                     } else if !attrs.contains_key("aria-label") {
@@ -375,7 +545,7 @@ fn visit(
                 }
             }
             "DialogOverlay" => {
-                if !is_open {
+                if !is_open && !out.force_mounted.contains(&path) {
                     attrs.insert("hidden".into(), String::new());
                 }
                 attrs.insert("aria-hidden".into(), "true".into());
@@ -425,14 +595,16 @@ fn visit(
     if html_tag == "button" {
         attrs.entry("type".into()).or_insert("button".into());
     }
-    if let Some(modal) = session
-        .top_overlay()
-        .filter(|w| [Family::Dialog, Family::AlertDialog].contains(&w.family))
+    if let Some(modal) = session.top_modal()
         && let Some(content) = &modal.content
     {
         let inside = path == *content || path.starts_with(&format!("{content}/"));
         let ancestor = content.starts_with(&format!("{path}/"));
-        if !inside && !ancestor {
+        let dismiss_surface = tag == "DialogOverlay"
+            && session
+                .owner(&path)
+                .is_some_and(|owner| owner.root == modal.root);
+        if !inside && !ancestor && !dismiss_surface {
             attrs.insert("aria-hidden".into(), "true".into());
             attrs.insert("inert".into(), String::new());
         }
@@ -453,11 +625,56 @@ fn visit(
         write!(out.html, " {name}=\"{}\"", escape(value)).unwrap();
     }
     out.html.push('>');
+    let mut text_runs = Vec::new();
+    if text_override.is_none() && icon.is_none() && !matches!(tag.as_str(), "Checkbox" | "Switch") {
+        let mut text = String::new();
+        let mut present = false;
+        for (index, child) in children.iter().enumerate() {
+            match &child.kind {
+                NodeKind::Text(Value::String(value)) => {
+                    text.push_str(value);
+                    present = true;
+                }
+                NodeKind::Element { .. } => {
+                    if present {
+                        text_runs.push(TextRun {
+                            before: Some(format!("{content_path}/{index}")),
+                            text: std::mem::take(&mut text),
+                        });
+                        present = false;
+                    }
+                }
+                _ => return Err("unbound native text run".into()),
+            }
+        }
+        if present {
+            text_runs.push(TextRun { before: None, text });
+        }
+    }
     out.elements.push(Element {
         path: path.clone(),
+        aliases: composed
+            .as_ref()
+            .map(|composed| vec![composed.child_path.clone()])
+            .unwrap_or_default(),
+        dom_tag: html_tag.into(),
         id,
         attributes: attrs,
         text_override: text_override.clone(),
+        text_runs,
+        preserve_dirty_value: matches!(html_tag, "input" | "textarea")
+            && !attributes.iter().any(|attribute| attribute.name == "value"),
+        controlled_checked: if html_tag == "input" {
+            attributes
+                .iter()
+                .find(|attribute| attribute.name == "checked")
+                .and_then(|attribute| match attribute.value {
+                    Value::Bool(value) => Some(value),
+                    _ => None,
+                })
+        } else {
+            None
+        },
     });
     if matches!(tag.as_str(), "Checkbox" | "Switch") {
         let spec = super::toggles::icon(tag);
@@ -471,7 +688,7 @@ fn visit(
         for (index, child) in children.iter().enumerate() {
             visit(
                 child,
-                format!("{path}/{index}"),
+                format!("{content_path}/{index}"),
                 item_value.clone(),
                 session,
                 ids,
@@ -508,6 +725,7 @@ fn safe_attribute(name: &str) -> bool {
             "style",
             "title",
             "role",
+            "dir",
             "for",
             "disabled",
             "readonly",
@@ -525,12 +743,15 @@ fn safe_attribute(name: &str) -> bool {
             "tabindex",
             "autofocus",
             "hidden",
+            "inert",
             "width",
             "height",
             "viewBox",
             "d",
             "fill",
             "stroke",
+            "src",
+            "alt",
         ]
         .contains(&name)
 }
@@ -541,6 +762,7 @@ fn html_tag(tag: &str) -> Option<&str> {
         .or_else(|| {
             Some(match tag {
                 "Checkbox"
+                | "RadioGroupItem"
                 | "Switch"
                 | "TabsTrigger"
                 | "AccordionTrigger"
@@ -558,6 +780,7 @@ fn html_tag(tag: &str) -> Option<&str> {
                 "SelectValue" | "Icon" => "span",
                 "DropdownMenuSeparator" => "hr",
                 "Tabs"
+                | "RadioGroup"
                 | "TabsList"
                 | "TabsContent"
                 | "Accordion"
@@ -586,9 +809,9 @@ fn html_tag(tag: &str) -> Option<&str> {
                 | "DropdownMenuLabel" => "div",
                 "article" | "main" | "header" | "footer" | "nav" | "aside" | "ul" | "ol" | "li"
                 | "strong" | "em" | "h1" | "h2" | "h4" | "h5" | "h6" | "textarea" | "select"
-                | "option" | "table" | "thead" | "tbody" | "tr" | "td" | "th" | "svg" | "path" => {
-                    tag
-                }
+                | "option" | "table" | "thead" | "tbody" | "tr" | "td" | "th" | "svg" | "path"
+                | "img" | "dl" | "dt" | "dd" | "fieldset" | "legend" | "details" | "summary"
+                | "pre" | "video" => tag,
                 _ => return None,
             })
         })

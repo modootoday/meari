@@ -1,0 +1,25 @@
+[package]
+workspace = "../.."
+name = "meari-builder"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "MIT OR Apache-2.0"
+description = "Rust Native/Web app compiler adapters and build CLI for Meari"
+repository = "https://github.com/modootoday/meari"
+include = [
+    "src/**/*.rs", "tests/**/*.rs", "fixtures/**/*.rs", "fixtures/**/*.tsx",
+    "fixtures/**/*.json", "fixtures/**/*.md",
+    "Cargo.toml", "README.md", "LICENSE-MIT", "LICENSE-APACHE", "NOTICE",
+    "!**/.spec/**", "!**/target/**", "!**/node_modules/**", "!**/.cache/**",
+    "!**/downloads/**", "!**/captures/**", "!**/screenshots/**", "!**/cache/**",
+    "!**/.env", "!**/.env.*", "!**/credentials.json",
+]
+
+[dependencies]
+meari = { workspace = true }
+meari-native = { path = "../meari-native", version = "0.1.0" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "=0.10.9"
+getrandom = "=0.4.3"

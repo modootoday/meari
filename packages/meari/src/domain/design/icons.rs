@@ -1,4 +1,5 @@
 //! Portable icon vocabulary. Geometry loading and painting belong to adapters.
+pub mod catalog;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

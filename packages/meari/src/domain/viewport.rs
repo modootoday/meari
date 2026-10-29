@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Layout viewport in CSS pixels, independent of monitor resolution or backend.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Viewport {
     pub width: u32,
     pub height: u32,

@@ -11,17 +11,11 @@ pub fn layout_screen(
 ) -> Result<Viewport, String> {
     renderer.layout(host, time_seconds)?;
     let bounds = renderer.bounds(sizing_element)?;
-    let dimension = |value: f32| -> Result<u32, String> {
-        if !value.is_finite() || !(1.0..=8192.0).contains(&value) {
-            return Err("CSS screen dimensions must be finite and in 1..=8192".into());
-        }
-        Ok(value.round() as u32)
-    };
-    let viewport = Viewport {
-        width: dimension(bounds.width)?,
-        height: dimension(bounds.height)?,
-        dark: host.dark,
-    };
+    let viewport = meari::application::screen::measured_viewport(
+        f64::from(bounds.width),
+        f64::from(bounds.height),
+        host.dark,
+    )?;
     renderer.layout(&viewport, time_seconds)?;
     Ok(viewport)
 }

@@ -8,6 +8,7 @@ use meari::application::Language;
 use std::{fs, path::Path};
 
 const CASES: &[(&str, &str)] = &[
+    ("source-state", ""),
     (
         "icons",
         r#"<div className="flex gap-4 items-center"><Icon name="selection-check" size="xs" tone="foreground"/><Icon name="selection-check" size="sm" tone="muted"/><Icon name="selection-check" size="md" tone="primary" stroke="bold"/><Icon name="toggle-thumb" size="lg" tone="destructive" decorative={false} label="Selected"/><Button aria-label="Confirm"><Icon name="selection-check"/>Confirm</Button></div>"#,
@@ -63,6 +64,9 @@ const CASES: &[(&str, &str)] = &[
 ];
 
 fn source(name: &str, body: &str) -> String {
+    if name == "source-state" {
+        return include_str!("../../fixtures/state-counter.tsx").into();
+    }
     let (import, hook) = if name == "use-id" {
         ("import {useId} from 'react';", "const id=useId();")
     } else {
@@ -104,6 +108,12 @@ pub(super) fn run(executable: &Path, output: &Path) -> Result<(), String> {
                 )?;
                 artifacts::capture(&mut doc, &directory, "initial")?;
                 let assertions = super::interaction::verify_recorded(&mut doc, Some(&directory))?;
+                let assertions = assertions
+                    + if *name == "source-state" {
+                        super::source_state::verify(&mut doc, Some(&directory))?
+                    } else {
+                        0
+                    };
                 let (buttons, inputs) = super::controls::verify(&mut doc, Some(&directory))?;
                 artifacts::capture(&mut doc, &directory, "final")?;
                 Ok::<_, String>(assertions + buttons + inputs)
@@ -123,7 +133,7 @@ pub(super) fn run(executable: &Path, output: &Path) -> Result<(), String> {
 mod tests {
     #[test]
     fn builtin_cases_cover_every_current_native_composite_family() {
-        assert_eq!(super::CASES.len(), 13);
+        assert_eq!(super::CASES.len(), 14);
         for (name, body) in super::CASES {
             let source = super::source(name, body);
             let component = meari::parse(&source, meari::application::Language::Tsx).unwrap();
@@ -138,6 +148,12 @@ mod tests {
             )
             .unwrap();
             let assertions = super::super::interaction::verify(&mut doc).unwrap();
+            let assertions = assertions
+                + if *name == "source-state" {
+                    super::super::source_state::verify(&mut doc, None).unwrap()
+                } else {
+                    0
+                };
             let (buttons, inputs) = super::super::controls::verify(&mut doc, None).unwrap();
             assert!(assertions + buttons + inputs > 0);
         }

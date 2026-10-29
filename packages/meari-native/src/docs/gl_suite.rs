@@ -149,9 +149,11 @@ pub fn verify(output: &Path) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
+    static GL_TEST: std::sync::Mutex<()> = std::sync::Mutex::new(());
     #[test]
     #[ignore = "requires actual Windows GL driver"]
     fn gl_scope_binds_documents_and_restores_cpu_default() {
+        let _guard = GL_TEST.lock().expect("GL test isolation lock");
         use crate::application::Renderer;
         let viewport = crate::domain::Viewport {
             width: 32,
@@ -177,6 +179,7 @@ mod tests {
     #[test]
     #[ignore = "requires actual Windows GL driver"]
     fn actual_gl_lifecycle_cache_and_teardown() {
+        let _guard = GL_TEST.lock().expect("GL test isolation lock");
         let path = std::env::temp_dir().join(format!(
             "bridge-gl-{}-{}.json",
             std::process::id(),

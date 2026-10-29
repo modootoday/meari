@@ -18,6 +18,14 @@ pub fn parse(source: &str, language: Language) -> Result<Component, Diagnostic> 
 pub fn emit(component: &Component, language: Language) -> Result<Output, Diagnostic> {
     CONVERTER.emit(component, language)
 }
+
+pub fn parse_module_graph(
+    entry: &domain::build::BuildPath,
+    sources: &std::collections::BTreeMap<domain::build::BuildPath, String>,
+) -> Result<domain::source_modules::SourceModuleGraph, application::source_modules::ModuleDiagnostic>
+{
+    application::source_modules::parse_graph(&SourceAdapters, entry, sources)
+}
 pub fn convert(source: &str, from: Language, to: Language) -> Result<Output, Diagnostic> {
     CONVERTER.convert(source, from, to)
 }

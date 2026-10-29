@@ -43,7 +43,8 @@ pub(super) fn verify(
         if doc.session.is_control(&path)
             || doc.elements().iter().any(|e| {
                 (path == e.path || path.starts_with(&format!("{}/", e.path)))
-                    && (e.attributes.contains_key("hidden")
+                    && (e.attributes.contains_key("disabled")
+                        || e.attributes.contains_key("hidden")
                         || e.attributes.contains_key("inert")
                         || e.attributes.get("aria-hidden").is_some_and(|v| v == "true"))
             })
@@ -99,6 +100,15 @@ pub(super) fn verify(
             }
             buttons += 1;
             serde_json::json!({"ToggleClickSpace":{"path":path}})
+        } else if button && doc.has_state_event(&path) {
+            let before = doc.component_state()?;
+            doc.dispatch(Action::Activate { path: path.clone() })?;
+            let after = doc.component_state()?;
+            if before.instance != after.instance || after.revision < before.revision {
+                return Err("source state action lost its instance/revision".into());
+            }
+            buttons += 1;
+            serde_json::json!({"StateActivate":{"path":path,"before":before,"after":after}})
         } else if button {
             let before = doc.activation_requests.len();
             doc.dispatch(Action::Activate { path: path.clone() })?;

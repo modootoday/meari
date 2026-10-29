@@ -160,6 +160,67 @@ pub(super) fn verify_recorded(
             .cloned()
             .collect();
         match widget.family {
+            Family::RadioGroup => {
+                if widget.controlled_value {
+                    return Err(
+                        "controlled RadioGroup requires its guarded host callback scenario".into(),
+                    );
+                }
+                require(
+                    attribute(doc, &widget.root, "role") == Some("radiogroup"),
+                    "radio group role missing",
+                )?;
+                assertions += 1;
+                for item in &enabled {
+                    dispatch(
+                        doc,
+                        &mut trace,
+                        Action::Activate {
+                            path: item.path.clone(),
+                        },
+                    )?;
+                    focused(doc, &item.path)?;
+                    require(
+                        doc.session.widgets[&widget.root].value == item.value,
+                        "radio selection value mismatch",
+                    )?;
+                    for candidate in &widget.items {
+                        require(
+                            attribute(doc, &candidate.path, "aria-checked")
+                                == Some(if candidate.path == item.path {
+                                    "true"
+                                } else {
+                                    "false"
+                                }),
+                            "radio checked state mismatch",
+                        )?;
+                        assertions += 1;
+                    }
+                    assertions += 2;
+                }
+                if let (Some(first), Some(last)) = (enabled.first(), enabled.last()) {
+                    for (from, key, expected) in [
+                        (&first.path, "End", &last.path),
+                        (&last.path, "Home", &first.path),
+                    ] {
+                        dispatch(
+                            doc,
+                            &mut trace,
+                            Action::Key {
+                                path: from.clone(),
+                                key: key.into(),
+                                shift: false,
+                            },
+                        )?;
+                        focused(doc, expected)?;
+                        require(
+                            attribute(doc, expected, "aria-checked") == Some("true"),
+                            "radio keyboard selection mismatch",
+                        )?;
+                        assertions += 2;
+                    }
+                }
+            }
             Family::Tabs | Family::Accordion => {
                 let tabs = widget.family == Family::Tabs;
                 for item in &enabled {

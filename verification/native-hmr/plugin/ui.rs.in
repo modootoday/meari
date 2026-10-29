@@ -1,0 +1,17 @@
+// Rust template, compiled by the verification runner as an owned cdylib fixture.
+#[path = @ABI_PATH@]
+mod abi;
+
+#[unsafe(no_mangle)]
+pub extern "C" fn ui_contract() -> abi::Contract {
+    abi::Contract { abi: @ABI_VALUE@, schema: @SCHEMA@ }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn ui_render(input: abi::Input) -> abi::Frame {
+    let heading = b"Compiled Rust UI generation @GEN@";
+    let button = b"Rust button variant @GEN@";
+    // Changing this function's compiled code must change the native scene.
+    let computed = input.counter.saturating_mul(@FACTOR@);
+    abi::Frame { generation: @GEN@, heading: heading.as_ptr(), heading_len: heading.len(), button: button.as_ptr(), button_len: button.len(), computed }
+}

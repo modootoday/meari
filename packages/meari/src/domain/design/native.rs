@@ -36,6 +36,15 @@ pub struct Context<'a> {
 
 fn bind(value: &Value, node: &Node, context: &Context<'_>) -> Result<Value, Diagnostic> {
     match value {
+        Value::Predicate(expression) => expression.evaluate(context.props).map(Value::Bool),
+        Value::NotProp(name) => match context.props.get(name) {
+            Some(Value::Bool(value)) => Ok(Value::Bool(!value)),
+            _ => Err(diagnostic(
+                node,
+                "native-binding",
+                "boolean negation requires a boolean binding",
+            )),
+        },
         Value::Id(name) => Ok(Value::String(crate::domain::hooks::stable_id(name))),
         Value::Prop(name) => context
             .props
@@ -128,6 +137,13 @@ fn lower(node: &Node, path: String, context: &Context<'_>) -> Result<NativeNode,
 
 pub fn prepare(component: &Component, context: &Context<'_>) -> Result<NativePlan, Diagnostic> {
     validation::validate(component)?;
+    if !component.states.is_empty() {
+        return Err(diagnostic(
+            &component.root,
+            "native-state-runtime",
+            "stateful source requires the persistent component runtime, not a static native plan",
+        ));
+    }
     let error = |message| diagnostic(&component.root, "native-binding", message);
     context.environment.validate().map_err(error)?;
     context.theme.validate().map_err(error)?;
@@ -135,11 +151,10 @@ pub fn prepare(component: &Component, context: &Context<'_>) -> Result<NativePla
         return Err(error("exact declared prop bindings required".into()));
     }
     for prop in &component.props {
-        let valid = matches!(
-            (prop.kind, context.props.get(&prop.name)),
-            (crate::domain::PropType::String, Some(Value::String(_)))
-                | (crate::domain::PropType::Bool, Some(Value::Bool(_)))
-        );
+        let valid = context
+            .props
+            .get(&prop.name)
+            .is_some_and(|value| prop.kind.accepts(value));
         if !valid {
             return Err(error(format!(
                 "missing or incorrectly typed prop: {}",

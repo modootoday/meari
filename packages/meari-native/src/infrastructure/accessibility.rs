@@ -54,6 +54,29 @@ pub fn tree(document: &InteractiveDocument) -> TreeUpdate {
             node.set_hidden();
             continue;
         }
+        let current = element.attributes.get("aria-current").map(String::as_str);
+        let current = match current {
+            None | Some("") => None,
+            Some(value)
+                if value.eq_ignore_ascii_case("false")
+                    || value.eq_ignore_ascii_case("undefined") =>
+            {
+                None
+            }
+            Some(value) if value.eq_ignore_ascii_case("page") => Some(accesskit::AriaCurrent::Page),
+            Some(value) if value.eq_ignore_ascii_case("step") => Some(accesskit::AriaCurrent::Step),
+            Some(value) if value.eq_ignore_ascii_case("location") => {
+                Some(accesskit::AriaCurrent::Location)
+            }
+            Some(value) if value.eq_ignore_ascii_case("date") => Some(accesskit::AriaCurrent::Date),
+            Some(value) if value.eq_ignore_ascii_case("time") => Some(accesskit::AriaCurrent::Time),
+            Some(_) => Some(accesskit::AriaCurrent::True),
+        };
+        if let Some(current) = current {
+            node.set_aria_current(current);
+        } else {
+            node.clear_aria_current();
+        }
         let relation = |name: &str| -> Vec<accesskit::NodeId> {
             element
                 .attributes
@@ -70,8 +93,26 @@ pub fn tree(document: &InteractiveDocument) -> TreeUpdate {
         if explicit_labels {
             node.clear_label();
             node.set_labelled_by(labels);
-        } else if let Some(label) = element.attributes.get("aria-label") {
+        } else if let Some(label) = element
+            .attributes
+            .get("aria-label")
+            .filter(|label| !label.trim().is_empty())
+        {
             node.set_label(label.clone());
+        } else if dom
+            .element_data()
+            .is_some_and(|data| data.name.local == blitz_dom::local_name!("img"))
+            && let Some(alt) = element.attributes.get("alt")
+        {
+            if alt.is_empty()
+                && !["role", "tabindex", "aria-describedby", "aria-labelledby"]
+                    .iter()
+                    .any(|name| element.attributes.contains_key(*name))
+            {
+                node.set_hidden();
+                continue;
+            }
+            node.set_label(alt.clone());
         }
         let descriptions = relation("aria-describedby");
         if !descriptions.is_empty() {
@@ -79,8 +120,10 @@ pub fn tree(document: &InteractiveDocument) -> TreeUpdate {
         }
         match element.attributes.get("role").map(String::as_str) {
             Some("img") => node.set_role(accesskit::Role::Image),
-            Some("checkbox") | Some("switch") => {
-                node.set_role(if element.attributes["role"] == "switch" {
+            Some("checkbox") | Some("switch") | Some("radio") => {
+                node.set_role(if element.attributes["role"] == "radio" {
+                    accesskit::Role::RadioButton
+                } else if element.attributes["role"] == "switch" {
                     accesskit::Role::Switch
                 } else {
                     accesskit::Role::CheckBox
@@ -97,6 +140,7 @@ pub fn tree(document: &InteractiveDocument) -> TreeUpdate {
                     },
                 );
             }
+            Some("radiogroup") => node.set_role(accesskit::Role::RadioGroup),
             Some("group") => node.set_role(accesskit::Role::Group),
             Some("alert") => {
                 node.set_role(accesskit::Role::Alert);
@@ -129,8 +173,34 @@ pub fn tree(document: &InteractiveDocument) -> TreeUpdate {
         let button = dom
             .element_data()
             .is_some_and(|element| element.name.local == blitz_dom::local_name!("button"));
+        let disclosure = document.disclosure_open(&element.path);
+        if let Some(open) = disclosure {
+            node.set_role(accesskit::Role::DisclosureTriangle);
+            node.set_expanded(open);
+            node.set_label(dom.text_content());
+            if !disabled {
+                node.add_action(Action::Click);
+                node.add_action(Action::Expand);
+                node.add_action(Action::Collapse);
+            }
+        }
         let labelled_control = element.attributes.contains_key("data-toggle")
             || element.attributes.contains_key("data-file-input");
+        if element.attributes.get("role").map(String::as_str) == Some("radio")
+            && !explicit_labels
+            && let Some(label) = document
+                .elements()
+                .iter()
+                .find(|candidate| candidate.attributes.get("for") == Some(&element.id))
+            && let Some(text) = document
+                .renderer
+                .document
+                .get_element_by_id(&label.id)
+                .and_then(|id| document.renderer.document.get_node(id))
+                .map(|dom| dom.text_content())
+        {
+            node.set_label(text);
+        }
         if (composite_action || button)
             && !labelled_control
             && node.label().is_none()
@@ -213,11 +283,15 @@ pub fn act(document: &mut InteractiveDocument, request: &ActionRequest) -> Resul
     }
     match request.action {
         Action::Expand | Action::Collapse => {
-            let open = document
-                .session
-                .owner(&path)
-                .ok_or("expand target has no widget")?
-                .open;
+            let open = if let Some(open) = document.disclosure_open(&path) {
+                open
+            } else {
+                document
+                    .session
+                    .owner(&path)
+                    .ok_or("expand target has no widget")?
+                    .open
+            };
             if open != (request.action == Action::Expand) {
                 document.dispatch(widgets::Action::Activate { path })?;
             }

@@ -112,8 +112,10 @@ pub(super) fn verify_selected(
                         );
                         let prepared =
                             application::bind(&component, &BTreeMap::new()).and_then(|component| {
-                                let session = Session::from_tree(&component.root)?;
-                                let markup = application::markup::build(&component, &session)?;
+                                let initial =
+                                    application::initial_state_projection(component.clone())?;
+                                let session = Session::from_tree(&initial.root)?;
+                                let markup = application::markup::build(&initial, &session)?;
                                 Ok((component, markup.classes))
                             });
                         match prepared {

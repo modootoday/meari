@@ -88,6 +88,13 @@ impl Coordinator {
         {
             return Err("invalid, duplicate or late target preparation".into());
         }
+        if pending
+            .artifacts
+            .values()
+            .any(|prepared| prepared.state_schema != artifact.state_schema)
+        {
+            return Err("Native/Web source state schemas differ".into());
+        }
         pending.artifacts.insert(target, artifact);
         Ok(())
     }

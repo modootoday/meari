@@ -1,5 +1,6 @@
 //! Default design vocabulary. Source preservation and native capability are separate.
 pub mod components;
+pub mod fonts;
 pub mod icons;
 pub mod native;
 pub mod stylesheet;
@@ -30,6 +31,9 @@ pub fn diagnostic(node: &Node, code: &str, message: impl Into<String>) -> Diagno
 /// Never rewrites or discards unsupported source expressions.
 pub fn analyze(component: &Component) -> Capabilities {
     fn visit(node: &Node, issues: &mut Vec<Diagnostic>) {
+        if let NodeKind::Text(Value::Repeat(repeat)) = &node.kind {
+            visit(&repeat.template, issues);
+        }
         if let NodeKind::Element {
             tag,
             attributes,

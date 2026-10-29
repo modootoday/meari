@@ -389,8 +389,6 @@ dependencies = [
 [[package]]
 name = "blitz-paint"
 version = "0.3.0-beta.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28803328124d7b7ea5f8f41501513ccb005559e9f6baf33fa0c1fb7612654a93"
 dependencies = [
  "anyrender",
  "anyrender_svg",
@@ -2009,12 +2007,26 @@ dependencies = [
  "oxc_span",
  "oxc_syntax",
  "proc-macro2",
+ "ryu-js",
  "serde",
  "serde_json",
+ "sha2",
  "syn 2.0.117",
  "wasm-bindgen",
  "wasm-bindgen-test",
  "web-sys",
+]
+
+[[package]]
+name = "meari-builder"
+version = "0.1.0"
+dependencies = [
+ "getrandom",
+ "meari",
+ "meari-native",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]
@@ -2035,6 +2047,7 @@ dependencies = [
  "dioxus-shadcn-primitives",
  "glow",
  "glutin",
+ "image",
  "keyboard-types",
  "meari",
  "oxc_allocator",
@@ -2045,14 +2058,24 @@ dependencies = [
  "raw-window-handle",
  "regex",
  "rfd",
+ "roxmltree 0.21.1",
  "serde",
  "serde_json",
  "sha2",
  "skia-safe",
  "stylo",
  "stylo_traits",
+ "ttf-parser",
+ "usvg",
  "windows",
  "winit",
+]
+
+[[package]]
+name = "meari-native-tools"
+version = "0.1.0"
+dependencies = [
+ "meari-native",
 ]
 
 [[package]]
@@ -3228,6 +3251,12 @@ name = "rustversion"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
+
+[[package]]
+name = "ryu-js"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04d056b875a9d2e6cb9a61d127afee9ac5999b9f87bcb32079d1318e505be714"
 
 [[package]]
 name = "same-file"

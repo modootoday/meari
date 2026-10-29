@@ -156,7 +156,7 @@ impl GlHost {
         surface.canvas().clear(skia_safe::Color::TRANSPARENT);
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let mut painter = SkiaScenePainter::new(surface.canvas(), &mut self.scene_cache);
-            blitz_paint::paint_scene(
+            blitz_paint::paint_scene_checked(
                 &mut painter,
                 document,
                 1.0,
@@ -164,11 +164,18 @@ impl GlHost {
                 viewport.height,
                 0,
                 0,
-            );
+            )
         }));
-        if result.is_err() {
-            self.scene_cache = SkiaSceneCache::new();
-            return Err("GL scene paint panicked; previous scene retained".into());
+        match result {
+            Ok(Ok(())) => {}
+            Ok(Err(error)) => {
+                self.scene_cache = SkiaSceneCache::new();
+                return Err(error.into());
+            }
+            Err(_) => {
+                self.scene_cache = SkiaSceneCache::new();
+                return Err("GL scene paint panicked; previous scene retained".into());
+            }
         }
         let gpu = self.gpu.as_mut().ok_or("GL context unavailable")?;
         gpu.flush_and_submit();

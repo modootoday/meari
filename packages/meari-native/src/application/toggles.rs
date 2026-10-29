@@ -1,4 +1,4 @@
-//! Uncontrolled two-state controls. Controlled callbacks and tri-state values remain explicit errors.
+//! Two-state control attributes; scoped event admission is an infrastructure concern.
 use meari::domain::{Node, NodeKind, Value};
 use std::collections::BTreeMap;
 
@@ -31,13 +31,17 @@ pub fn attributes(
         return Err(format!("{tag} cannot contain children"));
     }
     let mut checked = false;
+    let mut controlled = None;
     for attribute in attributes {
         match attribute.name.as_str() {
-            "checked" => {
-                return Err(
-                    "controlled checked requires a state binding; use defaultChecked".into(),
-                );
-            }
+            "checked" => match attribute.value {
+                Value::Bool(value) => controlled = Some(value),
+                _ => {
+                    return Err(
+                        "controlled checked requires boolean; tri-state is unsupported".into(),
+                    );
+                }
+            },
             "defaultChecked" => match attribute.value {
                 Value::Bool(value) => checked = value,
                 _ => return Err("defaultChecked requires boolean".into()),
@@ -48,6 +52,10 @@ pub fn attributes(
             }
             _ => {}
         }
+    }
+    if let Some(value) = controlled {
+        checked = value;
+        attrs.insert("data-meari-controlled-toggle".into(), "true".into());
     }
     attrs.insert(
         "role".into(),

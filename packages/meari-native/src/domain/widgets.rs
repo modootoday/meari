@@ -2,10 +2,16 @@
 use meari::domain::{Node, NodeKind, Value};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+mod controlled;
+#[cfg(test)]
+mod direction_tests;
+mod reload;
+pub use controlled::OpenRequest;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Family {
     Tabs,
+    RadioGroup,
     Accordion,
     Dialog,
     AlertDialog,
@@ -29,10 +35,38 @@ pub struct Widget {
     pub value: String,
     pub active: Option<String>,
     pub open: bool,
+    pub controlled_open: bool,
+    pub controlled_value: bool,
+    pub radio_orientation: meari::domain::radio_group::Orientation,
+    pub radio_direction: meari::domain::radio_group::Direction,
+    pub radio_loop: bool,
+    pub modal: bool,
     pub trigger: Option<String>,
     pub content: Option<String>,
     pub close_paths: Vec<String>,
     pub vertical: bool,
+}
+
+impl Widget {
+    pub(crate) fn radio_model(&self, disabled: bool) -> meari::domain::radio_group::RadioGroup {
+        use meari::domain::radio_group::{Item, RadioGroup};
+        RadioGroup {
+            items: self
+                .items
+                .iter()
+                .map(|item| Item {
+                    path: item.path.clone(),
+                    value: item.value.clone(),
+                    disabled: item.disabled,
+                })
+                .collect(),
+            checked: self.value.clone(),
+            disabled,
+            orientation: self.radio_orientation,
+            direction: self.radio_direction,
+            looping: self.radio_loop,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -103,6 +137,7 @@ pub fn boolean(node: &Node, name: &str) -> bool {
 pub fn family(tag: &str) -> Option<Family> {
     Some(match tag {
         "Tabs" => Family::Tabs,
+        "RadioGroup" => Family::RadioGroup,
         "Accordion" => Family::Accordion,
         "Dialog" => Family::Dialog,
         "AlertDialog" => Family::AlertDialog,
@@ -145,14 +180,28 @@ impl Session {
         Ok(true)
     }
     pub fn top_overlay(&self) -> Option<&Widget> {
-        let is_overlay =
-            |w: &&Widget| w.open && ![Family::Tabs, Family::Accordion].contains(&w.family);
+        let is_overlay = |w: &&Widget| {
+            w.open && ![Family::Tabs, Family::RadioGroup, Family::Accordion].contains(&w.family)
+        };
         self.changes
             .iter()
             .rev()
             .filter_map(|change| self.widgets.get(&change.root))
             .find(is_overlay)
             .or_else(|| self.widgets.values().rev().find(is_overlay))
+    }
+    pub fn top_modal(&self) -> Option<&Widget> {
+        let is_modal = |widget: &&Widget| {
+            widget.open
+                && widget.modal
+                && [Family::Dialog, Family::AlertDialog].contains(&widget.family)
+        };
+        self.changes
+            .iter()
+            .rev()
+            .filter_map(|change| self.widgets.get(&change.root))
+            .find(is_modal)
+            .or_else(|| self.widgets.values().rev().find(is_modal))
     }
     pub fn from_tree(root: &Node) -> Result<Self, String> {
         fn visit(
@@ -161,25 +210,42 @@ impl Session {
             owner: Option<String>,
             item_value: Option<String>,
             item_disabled: bool,
+            inherited: Option<meari::domain::radio_group::Direction>,
             session: &mut Session,
         ) -> Result<(), String> {
             let NodeKind::Element { tag, children, .. } = &node.kind else {
                 return Ok(());
             };
+            let direction = meari::domain::radio_group::Direction::inherit_html(
+                string(node, "dir").as_deref(),
+                inherited,
+            );
             let item_disabled = if let Some(family) = family(tag) {
-                family == Family::Accordion && boolean(node, "disabled")
+                [Family::Accordion, Family::RadioGroup].contains(&family)
+                    && (boolean(node, "disabled")
+                        || (family == Family::RadioGroup
+                            && (string(node, "aria-disabled").as_deref() == Some("true")
+                                || boolean(node, "aria-disabled"))))
             } else {
                 item_disabled || (tag == "AccordionItem" && boolean(node, "disabled"))
             };
-            let disabled = boolean(node, "disabled")
+            let composed_disabled = boolean(node, "asChild")
+                && children.first().is_some_and(|child| {
+                    boolean(child, "disabled")
+                        || string(child, "aria-disabled").as_deref() == Some("true")
+                });
+            let disabled = composed_disabled
+                || boolean(node, "disabled")
                 || string(node, "aria-disabled").as_deref() == Some("true")
-                || (tag == "AccordionTrigger" && item_disabled);
+                || (["AccordionTrigger", "RadioGroupItem"].contains(&tag.as_str())
+                    && item_disabled);
             if disabled {
                 session.disabled_paths.insert(path.clone());
             }
             let expected = if family(tag).is_none() {
                 match meari::domain::design::components::module(tag) {
                     Some("tabs") => Some(Family::Tabs),
+                    Some("radio-group") => Some(Family::RadioGroup),
                     Some("accordion") => Some(Family::Accordion),
                     Some("dialog") => Some(Family::Dialog),
                     Some("alert-dialog") => Some(Family::AlertDialog),
@@ -216,6 +282,54 @@ impl Session {
                         return Err(format!("{tag}.{name} requires bound bool"));
                     }
                 }
+                let dialog = [Family::Dialog, Family::AlertDialog].contains(&family);
+                if dialog
+                    && attr(node, "modal").is_some_and(|value| !matches!(value, Value::Bool(_)))
+                {
+                    return Err(format!("{tag}.modal requires bound bool"));
+                }
+                let modal = dialog
+                    && attr(node, "modal").is_none_or(|value| matches!(value, Value::Bool(true)));
+                if family == Family::AlertDialog && !modal {
+                    return Err("nonmodal AlertDialog is unsupported".into());
+                }
+                use meari::domain::radio_group::{Direction, Orientation};
+                let mut radio_orientation = Orientation::Unspecified;
+                let mut radio_direction = Direction::LeftToRight;
+                if family == Family::RadioGroup {
+                    for name in ["disabled", "required"] {
+                        if attr(node, name).is_some_and(|value| !matches!(value, Value::Bool(_))) {
+                            return Err(format!("RadioGroup.{name} requires a bound boolean"));
+                        }
+                    }
+                    radio_orientation = match attr(node, "orientation") {
+                        None => Orientation::Unspecified,
+                        Some(Value::String(value)) if value == "vertical" => Orientation::Vertical,
+                        Some(Value::String(value)) if value == "horizontal" => {
+                            Orientation::Horizontal
+                        }
+                        _ => {
+                            return Err(
+                                "RadioGroup.orientation requires horizontal or vertical".into()
+                            );
+                        }
+                    };
+                    radio_direction = match attr(node, "dir") {
+                        None => direction.ok_or(
+                            "RadioGroup inherited dir=auto requires host direction resolution",
+                        )?,
+                        Some(Value::String(value)) if value.eq_ignore_ascii_case("ltr") => {
+                            Direction::LeftToRight
+                        }
+                        Some(Value::String(value)) if value.eq_ignore_ascii_case("rtl") => {
+                            Direction::RightToLeft
+                        }
+                        _ => return Err("RadioGroup.dir requires ltr or rtl".into()),
+                    };
+                    if attr(node, "loop").is_some_and(|value| !matches!(value, Value::Bool(_))) {
+                        return Err("RadioGroup.loop requires a bound boolean".into());
+                    }
+                }
                 session.widgets.insert(
                     path.clone(),
                     Widget {
@@ -226,7 +340,18 @@ impl Session {
                             .or_else(|| string(node, "defaultValue"))
                             .unwrap_or_default(),
                         active: None,
-                        open: boolean(node, "open") || boolean(node, "defaultOpen"),
+                        open: attr(node, "open").map_or_else(
+                            || boolean(node, "defaultOpen"),
+                            |value| matches!(value, Value::Bool(true)),
+                        ),
+                        controlled_open: dialog && attr(node, "open").is_some(),
+                        controlled_value: family == Family::RadioGroup
+                            && attr(node, "value").is_some(),
+                        radio_orientation,
+                        radio_direction,
+                        radio_loop: attr(node, "loop")
+                            .is_none_or(|value| matches!(value, Value::Bool(true))),
+                        modal,
                         trigger: None,
                         content: None,
                         close_paths: Vec::new(),
@@ -242,6 +367,7 @@ impl Session {
                 let widget = session.widgets.get_mut(owner).unwrap();
                 if [
                     "TabsTrigger",
+                    "RadioGroupItem",
                     "AccordionTrigger",
                     "SelectItem",
                     "DropdownMenuItem",
@@ -251,6 +377,17 @@ impl Session {
                     let value = string(node, "value")
                         .or_else(|| item_value.clone())
                         .unwrap_or_else(|| path.clone());
+                    if tag == "RadioGroupItem"
+                        && string(node, "value").is_none_or(|value| value.is_empty())
+                    {
+                        return Err("RadioGroupItem requires a nonempty bound string value".into());
+                    }
+                    if tag == "RadioGroupItem"
+                        && attr(node, "disabled")
+                            .is_some_and(|value| !matches!(value, Value::Bool(_)))
+                    {
+                        return Err("RadioGroupItem.disabled requires a bound boolean".into());
+                    }
                     if widget.items.iter().any(|i| i.value == value) {
                         return Err(format!("duplicate widget item value: {value}"));
                     }
@@ -289,14 +426,26 @@ impl Session {
                     owner.clone(),
                     item_value.clone(),
                     item_disabled,
+                    direction,
                     session,
                 )?;
             }
             Ok(())
         }
         let mut session = Self::default();
-        visit(root, "0".into(), None, None, false, &mut session)?;
+        visit(
+            root,
+            "0".into(),
+            None,
+            None,
+            false,
+            Some(meari::domain::radio_group::Direction::LeftToRight),
+            &mut session,
+        )?;
         for widget in session.widgets.values_mut() {
+            if widget.family == Family::RadioGroup {
+                widget.radio_model(false).validate()?;
+            }
             if widget.family == Family::Tabs && widget.value.is_empty() {
                 widget.value = widget
                     .items
@@ -344,6 +493,20 @@ impl Session {
         navigation: &dyn Navigation,
         focusable: &[String],
     ) -> Result<bool, String> {
+        if self.requested_open(&action).is_some() {
+            return Err("controlled open requires a scoped Boolean intent dispatcher".into());
+        }
+        let radio_path = match &action {
+            Action::Activate { path }
+            | Action::Key { path, .. }
+            | Action::DismissOutside { path } => path,
+        };
+        if self
+            .owner(radio_path)
+            .is_some_and(|widget| widget.family == Family::RadioGroup)
+        {
+            return Err("radio selection requires its owned renderer adapter".into());
+        }
         if let Action::DismissOutside { path } = &action {
             let Some(overlay) = self.top_overlay() else {
                 return Ok(false);
@@ -395,6 +558,7 @@ impl Session {
             self.focus = widget.trigger.clone();
         } else if key.as_deref() == Some("Tab")
             && widget.open
+            && widget.modal
             && [Family::Dialog, Family::AlertDialog].contains(&widget.family)
         {
             if focusable.is_empty() {

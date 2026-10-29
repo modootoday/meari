@@ -1,7 +1,27 @@
 use crate::domain::{Component, Diagnostic, Span, validation::validate};
 use serde::{Deserialize, Serialize};
+pub mod app_bundle;
+pub mod assets;
+pub mod binding;
+pub mod builder;
+pub mod component_state;
+pub mod dom;
+#[cfg(feature = "bundled-fonts")]
+pub mod fonts;
 pub mod hmr;
+pub mod hook_values;
+pub mod host_callbacks;
+pub mod icons;
 pub mod media;
+pub mod module_app_bundle;
+pub mod plugins;
+pub(crate) mod radio_group;
+pub mod range_parts;
+pub mod repeat;
+pub mod responsive;
+pub mod screen;
+pub mod source_modules;
+pub mod state_program;
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -69,6 +89,12 @@ impl<'a> Converter<'a> {
     }
     pub fn emit(&self, component: &Component, language: Language) -> Result<Output, Diagnostic> {
         validate(component)?;
+        if crate::domain::host_callbacks::contains_runtime(&component.root) {
+            return Err(Diagnostic::unsupported(
+                component.root.span,
+                "bound runtime callback identities cannot be emitted as authoring source",
+            ));
+        }
         Ok(self.backend.emit(component, language))
     }
     pub fn convert(
@@ -95,3 +121,5 @@ impl<'a> Converter<'a> {
         )
     }
 }
+pub mod hook_document;
+pub mod hook_expression;

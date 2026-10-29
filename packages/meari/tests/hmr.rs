@@ -9,6 +9,32 @@ fn artifact(hash: &str) -> Artifact {
 }
 
 #[test]
+fn mismatched_target_schema_is_rejected_without_consuming_preparation() {
+    for first in [Target::Native, Target::Web] {
+        let second = match first {
+            Target::Native => Target::Web,
+            Target::Web => Target::Native,
+        };
+        let mut coordinator = Coordinator::default();
+        let revision = coordinator.request("source".into()).unwrap();
+        coordinator
+            .prepare(revision, first, artifact("source"))
+            .unwrap();
+        let mut incompatible = artifact("source");
+        incompatible.state_schema = "different-hook-layout".into();
+        assert!(coordinator.prepare(revision, second, incompatible).is_err());
+        assert!(coordinator.publish(revision).is_err());
+        assert!(coordinator.last_good().is_none());
+        coordinator
+            .prepare(revision, second, artifact("source"))
+            .unwrap();
+        coordinator.publish(revision).unwrap();
+        assert!(!coordinator.acknowledge(revision, first).unwrap());
+        assert!(coordinator.acknowledge(revision, second).unwrap());
+    }
+}
+
+#[test]
 fn same_revision_requires_both_prepares_and_real_frame_acknowledgements() {
     let mut coordinator = Coordinator::default();
     let stale = coordinator.request("old".into()).unwrap();

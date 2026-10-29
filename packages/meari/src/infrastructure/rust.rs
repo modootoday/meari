@@ -1,6 +1,10 @@
 use crate::domain::*;
 use syn::parse::Parser;
-use syn::{Expr, Item, Lit, Stmt, Type, spanned::Spanned};
+use syn::{Expr, Item, Lit, Type, spanned::Spanned};
+mod bool_expression;
+mod prop_type;
+mod records;
+mod state;
 
 fn span(source: &str, span: proc_macro2::Span) -> Span {
     fn offset(source: &str, location: proc_macro2::LineColumn) -> usize {
@@ -24,6 +28,7 @@ fn span(source: &str, span: proc_macro2::Span) -> Span {
 
 struct Reader<'a> {
     source: &'a str,
+    records: std::collections::BTreeMap<String, &'a syn::ItemStruct>,
 }
 impl Reader<'_> {
     fn err(&self, node: &impl Spanned, message: &str) -> Diagnostic {
@@ -31,6 +36,180 @@ impl Reader<'_> {
     }
     fn value(&self, expr: &Expr) -> Result<Value, Diagnostic> {
         match expr {
+            Expr::Call(call)
+                if call.attrs.is_empty()
+                    && call.args.len() == 2
+                    && matches!(&*call.func, Expr::Path(path) if path.attrs.is_empty() && path.qself.is_none() && path.path.is_ident("member")) =>
+            {
+                let path = self
+                    .vector(&call.args[1])?
+                    .iter()
+                    .map(|field| self.string(field))
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(Value::Member(member_value::MemberValue {
+                    root: Box::new(self.value(&call.args[0])?),
+                    path,
+                }))
+            }
+            Expr::Call(call)
+                if call.attrs.is_empty()
+                    && matches!(&*call.func,Expr::Path(path) if path.attrs.is_empty() && path.qself.is_none() && path.path.is_ident("empty_node_slot"))
+                    && call.args.is_empty() =>
+            {
+                Ok(Value::NodeSlot(crate::domain::node_slots::NodeSlot::Empty))
+            }
+            Expr::Call(call)
+                if call.attrs.is_empty()
+                    && matches!(&*call.func,Expr::Path(path) if path.attrs.is_empty() && path.qself.is_none() && path.path.is_ident("node_slot"))
+                    && call.args.len() == 1 =>
+            {
+                Ok(Value::NodeSlot(
+                    crate::domain::node_slots::NodeSlot::Content(
+                        self.vector(&call.args[0])?
+                            .iter()
+                            .map(|node| self.node(node))
+                            .collect::<Result<_, _>>()?,
+                    ),
+                ))
+            }
+            Expr::Call(call)
+                if call.args.len() == 1
+                    && call.attrs.is_empty()
+                    && matches!(&*call.func, Expr::Path(path) if path.attrs.is_empty() && path.path.is_ident("local")) =>
+            {
+                Ok(Value::Local(self.string(&call.args[0])?))
+            }
+            Expr::Binary(binary)
+                if binary.attrs.is_empty()
+                    && matches!(
+                        binary.op,
+                        syn::BinOp::And(_)
+                            | syn::BinOp::Or(_)
+                            | syn::BinOp::Eq(_)
+                            | syn::BinOp::Ne(_)
+                    ) =>
+            {
+                self.bool_expression(expr)
+                    .map(Box::new)
+                    .map(Value::Predicate)
+            }
+            Expr::Paren(value) if value.attrs.is_empty() => self.value(&value.expr),
+            Expr::Group(value) if value.attrs.is_empty() => self.value(&value.expr),
+            Expr::Unary(unary)
+                if unary.attrs.is_empty() && matches!(unary.op, syn::UnOp::Not(_)) =>
+            {
+                match self.value(&unary.expr) {
+                    Ok(Value::Prop(prop)) => Ok(Value::NotProp(prop)),
+                    _ => self
+                        .bool_expression(expr)
+                        .map(Box::new)
+                        .map(Value::Predicate),
+                }
+            }
+            Expr::Try(value) if value.attrs.is_empty() => {
+                let Expr::Call(call) = &*value.expr else {
+                    return Err(self.err(expr, "canonical state expression required"));
+                };
+                if !call.attrs.is_empty() {
+                    return Err(self.err(expr, "state expression attributes unsupported"));
+                }
+                let Expr::Path(path) = &*call.func else {
+                    return Err(self.err(expr, "named state function required"));
+                };
+                if !path.attrs.is_empty() || path.qself.is_some() {
+                    return Err(self.err(expr, "plain state function required"));
+                }
+                if path.path.is_ident("state_read")
+                    && call.args.len() == 2
+                    && matches!(&call.args[0], Expr::Path(path) if path.attrs.is_empty() && path.qself.is_none() && path.path.is_ident("state"))
+                {
+                    Ok(Value::State(self.string(&call.args[1])?))
+                } else if path.path.is_ident("input_event") && call.args.len() == 1 {
+                    serde_json::from_str(&self.string(&call.args[0])?)
+                        .map(Value::Input)
+                        .map_err(|_| self.err(expr, "invalid input event JSON"))
+                } else if path.path.is_ident("state_event") && call.args.len() == 1 {
+                    serde_json::from_str(&self.string(&call.args[0])?)
+                        .map(Value::Event)
+                        .map_err(|_| self.err(expr, "invalid state event JSON"))
+                } else if path.path.is_ident("state_captured_event")
+                    && call.args.len() == 2
+                    && matches!(&call.args[0],Expr::Path(path) if path.attrs.is_empty() && path.qself.is_none() && path.path.is_ident("state"))
+                {
+                    serde_json::from_str(&self.string(&call.args[1])?)
+                        .map(Value::Event)
+                        .map_err(|_| self.err(expr, "invalid captured state event JSON"))
+                } else {
+                    Err(self.err(expr, "unsupported fallible state expression"))
+                }
+            }
+            Expr::Call(call)
+                if call.attrs.is_empty()
+                    && call.args.len() == 2
+                    && matches!(&*call.func, Expr::Path(path) if path.attrs.is_empty() && path.qself.is_none() && path.path.is_ident("host_text_capture")) =>
+            {
+                let mut props = Vec::with_capacity(2);
+                for argument in &call.args {
+                    let Expr::Reference(reference) = argument else {
+                        return Err(
+                            self.err(expr, "captured callback requires borrowed typed props")
+                        );
+                    };
+                    if reference.mutability.is_some() || !reference.attrs.is_empty() {
+                        return Err(
+                            self.err(expr, "captured callback requires immutable prop references")
+                        );
+                    }
+                    let Value::Prop(prop) = self.value(&reference.expr)? else {
+                        return Err(self.err(expr, "captured callback must reference props.name"));
+                    };
+                    props.push(prop);
+                }
+                Ok(Value::Callback(
+                    crate::domain::host_callbacks::CallbackHandler {
+                        prop: props.remove(0),
+                        source: crate::domain::host_callbacks::CallbackSource::CapturedText,
+                        capture_prop: props.pop(),
+                        span: span(self.source, expr.span()),
+                    },
+                ))
+            }
+            Expr::Call(call)
+                if call.attrs.is_empty()
+                    && call.args.len() == 1
+                    && matches!(&*call.func, Expr::Path(path) if path.attrs.is_empty() && path.qself.is_none() && (path.path.is_ident("host_action") || path.path.is_ident("host_text") || path.path.is_ident("host_boolean") || path.path.is_ident("host_selection"))) =>
+            {
+                let Expr::Reference(reference) = &call.args[0] else {
+                    return Err(self.err(expr, "host callback requires a borrowed typed prop"));
+                };
+                if reference.mutability.is_some() || !reference.attrs.is_empty() {
+                    return Err(
+                        self.err(expr, "host callback requires an immutable prop reference")
+                    );
+                }
+                let Value::Prop(prop) = self.value(&reference.expr)? else {
+                    return Err(self.err(expr, "host callback must reference props.name"));
+                };
+                let Expr::Path(path) = &*call.func else {
+                    unreachable!()
+                };
+                Ok(Value::Callback(
+                    crate::domain::host_callbacks::CallbackHandler {
+                        prop,
+                        source: if path.path.is_ident("host_action") {
+                            crate::domain::host_callbacks::CallbackSource::Action
+                        } else if path.path.is_ident("host_boolean") {
+                            crate::domain::host_callbacks::CallbackSource::BooleanValue
+                        } else if path.path.is_ident("host_selection") {
+                            crate::domain::host_callbacks::CallbackSource::SelectionValue
+                        } else {
+                            crate::domain::host_callbacks::CallbackSource::CurrentTargetText
+                        },
+                        span: span(self.source, expr.span()),
+                        capture_prop: None,
+                    },
+                ))
+            }
             Expr::Call(call)
                 if call.attrs.is_empty()
                     && call.args.len() == 1
@@ -99,7 +278,32 @@ impl Reader<'_> {
         if !call.attrs.is_empty() || !path.attrs.is_empty() {
             return Err(self.err(expr, "expression attributes unsupported"));
         }
-        let kind = if path.path.is_ident("text") && call.args.len() == 1 {
+        let kind = if (path.path.is_ident("repeat") || path.path.is_ident("repeat_member"))
+            && call.args.len() == 4
+        {
+            let item = self.string(&call.args[1])?;
+            let member_key = path.path.is_ident("repeat_member");
+            NodeKind::Text(Value::Repeat(Box::new(crate::domain::repeat::Repeat {
+                source: self.value(&call.args[0])?,
+                item: item.clone(),
+                key: if member_key {
+                    item
+                } else {
+                    self.string(&call.args[2])?
+                },
+                key_path: if member_key {
+                    self.vector(&call.args[2])?
+                        .iter()
+                        .map(|field| self.string(field))
+                        .collect::<Result<Vec<_>, _>>()?
+                } else {
+                    Vec::new()
+                },
+                template: self.node(&call.args[3])?,
+                source_span: span(self.source, call.args[0].span()),
+                key_span: span(self.source, call.args[2].span()),
+            })))
+        } else if path.path.is_ident("text") && call.args.len() == 1 {
             NodeKind::Text(self.value(&call.args[0])?)
         } else if path.path.is_ident("element") && call.args.len() == 3 {
             let mut attributes = Vec::new();
@@ -141,18 +345,31 @@ impl Reader<'_> {
 }
 
 pub fn parse(source: &str) -> Result<Component, Diagnostic> {
-    let reader = Reader { source };
     let file = syn::parse_file(source).map_err(|e| Diagnostic {
         code: "syntax".into(),
         message: e.to_string(),
         span: span(source, e.span()),
     })?;
+    let mut records = std::collections::BTreeMap::new();
+    for item in &file.items {
+        if let Item::Struct(record) = item
+            && record.ident != "Props"
+            && records.insert(record.ident.to_string(), record).is_some()
+        {
+            return Err(Diagnostic::unsupported(
+                span(source, record.span()),
+                "duplicate record declaration",
+            ));
+        }
+    }
+    let reader = Reader { source, records };
     if !file.attrs.is_empty() {
         return Err(reader.err(&file, "file attributes unsupported"));
     }
     let mut props = None;
     let mut client = false;
     let mut function = None;
+    let mut record_implementations = std::collections::BTreeSet::new();
     for item in &file.items {
         match item {
             Item::Const(c)
@@ -172,7 +389,7 @@ pub fn parse(source: &str) -> Result<Component, Diagnostic> {
                     .get(span(source, u.span()).start..span(source, u.span()).end)
                     .is_some_and(|s| s == "use meari::runtime::*;") => {}
             Item::Struct(s) if s.ident == "Props" && props.is_none() => {
-                if !s.attrs.is_empty()
+                if s.attrs.len() > 1 || s.attrs.iter().any(|attribute| !attribute.path().is_ident("allow") || !matches!(&attribute.meta, syn::Meta::List(list) if list.tokens.to_string() == "non_snake_case"))
                     || !s.generics.params.is_empty()
                     || s.generics.where_clause.is_some()
                 {
@@ -186,15 +403,7 @@ pub fn parse(source: &str) -> Result<Component, Diagnostic> {
                     if !f.attrs.is_empty() {
                         return Err(reader.err(f, "prop attributes unsupported"));
                     }
-                    let kind = match &f.ty {
-                        Type::Path(p) if p.qself.is_none() && p.path.is_ident("String") => {
-                            PropType::String
-                        }
-                        Type::Path(p) if p.qself.is_none() && p.path.is_ident("bool") => {
-                            PropType::Bool
-                        }
-                        _ => return Err(reader.err(f, "Props fields support only String/bool")),
-                    };
+                    let kind = reader.prop_type(&f.ty, 0)?;
                     values.push(Prop {
                         name: f.ident.as_ref().expect("named fields").to_string(),
                         kind,
@@ -204,6 +413,34 @@ pub fn parse(source: &str) -> Result<Component, Diagnostic> {
             }
             Item::Fn(f) if function.is_none() => {
                 function = Some(f);
+            }
+            Item::Struct(record) if record.ident != "Props" => {
+                let fields = reader.record_fields(record, 0)?;
+                PropType::Record(fields)
+                    .validate()
+                    .map_err(|message| reader.err(record, &message))?;
+            }
+            Item::Impl(implementation) => {
+                if !reader.record_implementation(implementation)? {
+                    return Err(reader.err(
+                        implementation,
+                        "only generated typed record conversions are supported",
+                    ));
+                }
+                let syn::Type::Path(record) = implementation.self_ty.as_ref() else {
+                    unreachable!("canonical record implementation")
+                };
+                let (_, trait_path, _) = implementation
+                    .trait_
+                    .as_ref()
+                    .expect("canonical record trait");
+                let identity = (
+                    record.path.segments[0].ident.to_string(),
+                    trait_path.segments[0].ident.to_string(),
+                );
+                if !record_implementations.insert(identity) {
+                    return Err(reader.err(implementation, "duplicate typed record conversion"));
+                }
             }
             _ => {
                 return Err(reader.err(
@@ -218,7 +455,7 @@ pub fn parse(source: &str) -> Result<Component, Diagnostic> {
     // The generated lint attribute is the only permitted function attribute.
     if f.attrs.iter().any(|a| {
         !a.path().is_ident("allow")
-            || !matches!(&a.meta, syn::Meta::List(l) if l.tokens.to_string() == "non_snake_case")
+            || !matches!(&a.meta, syn::Meta::List(l) if matches!(l.tokens.to_string().as_str(), "non_snake_case" | "non_snake_case , unused_variables"))
     }) {
         return Err(reader.err(f, "component attributes unsupported"));
     }
@@ -230,23 +467,32 @@ pub fn parse(source: &str) -> Result<Component, Diagnostic> {
         || sig.variadic.is_some()
         || !sig.generics.params.is_empty()
         || sig.generics.where_clause.is_some()
-        || sig.inputs.len() != 1
+        || ![1, 2].contains(&sig.inputs.len())
     {
         return Err(reader.err(sig, "plain synchronous component(props: Props) required"));
     }
     let valid_input = matches!(&sig.inputs[0], syn::FnArg::Typed(p) if p.attrs.is_empty() && matches!(&*p.pat, syn::Pat::Ident(i) if i.ident == "props" && i.by_ref.is_none() && i.mutability.is_none() && i.subpat.is_none()) && matches!(&*p.ty, Type::Path(t) if t.qself.is_none() && t.path.is_ident("Props")));
+    let stateful = sig.inputs.len() == 2;
+    let valid_state = !stateful
+        || matches!(&sig.inputs[1], syn::FnArg::Typed(p) if p.attrs.is_empty()
+        && matches!(&*p.pat,syn::Pat::Ident(i) if i.ident == "state" && i.by_ref.is_none() && i.mutability.is_none() && i.subpat.is_none())
+        && matches!(&*p.ty, Type::Reference(reference) if reference.lifetime.is_none() && reference.mutability.is_none() && matches!(&*reference.elem,Type::Path(path) if path.qself.is_none() && path.path.is_ident("StateContext"))));
     if !valid_input
-        || !matches!(&sig.output, syn::ReturnType::Type(_, t) if matches!(&**t, Type::Path(p) if p.qself.is_none() && p.path.is_ident("Node")))
+        || !valid_state
+        || !matches!(&sig.output, syn::ReturnType::Type(_, t) if matches!(&**t, Type::Path(p) if p.qself.is_none() && p.path.is_ident(if stateful { "RenderResult" } else { "Node" })))
     {
         return Err(reader.err(sig, "expected (props: Props) -> Node"));
     }
-    let [Stmt::Expr(expr, None)] = f.block.stmts.as_slice() else {
+    let (states, hook_order, expr) = state::body(&reader, f)?;
+    if stateful == states.is_empty() {
         return Err(reader.err(
-            &f.block,
-            "component must contain one pure tail expression; statements/hooks/effects unsupported",
+            f,
+            "state declarations require StateContext and RenderResult",
         ));
-    };
+    }
     Ok(Component {
+        hook_order,
+        states,
         client,
         name: sig.ident.to_string(),
         props: props.ok_or_else(|| reader.err(f, "Props struct required"))?,

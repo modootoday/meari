@@ -12,7 +12,7 @@ pub struct MediaChange {
 
 /// Explicit subscription lifetime for native responsive hooks. Poll only after
 /// final layout commit, never during the host sizing measurement.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct MediaSubscriptions {
     next: u64,
     entries: BTreeMap<u64, (String, bool)>,

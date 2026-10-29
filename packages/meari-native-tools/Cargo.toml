@@ -1,0 +1,31 @@
+[package]
+workspace = "../.."
+name = "meari-native-tools"
+version = "0.1.0"
+edition = "2024"
+publish = false
+default-run = "meari-native"
+license = "MIT OR Apache-2.0"
+description = "Native showcase and batch kitchen-sink executable hosts for Meari"
+repository = "https://github.com/modootoday/meari"
+readme = "README.md"
+include = [
+    "src/**/*.rs", "tests/**/*.rs",
+    "Cargo.toml", "README.md", "LICENSE-MIT", "LICENSE-APACHE", "NOTICE",
+]
+
+[features]
+test-support = ["meari-native/test-support"]
+gl = ["meari-native/gl"]
+window = ["meari-native/window"]
+
+[dependencies]
+meari-native = { path = "../meari-native", version = "0.1.0" }
+
+[[bin]]
+name = "meari-native"
+path = "src/main.rs"
+
+[[bin]]
+name = "meari-kitchen-sink"
+path = "src/bin/kitchen_sink.rs"

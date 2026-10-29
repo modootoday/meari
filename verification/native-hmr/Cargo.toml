@@ -1,0 +1,29 @@
+[package]
+name = "native-hmr-verification"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+anyhow = "1"
+eframe = { version = "=0.36.2", default-features = false, features = ["default_fonts", "glow"] }
+libloading = "=0.8.9"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+png = "0.18"
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_UI_WindowsAndMessaging", "Win32_System_Threading", "Win32_System_ProcessStatus"] }
+
+[[bin]]
+name = "hmr-host"
+path = "src/bin/host.rs"
+
+[[bin]]
+name = "hmr-verify"
+path = "src/bin/verify.rs"
+
+[[bin]]
+name = "hmr-report"
+path = "src/bin/report.rs"
