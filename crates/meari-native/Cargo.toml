@@ -17,6 +17,7 @@ include = [
 ]
 
 [features]
+default = ["bundled-fonts"]
 bundled-fonts = ["meari/bundled-fonts"]
 test-support = ["window"]
 gl = ["dep:anyrender_skia", "dep:skia-safe", "dep:glutin", "dep:glow", "dep:raw-window-handle"]

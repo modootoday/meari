@@ -1,14 +1,20 @@
-//! Generic CSS families resolved like Chromium's default font preferences.
+//! Generic CSS families (`sans-serif`, `serif`) for native documents.
 //!
-//! Chromium does not ask fontconfig for `sans-serif`/`serif`; it uses its own per-platform
-//! preferences (Linux: Arial / Times New Roman), which fontconfig then substitutes with
-//! metric-compatible faces (Arimo / Liberation, Tinos). Native must pick the same faces or text
-//! widths drift from the Web path.
-use parley::fontique::{Blob, Collection, CollectionOptions, GenericFamily, SourceCache};
+//! Canonical profile (default): the bundled OFL faces come first, Pretendard Variable /
+//! Pretendard JP for `sans-serif` and Source Serif 4 then an installed Source Han Serif KR /
+//! Noto Serif KR for `serif`, then the Chromium Linux defaults below.
+//!
+//! Chrome comparison profile (`meari-visual` only): Chromium does not ask fontconfig for
+//! generics; it uses per-platform preferences (Linux: Arial / Times New Roman) which
+//! fontconfig substitutes with metric-compatible host faces (Arimo / Liberation, Tinos). Those
+//! faces are never bundled; this profile exists only so a pixel comparison against an
+//! unmodified Chrome picks the same host faces.
+use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, GenericFamily, SourceCache};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Chromium Linux defaults followed by fontconfig's metric-compatible substitutes.
-const PREFERENCES: &[(GenericFamily, &[&str])] = &[
+const CHROMIUM: &[(GenericFamily, &[&str])] = &[
     (
         GenericFamily::SansSerif,
         &["Arial", "Arimo", "Liberation Sans"],
@@ -19,15 +25,34 @@ const PREFERENCES: &[(GenericFamily, &[&str])] = &[
     ),
 ];
 
-/// Font context for a document: system fonts, blitz's list-bullet font, Chromium generics.
+static CHROME_COMPARISON: AtomicBool = AtomicBool::new(false);
+
+/// Switches every later document of this process to the Chrome comparison profile.
+pub fn use_chrome_comparison_profile() {
+    CHROME_COMPARISON.store(true, Ordering::SeqCst);
+}
+
+/// Font context for a document: system fonts, bundled faces, blitz's bullet font, generics.
 pub fn context() -> parley::FontContext {
+    build(!CHROME_COMPARISON.load(Ordering::SeqCst))
+}
+
+fn build(canonical: bool) -> parley::FontContext {
     let mut collection = Collection::new(CollectionOptions {
         shared: false,
         system_fonts: true,
     });
     collection.register_fonts(Blob::new(Arc::new(blitz_dom::BULLET_FONT) as _), None);
-    if cfg!(target_os = "linux") {
-        apply(&mut collection);
+    register_bundled(&mut collection);
+    for (generic, chromium) in CHROMIUM {
+        let mut names: Vec<&str> = Vec::new();
+        if canonical {
+            names.extend(canonical_names(*generic));
+        }
+        if canonical || cfg!(target_os = "linux") {
+            names.extend(chromium.iter().copied());
+        }
+        prefer(&mut collection, *generic, &names);
     }
     parley::FontContext {
         source_cache: SourceCache::new_shared(),
@@ -35,27 +60,88 @@ pub fn context() -> parley::FontContext {
     }
 }
 
-/// Puts the first installed preference in front of each generic family; unchanged otherwise.
-fn apply(collection: &mut Collection) {
-    for (generic, names) in PREFERENCES {
-        let Some(first) = names.iter().find_map(|name| collection.family_id(name)) else {
-            continue;
-        };
-        let rest = collection
-            .generic_families(*generic)
-            .filter(|id| *id != first)
-            .collect::<Vec<_>>();
-        collection.set_generic_families(*generic, std::iter::once(first).chain(rest));
+#[cfg(feature = "bundled-fonts")]
+fn canonical_names(generic: GenericFamily) -> Vec<&'static str> {
+    use meari::domain::design::fonts::{SANS_FAMILIES, SERIF_FAMILIES};
+    match generic {
+        GenericFamily::SansSerif => SANS_FAMILIES.to_vec(),
+        GenericFamily::Serif => SERIF_FAMILIES.to_vec(),
+        _ => Vec::new(),
     }
+}
+
+#[cfg(not(feature = "bundled-fonts"))]
+fn canonical_names(_: GenericFamily) -> Vec<&'static str> {
+    Vec::new()
+}
+
+#[cfg(feature = "bundled-fonts")]
+fn register_bundled(collection: &mut Collection) {
+    use meari::{
+        application::fonts::face_bytes,
+        domain::design::fonts::{FontFormat, UI_FACES},
+    };
+    for face in UI_FACES {
+        let bytes: &'static [u8] = face_bytes(face, FontFormat::Truetype);
+        collection.register_fonts(Blob::new(Arc::new(bytes) as _), None);
+    }
+}
+
+#[cfg(not(feature = "bundled-fonts"))]
+fn register_bundled(_: &mut Collection) {}
+
+/// Puts the installed names, in order, in front of the generic family; others keep order.
+fn prefer(collection: &mut Collection, generic: GenericFamily, names: &[&str]) {
+    let mut first: Vec<FamilyId> = Vec::new();
+    for name in names {
+        if let Some(id) = collection.family_id(name)
+            && !first.contains(&id)
+        {
+            first.push(id);
+        }
+    }
+    if first.is_empty() {
+        return;
+    }
+    let rest = collection
+        .generic_families(generic)
+        .filter(|id| !first.contains(id))
+        .collect::<Vec<_>>();
+    collection.set_generic_families(generic, first.into_iter().chain(rest));
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    #[cfg(feature = "bundled-fonts")]
     #[test]
-    fn sans_serif_prefers_the_chromium_face_when_installed() {
-        let mut context = context();
+    fn canonical_generics_resolve_to_bundled_faces_first() {
+        let mut context = build(true);
+        let collection = &mut context.collection;
+        let pretendard = collection.family_id("Pretendard Variable").unwrap();
+        let jp = collection.family_id("Pretendard JP").unwrap();
+        let serif = collection.family_id("Source Serif 4 Variable").unwrap();
+        let sans = collection
+            .generic_families(GenericFamily::SansSerif)
+            .collect::<Vec<_>>();
+        assert_eq!(&sans[..2], &[pretendard, jp]);
+        let serifs = collection
+            .generic_families(GenericFamily::Serif)
+            .collect::<Vec<_>>();
+        assert_eq!(serifs[0], serif);
+        // The Arial-family host fallback, when installed, follows the canonical faces.
+        if let Some(arial) = ["Arial", "Arimo", "Liberation Sans"]
+            .iter()
+            .find_map(|name| collection.family_id(name))
+        {
+            assert_eq!(sans[2], arial);
+        }
+    }
+
+    #[test]
+    fn chrome_comparison_profile_prefers_the_chromium_face_when_installed() {
+        let mut context = build(false);
         let collection = &mut context.collection;
         let Some(expected) = ["Arial", "Arimo", "Liberation Sans"]
             .iter()

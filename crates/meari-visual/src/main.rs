@@ -3,6 +3,8 @@ use meari_visual::{compare, fixtures, report};
 use std::path::PathBuf;
 
 fn main() {
+    // Unmodified Chrome resolves generics to host Arial/Times substitutes; compare like for like.
+    meari_native::infrastructure::engine::generic_fonts::use_chrome_comparison_profile();
     let mut args = std::env::args().skip(1);
     let mut out = PathBuf::from("target/meari-visual");
     let mut chrome = String::from("/usr/bin/google-chrome");

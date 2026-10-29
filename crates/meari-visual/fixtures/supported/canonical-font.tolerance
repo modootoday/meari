@@ -1,0 +1,2 @@
+max_ratio=0.012
+reason=glyph rasterization only (vello_cpu vs Skia anti-aliasing); same faces (bundled Pretendard Variable / Pretendard JP / Source Serif 4: Chrome via the upstream WOFF2, native via the upstream TTF); per-line ink bbox equal on all 4 lines (y 29-48/65-82/102-116/138-152, x 25-309/24-226/27-162/25-283). Measured 1.105% on 2026-10-30.
