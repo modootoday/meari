@@ -97,7 +97,13 @@ fn source_reference_changes_are_not_stable_placements_and_raw_keys_are_not_slot_
         .iter()
         .map(Option::as_deref)
         .collect::<Vec<_>>();
-    assert!(child_placement::plan(&a, &b, Span::default()).is_err());
+    // A changed source reference yields a new identity key: the fixed sibling keeps
+    // its position while the slot is remounted (None), never rebound to the old index.
+    assert_ne!(a[1], b[1]);
+    assert_eq!(
+        child_placement::plan(&a, &b, Span::default()).unwrap(),
+        vec![Some(0), None]
+    );
     let raw = Value::NodeSlot(NodeSlot::Content(vec![Node {
         kind: NodeKind::Element {
             tag: "article".into(),
