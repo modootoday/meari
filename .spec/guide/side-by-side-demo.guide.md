@@ -15,7 +15,7 @@ rel:
 
 ```sh
 export PATH=$HOME/.cargo/bin:$PATH
-export CARGO_TARGET_DIR=$PWD/runtime/build-cache/target TMP=$PWD/runtime/build-cache/tmp TEMP=$PWD/runtime/build-cache/tmp
+# target-dir·TMP·TEMP는 .cargo/config.toml이 설정한다
 DISPLAY=:7 cargo xtask demo                    # 첫 픽스처부터
 DISPLAY=:7 cargo xtask demo app-form           # 이름(부분 일치) 또는 번호로 시작
 cargo xtask demo --list                        # 목록만 출력
