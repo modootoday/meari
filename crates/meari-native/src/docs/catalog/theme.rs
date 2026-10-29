@@ -1,7 +1,7 @@
 //! Shared, source-owned verification palette; not an upstream visual reference.
 use meari::domain::design::{theme::Theme, utilities::COLORS};
 
-pub(super) fn reference() -> Theme {
+pub(in super::super) fn reference() -> Theme {
     let mut theme = Theme::default();
     for name in COLORS {
         let foreground = name.contains("foreground");

@@ -82,7 +82,7 @@ html,body { margin:0 }
     {
         return Err("media subscription cleanup/count failed".into());
     }
-    super::write_json(
+    super::super::write_json(
         output,
         &serde_json::json!({"passed":true,"scenarios":receipts,"os_window_resize_tested":false}),
     )

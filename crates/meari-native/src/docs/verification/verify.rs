@@ -1,4 +1,4 @@
-use super::{
+use super::super::{
     model::{Check, CheckStatus, Receipt},
     read_catalog, write_json,
 };
@@ -15,7 +15,7 @@ pub fn verify(catalog_dir: &Path, executable: &Path, output: &Path) -> Result<()
     verify_selected(catalog_dir, executable, output, None)
 }
 
-pub(super) fn verify_selected(
+pub(in super::super) fn verify_selected(
     catalog_dir: &Path,
     executable: &Path,
     output: &Path,
@@ -48,7 +48,7 @@ pub(super) fn verify_selected(
             screenshot: None,
             interaction: "not-run".into(),
             accessibility: "not-run".into(),
-            checks: super::completion::REQUIRED
+            checks: super::super::completion::REQUIRED
                 .iter()
                 .map(|gate| Check {
                     gate: (*gate).into(),
@@ -75,7 +75,7 @@ pub(super) fn verify_selected(
                     "Installation/configuration/text snippet; not an executable component".into();
             } else {
                 let original = meari::parse(&code, Language::Tsx).err();
-                let wrapped = super::reference_adapter::adapt(&code)?;
+                let wrapped = super::super::reference_adapter::adapt(&code)?;
                 let adaptation = format!(
                     "Explicit typed/import/fragment adapter; upstream implementations are mapped to local recipes. Original module diagnostic: {}. ",
                     original
@@ -142,7 +142,7 @@ pub(super) fn verify_selected(
         }
         receipts.push(receipt);
     }
-    let theme = super::theme::reference();
+    let theme = super::super::theme::reference();
     let css = compiler.compile(&classes, &theme)?;
     fs::write(output.join("compiled.css"), &css).map_err(|e| e.to_string())?;
     let total_variants = renderable.len() * 4;
@@ -180,8 +180,9 @@ pub(super) fn verify_selected(
                 );
                 receipt.accessibility = "tree-captured; OS/screen-reader acceptance not-run".into();
                 let exercised =
-                    super::interaction::verify_recorded(&mut document, Some(&state_dir))?;
-                let (buttons, inputs) = super::controls::verify(&mut document, Some(&state_dir))?;
+                    super::super::interaction::verify_recorded(&mut document, Some(&state_dir))?;
+                let (buttons, inputs) =
+                    super::super::controls::verify(&mut document, Some(&state_dir))?;
                 receipt.interaction = format!(
                     "{exercised} native contract assertions (state/ARIA/focus/navigation); {buttons} button/toggle controls asserted (see controls.json); {inputs} text/file controls asserted; OS keyboard/pointer/upstream controlled callbacks not verified"
                 );
@@ -218,7 +219,7 @@ pub(super) fn verify_selected(
         }
     }
     write_json(&output.join("receipts.json"), &receipts)?;
-    let completion = super::completion::evaluate(&catalog, &receipts);
+    let completion = super::super::completion::evaluate(&catalog, &receipts);
     write_json(&output.join("completion.json"), &completion)?;
     let counts = receipts
         .iter()

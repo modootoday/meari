@@ -31,7 +31,7 @@ fn collect(node: &Node, path: String, out: &mut Vec<(String, bool)>) {
     }
 }
 
-pub(super) fn verify(
+pub(in super::super) fn verify(
     doc: &mut InteractiveDocument,
     directory: Option<&Path>,
 ) -> Result<(usize, usize), String> {

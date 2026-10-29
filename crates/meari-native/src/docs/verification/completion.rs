@@ -1,8 +1,8 @@
-use super::model::{Catalog, CheckStatus, Receipt};
+use super::super::model::{Catalog, CheckStatus, Receipt};
 use serde::Serialize;
 use std::collections::BTreeMap;
 
-pub(super) const REQUIRED: &[&str] = &[
+pub(in super::super) const REQUIRED: &[&str] = &[
     "source-semantics",
     "roundtrip",
     "native-render",
@@ -14,7 +14,7 @@ pub(super) const REQUIRED: &[&str] = &[
 ];
 
 #[derive(Debug, Serialize)]
-pub(super) struct Completion {
+pub(in super::super) struct Completion {
     pub full_acceptance: bool,
     pub total_examples: usize,
     pub receipt_count: usize,
@@ -22,7 +22,7 @@ pub(super) struct Completion {
     pub inventory_gaps: Vec<String>,
 }
 
-pub(super) fn evaluate(catalog: &Catalog, receipts: &[Receipt]) -> Completion {
+pub(in super::super) fn evaluate(catalog: &Catalog, receipts: &[Receipt]) -> Completion {
     let mut incomplete = BTreeMap::new();
     for example in &catalog.examples {
         let receipt = receipts.iter().find(|row| row.id == example.id);

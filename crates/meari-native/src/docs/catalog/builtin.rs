@@ -65,7 +65,7 @@ const CASES: &[(&str, &str)] = &[
 
 fn source(name: &str, body: &str) -> String {
     if name == "source-state" {
-        return include_str!("../../fixtures/state-counter.tsx").into();
+        return include_str!("../../../fixtures/state-counter.tsx").into();
     }
     let (import, hook) = if name == "use-id" {
         ("import {useId} from 'react';", "const id=useId();")
@@ -77,10 +77,10 @@ fn source(name: &str, body: &str) -> String {
     )
 }
 
-pub(super) fn run(executable: &Path, output: &Path) -> Result<(), String> {
+pub(in super::super) fn run(executable: &Path, output: &Path) -> Result<(), String> {
     fs::create_dir(output).map_err(|e| e.to_string())?;
     let compiler = TailwindCompiler::pinned(executable)?;
-    let theme = super::theme::reference();
+    let theme = super::super::theme::reference();
     let mut report = Vec::new();
     for (name, body) in CASES {
         let source = source(name, body);
@@ -107,14 +107,15 @@ pub(super) fn run(executable: &Path, output: &Path) -> Result<(), String> {
                     },
                 )?;
                 artifacts::capture(&mut doc, &directory, "initial")?;
-                let assertions = super::interaction::verify_recorded(&mut doc, Some(&directory))?;
+                let assertions =
+                    super::super::interaction::verify_recorded(&mut doc, Some(&directory))?;
                 let assertions = assertions
                     + if *name == "source-state" {
-                        super::source_state::verify(&mut doc, Some(&directory))?
+                        super::super::source_state::verify(&mut doc, Some(&directory))?
                     } else {
                         0
                     };
-                let (buttons, inputs) = super::controls::verify(&mut doc, Some(&directory))?;
+                let (buttons, inputs) = super::super::controls::verify(&mut doc, Some(&directory))?;
                 artifacts::capture(&mut doc, &directory, "final")?;
                 Ok::<_, String>(assertions + buttons + inputs)
             })();
@@ -147,14 +148,14 @@ mod tests {
                 },
             )
             .unwrap();
-            let assertions = super::super::interaction::verify(&mut doc).unwrap();
+            let assertions = super::super::super::interaction::verify(&mut doc).unwrap();
             let assertions = assertions
                 + if *name == "source-state" {
-                    super::super::source_state::verify(&mut doc, None).unwrap()
+                    super::super::super::source_state::verify(&mut doc, None).unwrap()
                 } else {
                     0
                 };
-            let (buttons, inputs) = super::super::controls::verify(&mut doc, None).unwrap();
+            let (buttons, inputs) = super::super::super::controls::verify(&mut doc, None).unwrap();
             assert!(assertions + buttons + inputs > 0);
         }
     }

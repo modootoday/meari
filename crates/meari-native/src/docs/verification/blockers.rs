@@ -1,4 +1,4 @@
-use super::model::Receipt;
+use super::super::model::Receipt;
 use serde::Serialize;
 use std::{collections::BTreeMap, fs, path::Path};
 
@@ -10,7 +10,7 @@ struct Group {
     sample_ids: Vec<usize>,
 }
 
-pub(super) fn report(receipts: &Path, output: &Path) -> Result<(), String> {
+pub(in super::super) fn report(receipts: &Path, output: &Path) -> Result<(), String> {
     let rows: Vec<Receipt> =
         serde_json::from_slice(&fs::read(receipts).map_err(|e| e.to_string())?)
             .map_err(|e| e.to_string())?;
@@ -42,7 +42,7 @@ pub(super) fn report(receipts: &Path, output: &Path) -> Result<(), String> {
     }
     let mut groups: Vec<_> = groups.into_values().collect();
     groups.sort_by(|a, b| b.count.cmp(&a.count).then(a.reason.cmp(&b.reason)));
-    super::write_json(output, &groups)?;
+    super::super::write_json(output, &groups)?;
     for group in groups.iter().take(25) {
         println!(
             "{} {}: {} {:?}",

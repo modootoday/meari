@@ -8,19 +8,19 @@ use crate::{
 };
 use std::{fs, path::Path};
 
-pub(super) fn run(executable: &Path, output: &Path) -> Result<(), String> {
+pub(in super::super) fn run(executable: &Path, output: &Path) -> Result<(), String> {
     fs::create_dir(output).map_err(|e| e.to_string())?;
     let compiler = TailwindCompiler::pinned(executable)?;
     let mut report = Vec::new();
     for (name, json, tailwind) in [
         (
             "direct-css",
-            include_str!("../../fixtures/custom-css/raw.json"),
+            include_str!("../../../fixtures/custom-css/raw.json"),
             false,
         ),
         (
             "tailwind-css",
-            include_str!("../../fixtures/custom-css/tailwind.json"),
+            include_str!("../../../fixtures/custom-css/tailwind.json"),
             true,
         ),
     ] {
