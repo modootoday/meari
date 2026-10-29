@@ -1,7 +1,7 @@
 # Third-party notices: bundled fonts
 
 Every bundled font is licensed under the **SIL Open Font License, Version 1.1**
-(OFL-1.1) and nothing else. A test (`crates/meari/tests/font_catalog.rs`,
+(OFL-1.1) and nothing else. A test (`crates/meari/tests/platform/font_catalog.rs`,
 `every_bundled_font_is_ofl_and_catalogued`) fails if any file under
 `crates/meari/assets/fonts` is not a catalogued face or an OFL-1.1 notice.
 All files are unchanged upstream release files (no subsetting, no conversion), except

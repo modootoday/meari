@@ -47,3 +47,195 @@ wasm-bindgen-test = "=0.3.79"
 [[bin]]
 name = "meari-cli"
 path = "src/main.rs"
+
+[[test]]
+name = "array_intake"
+path = "tests/props/array_intake.rs"
+
+[[test]]
+name = "array_props"
+path = "tests/props/array_props.rs"
+
+[[test]]
+name = "bool_props"
+path = "tests/props/bool_props.rs"
+
+[[test]]
+name = "record_props"
+path = "tests/props/record_props.rs"
+
+[[test]]
+name = "record_predicates"
+path = "tests/props/record_predicates.rs"
+
+[[test]]
+name = "scalar_predicates"
+path = "tests/props/scalar_predicates.rs"
+
+[[test]]
+name = "mixed_node_slots"
+path = "tests/props/mixed_node_slots.rs"
+
+[[test]]
+name = "mixed_slots"
+path = "tests/props/mixed_slots.rs"
+
+[[test]]
+name = "boolean_callbacks"
+path = "tests/callbacks/boolean_callbacks.rs"
+
+[[test]]
+name = "captured_callbacks"
+path = "tests/callbacks/captured_callbacks.rs"
+
+[[test]]
+name = "host_callback_source"
+path = "tests/callbacks/host_callback_source.rs"
+
+[[test]]
+name = "selection_callbacks"
+path = "tests/callbacks/selection_callbacks.rs"
+
+[[test]]
+name = "local_actions"
+path = "tests/callbacks/local_actions.rs"
+
+[[test]]
+name = "input_source"
+path = "tests/callbacks/input_source.rs"
+
+[[test]]
+name = "client_boundary"
+path = "tests/callbacks/client_boundary.rs"
+
+[[test]]
+name = "component_state"
+path = "tests/state/component_state.rs"
+
+[[test]]
+name = "state_expressions"
+path = "tests/state/state_expressions.rs"
+
+[[test]]
+name = "state_input"
+path = "tests/state/state_input.rs"
+
+[[test]]
+name = "state_list_map"
+path = "tests/state/state_list_map.rs"
+
+[[test]]
+name = "state_media_program"
+path = "tests/state/state_media_program.rs"
+
+[[test]]
+name = "state_predicates"
+path = "tests/state/state_predicates.rs"
+
+[[test]]
+name = "state_reload"
+path = "tests/state/state_reload.rs"
+
+[[test]]
+name = "state_source"
+path = "tests/state/state_source.rs"
+
+[[test]]
+name = "hook_modules"
+path = "tests/hooks/hook_modules.rs"
+
+[[test]]
+name = "hooks"
+path = "tests/hooks/hooks.rs"
+
+[[test]]
+name = "structured_hook_source"
+path = "tests/hooks/structured_hook_source.rs"
+
+[[test]]
+name = "structured_hook_updaters"
+path = "tests/hooks/structured_hook_updaters.rs"
+
+[[test]]
+name = "web_hook_modules"
+path = "tests/hooks/web_hook_modules.rs"
+
+[[test]]
+name = "use_effect"
+path = "tests/hooks/use_effect.rs"
+
+[[test]]
+name = "source_modules"
+path = "tests/sources/source_modules.rs"
+
+[[test]]
+name = "source_schema"
+path = "tests/sources/source_schema.rs"
+
+[[test]]
+name = "repeat_source"
+path = "tests/sources/repeat_source.rs"
+
+[[test]]
+name = "jsx_text"
+path = "tests/sources/jsx_text.rs"
+
+[[test]]
+name = "roundtrip"
+path = "tests/sources/roundtrip.rs"
+
+[[test]]
+name = "execution"
+path = "tests/sources/execution.rs"
+
+[[test]]
+name = "ternary"
+path = "tests/sources/ternary.rs"
+
+[[test]]
+name = "app_bundle"
+path = "tests/platform/app_bundle.rs"
+
+[[test]]
+name = "assets"
+path = "tests/platform/assets.rs"
+
+[[test]]
+name = "hmr"
+path = "tests/platform/hmr.rs"
+
+[[test]]
+name = "font_catalog"
+path = "tests/platform/font_catalog.rs"
+
+[[test]]
+name = "icons"
+path = "tests/platform/icons.rs"
+
+[[test]]
+name = "design_system"
+path = "tests/platform/design_system.rs"
+
+[[test]]
+name = "package_boundary"
+path = "tests/platform/package_boundary.rs"
+
+[[test]]
+name = "media"
+path = "tests/environment/media.rs"
+
+[[test]]
+name = "media_state"
+path = "tests/environment/media_state.rs"
+
+[[test]]
+name = "responsive"
+path = "tests/environment/responsive.rs"
+
+[[test]]
+name = "dom"
+path = "tests/environment/dom.rs"
+
+[[test]]
+name = "host_environment"
+path = "tests/environment/host_environment.rs"

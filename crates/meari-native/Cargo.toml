@@ -25,7 +25,7 @@ window = ["dep:blitz-shell", "dep:winit", "dep:accesskit_xplat", "anyrender_vell
 
 [[test]]
 name = "bundled_font_catalog"
-path = "tests/bundled_font_catalog.rs"
+path = "tests/pages/bundled_font_catalog.rs"
 required-features = ["bundled-fonts"]
 
 [dependencies]
@@ -72,3 +72,131 @@ rfd = { version = "=0.17.2", default-features = false, features = ["xdg-portal"]
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "=0.62.2", features = ["Win32_Graphics_Gdi", "Win32_UI_Accessibility", "Win32_UI_WindowsAndMessaging", "Win32_System_Com", "Win32_System_Ole", "Win32_System_Variant", "Win32_System_LibraryLoader"] }
+
+[[test]]
+name = "asset_document"
+path = "tests/rendering/asset_document.rs"
+
+[[test]]
+name = "custom_styles"
+path = "tests/rendering/custom_styles.rs"
+
+[[test]]
+name = "engine"
+path = "tests/rendering/engine.rs"
+
+[[test]]
+name = "html_progress"
+path = "tests/rendering/html_progress.rs"
+
+[[test]]
+name = "ring_shadow"
+path = "tests/rendering/ring_shadow.rs"
+
+[[test]]
+name = "overflow_scroll"
+path = "tests/rendering/overflow_scroll.rs"
+
+[[test]]
+name = "input_intrinsic_width"
+path = "tests/pages/input_intrinsic_width.rs"
+
+[[test]]
+name = "input_placeholder"
+path = "tests/pages/input_placeholder.rs"
+
+[[test]]
+name = "icons"
+path = "tests/pages/icons.rs"
+
+[[test]]
+name = "screen"
+path = "tests/pages/screen.rs"
+
+[[test]]
+name = "kitchen_sink"
+path = "tests/pages/kitchen_sink.rs"
+
+[[test]]
+name = "composites"
+path = "tests/widgets/composites.rs"
+
+[[test]]
+name = "events_accessibility"
+path = "tests/widgets/events_accessibility.rs"
+
+[[test]]
+name = "file_and_toggles"
+path = "tests/widgets/file_and_toggles.rs"
+
+[[test]]
+name = "groups"
+path = "tests/widgets/groups.rs"
+
+[[test]]
+name = "range_input"
+path = "tests/widgets/range_input.rs"
+
+[[test]]
+name = "source_input"
+path = "tests/sources/source_input.rs"
+
+[[test]]
+name = "source_modules"
+path = "tests/sources/source_modules.rs"
+
+[[test]]
+name = "source_reload"
+path = "tests/sources/source_reload.rs"
+
+[[test]]
+name = "source_state"
+path = "tests/sources/source_state.rs"
+
+[[test]]
+name = "node_slots"
+path = "tests/sources/node_slots.rs"
+
+[[test]]
+name = "hook_modules"
+path = "tests/hooks/hook_modules.rs"
+
+[[test]]
+name = "media_state"
+path = "tests/hooks/media_state.rs"
+
+[[test]]
+name = "state_list_map"
+path = "tests/hooks/state_list_map.rs"
+
+[[test]]
+name = "ternary"
+path = "tests/hooks/ternary.rs"
+
+[[test]]
+name = "use_effect"
+path = "tests/hooks/use_effect.rs"
+
+[[test]]
+name = "use_reducer"
+path = "tests/hooks/use_reducer.rs"
+
+[[test]]
+name = "host_window"
+path = "tests/windowing/host_window.rs"
+
+[[test]]
+name = "retained_observation"
+path = "tests/windowing/retained_observation.rs"
+
+[[test]]
+name = "startup_facade"
+path = "tests/windowing/startup_facade.rs"
+
+[[test]]
+name = "window_user_close"
+path = "tests/windowing/window_user_close.rs"
+
+[[test]]
+name = "window_user_close_os"
+path = "tests/windowing/window_user_close_os.rs"
