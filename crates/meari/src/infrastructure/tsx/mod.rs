@@ -219,8 +219,8 @@ fn jsx_children(input: &[JSXChild<'_>]) -> Result<Vec<Node>, Diagnostic> {
                     c.expression.as_expression()
                 {
                     children.extend(repeat::nodes(expression)?);
-                } else if let Some(node) = conditional::node(c.expression.as_expression())? {
-                    children.push(node);
+                } else if let Some(nodes) = conditional::nodes(c.expression.as_expression())? {
+                    children.extend(nodes);
                 } else {
                     children.push(Node {
                         kind: NodeKind::Text(jsx_value(&c.expression)?),
