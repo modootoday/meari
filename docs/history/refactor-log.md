@@ -1,0 +1,38 @@
+# Meari 구조 리팩터링 로그 (2026-10-29 KST, box Linux)
+
+승인: 사용자 "권고대로 진행" (Q1 import 커밋 1개, Q2 wip patch 별도 브랜치 검토, Q3 meari-cli 단일 바이너리, Q4 공통 lint는 우선 meari xtask → 추후 컨벤션 크레이트 분리).
+원격 push 없음(push URL DISABLED 유지). Windows 빌드/실행은 **미검증** — 추후 GitHub Actions 매트릭스로 검증.
+
+## 브랜치/커밋
+- `import/canonical-from-kinekino` @ ea81d39: B(/workspace/oink-player/packages/meari) 564개 파일을 A(26805a9) 위 import 커밋 1개로 반영. HANDOFF 기준 base 0844f6c(이 저장소 이력에 없음). A 전용 meari-native/src/{main.rs,bin} 삭제.
+- `refactor/crates-layout`:
+  - 4baaa1e packages/ → crates/ (git mv), 경로 참조 갱신, meari-paint 정식 멤버화(독립 [workspace] 제거, blitz-paint patch 유지).
+  - dc53ada Linux rfd 백엔드(xdg-portal) 선택, 비루트 resolver 제거 → Linux `cargo check --workspace` 통과.
+  - 895ef80 모듈 스타일 `foo/mod.rs` 통일(77곳 중 67곳). tests/ 최상위 테스트 타깃 10곳은 Cargo 자동탐색 때문에 보류(→ tests/<맥락>/main.rs 재편 단계에서 처리).
+  - (이 커밋) xtask lint-structure 초안, rust-toolchain.toml, 본 로그.
+- `wip/review-tracked-patch` = import 커밋. 패치 미적용.
+
+## 검증 (Linux, toolchain 1.99.1, jobs=1)
+- fmt --check: 통과 / check --workspace(--all-targets): 통과 / clippy --workspace --all-targets: 통과(경고 소수, -D 미적용)
+- test --workspace: 실패 2건(구조 변경과 무관, import 원본 상태 그대로):
+  - meari `package_boundary::package_license_and_notice_copies_preserve_original_bytes` — crates/meari/NOTICE가 루트 NOTICE와 다름(Lucide/Pretendard 문구 추가분)
+  - meari `mixed_slots::source_reference_changes_are_not_stable_placements...` — child_placement::plan이 Err를 기대했으나 Ok
+- Windows: 미실행.
+
+## box 환경 메모 (저장소 외부)
+- apt 저장소 접근 불가(500/unsigned) → pkg-config, *-dev 미설치. `runtime/sysshim`(git 제외)에 pkg-config 셈과 lib*.so 심볼릭 링크로 우회. `. runtime/env.sh` 후 빌드.
+- .cargo/config.toml target-dir이 ../../runtime(저장소 밖)을 가리키므로 CARGO_TARGET_DIR=runtime/build-cache/target 로 덮어씀.
+
+## wip patch (docs/continuation/wip/meari-tracked.patch, oink-player 루트에 위치)
+- `git apply --check`: 27/27 파일 실패. `git apply --check -R`: 성공 → **이미 B(import 커밋)에 반영된 상태**. 추가 적용 불필요, 담당 확인만 필요.
+
+## 남은 위반 (cargo xtask lint-structure)
+- 직속 .rs > 8: 8곳 (meari/tests 50, meari-native/tests 29, native/infrastructure 24, meari/domain 22, native/docs 15, web_document 12, meari/application 11, meari-paint/src 9)
+- 600줄 초과: 21개 (최대 meari-paint render/mod.rs 1395)
+- 금지 이름: 1 (meari-native/tests/shared_font_catalog.rs)
+- x.rs + x/ 병존: 10 (tests 최상위 타깃)
+
+## 다음 단계 (미착수)
+meari-platform 분리(cfg 격리), core/web/builder 분할, meari-cli 통합(Q3), tests/<맥락>/main.rs 재편, 800줄 분해, xtask --strict CI 강제.
+Actions 매트릭스(문서만): ubuntu-latest + windows-latest × {fmt --check, clippy -D warnings, test, xtask lint-structure}.
+Q4 분리 계획: xtask/src/structure → 별도 `modoo-conventions`(가칭) 크레이트로 추출, kinekino·meari가 동일 git rev 고정.

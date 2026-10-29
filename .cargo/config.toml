@@ -6,3 +6,6 @@ incremental = false
 [env]
 TMP = { value = "../../runtime/build-cache/tmp", relative = true, force = true }
 TEMP = { value = "../../runtime/build-cache/tmp", relative = true, force = true }
+
+[alias]
+xtask = "run --package xtask --"
