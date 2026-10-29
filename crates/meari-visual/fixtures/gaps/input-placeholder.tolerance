@@ -1,2 +1,0 @@
-max_ratio=0.001
-reason=Strict limit: the placeholder glyphs cover few pixels, so the default 0.5% would hide that Native does not paint ::placeholder (blitz has no placeholder rendering). Measured 0.372% with the placeholder missing.

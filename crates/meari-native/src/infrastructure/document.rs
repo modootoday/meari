@@ -190,7 +190,7 @@ impl InteractiveDocument {
             .ok_or("missing stylesheet node")?;
         {
             let mut mutation = renderer.document.mutate();
-            let text = mutation.create_text_node(css);
+            let text = mutation.create_text_node(&super::placeholder_css::project(css));
             mutation.append_children(style_id, &[text]);
         }
         renderer.document.upsert_stylesheet_for_node(style_id);
@@ -284,7 +284,7 @@ impl InteractiveDocument {
             .ok_or("missing stylesheet node")?;
         {
             let mut mutation = self.renderer.document.mutate();
-            let text = mutation.create_text_node(css);
+            let text = mutation.create_text_node(&super::placeholder_css::project(css));
             mutation.replace_children(style, &[text]);
         }
         self.renderer.document.upsert_stylesheet_for_node(style);

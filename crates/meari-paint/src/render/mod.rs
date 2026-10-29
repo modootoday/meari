@@ -46,6 +46,14 @@ use peniko::{self, Fill, ImageData, ImageSampler};
 use style::values::generics::color::GenericColor;
 use taffy::Layout;
 
+thread_local! {
+    /// Text contexts for placeholder layout; system fonts only.
+    static PLACEHOLDER_CONTEXT: RefCell<(
+        parley::FontContext,
+        parley::LayoutContext<blitz_dom::node::TextBrush>,
+    )> = RefCell::new((parley::FontContext::new(), parley::LayoutContext::new()));
+}
+
 /// A view of the track positions reported by taffy in physical (left-to-right /
 /// top-to-bottom) order. Taffy reports tracks in logical order, which for RTL grid
 /// containers is physically reversed.
@@ -1011,6 +1019,11 @@ impl ElementCx<'_, '_> {
                 };
             }
 
+            if input_data.editor.raw_text().is_empty() {
+                self.draw_placeholder(scene, input_data, transform);
+                return;
+            }
+
             // Render text
             let mut draw_text_context = self.context.draw_text_context.borrow_mut();
             crate::text::stroke_text(
@@ -1023,6 +1036,51 @@ impl ElementCx<'_, '_> {
                 &mut draw_text_context,
             );
         }
+    }
+
+    /// Paint the `placeholder` attribute of an empty text input. Its colour is the
+    /// host's `text-decoration-color`, onto which meari-native projects `::placeholder`
+    /// rules (stylo never cascades that lazy pseudo-element).
+    fn draw_placeholder(
+        &self,
+        scene: &mut impl PaintScene,
+        input_data: &blitz_dom::node::TextInputData,
+        transform: Affine,
+    ) {
+        let Some(text) = self
+            .node
+            .attr(local_name!("placeholder"))
+            .filter(|t| !t.is_empty())
+        else {
+            return;
+        };
+        let color = self.style.get_inherited_text().color;
+        let color = self
+            .style
+            .get_text()
+            .text_decoration_color
+            .resolve_to_absolute(&color)
+            .as_srgb_color();
+        let mut editor = input_data.editor.clone();
+        editor.set_text(text);
+        PLACEHOLDER_CONTEXT.with_borrow_mut(|(font_cx, layout_cx)| {
+            editor.refresh_layout(font_cx, layout_cx);
+        });
+        let Some(layout) = editor.try_layout() else {
+            return;
+        };
+        let mut draw_text_context = self.context.draw_text_context.borrow_mut();
+        draw_text_context.color_override = Some(color);
+        crate::text::stroke_text(
+            scene,
+            layout.lines(),
+            self.context.dom,
+            transform,
+            self.scale,
+            self.node.id,
+            &mut draw_text_context,
+        );
+        draw_text_context.color_override = None;
     }
 
     fn draw_marker(&self, scene: &mut impl PaintScene, pos: Point) {
