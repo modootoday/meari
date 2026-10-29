@@ -23,7 +23,7 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
     };
     let target = std::env::var_os("CARGO_TARGET_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| root.join("runtime/build-cache/target")); // mirrors .cargo/config.toml build.target-dir
+        .unwrap_or_else(|| root.join("../.cargo-target")); // mirrors .cargo/config.toml build.target-dir
     let before = size(&target);
     let mut cleaner = Cleaner {
         dry_run: options.dry_run,

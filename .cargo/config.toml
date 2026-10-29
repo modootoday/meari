@@ -1,6 +1,8 @@
 [build]
-# Relative to the repo root (parent of .cargo/). Worktrees get their own cache; set CARGO_TARGET_DIR to share.
-target-dir = "runtime/build-cache/target"
+# One target dir shared by every repo and worktree under the same parent
+# (box: /workspace/.cargo-target). Relative to the repo root, so it means the
+# same on Linux and Windows; CARGO_TARGET_DIR overrides it per machine.
+target-dir = "../.cargo-target"
 jobs = 1
 incremental = false # replaces CARGO_INCREMENTAL=0 from runtime/env.sh
 
