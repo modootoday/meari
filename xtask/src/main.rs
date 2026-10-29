@@ -1,6 +1,7 @@
 //! Meari development tasks.
 //! Usage: `cargo xtask lint-structure [--strict]` | `cargo xtask visual-test [--out DIR] [...]` | `cargo xtask spec-check [...]` | `cargo xtask demo [FIXTURE] [...]`.
 
+mod clean_cache;
 mod spec_check;
 mod structure;
 
@@ -26,10 +27,14 @@ fn main() -> ExitCode {
             run_package("meari-visual", &args[1..])
         }
         Some("spec-check") => spec_check::run(&args[1..]),
+        Some("clean-cache") => clean_cache::run(
+            &args[1..],
+            &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(".."),
+        ),
         Some("demo") => run_package("meari-demo", &args[1..]),
         _ => {
             eprintln!(
-                "usage: cargo xtask lint-structure [--strict] | cargo xtask visual-test [--out DIR] | cargo xtask spec-check [ARGS] | cargo xtask demo [FIXTURE] [--list] [--seconds N]"
+                "usage: cargo xtask lint-structure [--strict] | cargo xtask visual-test [--out DIR] | cargo xtask spec-check [ARGS] | cargo xtask clean-cache [--max-gb N] [--older-days D] [--dry-run] | cargo xtask demo [FIXTURE] [--list] [--seconds N]"
             );
             ExitCode::from(2)
         }
