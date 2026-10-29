@@ -17,7 +17,7 @@ rel:
 
 
 Evidence: `cargo xtask visual-test` (Native blitz/vello_cpu offscreen vs headless Chrome, same Tailwind v4.3.3 CSS).
-Fixtures in `crates/meari-visual/fixtures/{supported,gaps}`. Last run 2026-10-30: 47 MATCH, 0 MISMATCH, 1 KNOWN-GAP (48 fixtures).
+Fixtures in `crates/meari-visual/fixtures/{supported,gaps}`. Last run 2026-10-30: 48 MATCH, 0 MISMATCH, 0 KNOWN-GAP (48 fixtures).
 This is automated pixel comparison only; **no human visual check, no Windows, no real wasm-bindgen glue run**.
 
 ### Tailwind
@@ -40,7 +40,7 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | scrollbars | 구현됨 (overlay, Chromium fade timing, thumb drag tested); visual test compares the idle frame with Chrome `--hide-scrollbars` — classic 15px Chrome scrollbars are not reproduced. 방침(2026-10-30): 비교 기준은 overlay(Chrome `--hide-scrollbars` idle frame)로 고정한다. 근거: meari native는 overlay 스크롤바(Chromium fade)를 정본으로 구현하고, classic 15px gutter는 layout width를 바꾸는 별도 모드라 정본이 아니다. classic 모드는 미구현으로 남긴다 | overflow_scroll.rs (opacity, thumb drag) |
 | dark mode | 구현됨 | dark-tw-dark-mode, dark-scheme |
 | state variants (hover/focus/disabled) | 구현됨 | tw-state-variants |
-| `group-*` / `peer-*` variants | 부분: `group-hover:*` (idle frame), `group-[.cls]:*`, `peer-[.cls]:*` MATCH (1.271%, glyph AA tolerance 1.3% with bbox evidence). `peer-checked:*` with `defaultChecked` is a KNOWN-GAP: native checkbox does not paint/match `:checked` from the `checked` attribute (web shows checked box + blue label, native neither) | supported/tw-group-peer, gaps/tw-peer-checked |
+| `group-*` / `peer-*` variants | 부분: `group-hover:*` (idle frame), `group-[.cls]:*`, `peer-[.cls]:*` MATCH (1.271%, glyph AA tolerance 1.3% with bbox evidence). `peer-checked:*` with host `<input defaultChecked>` MATCH 0.350% at default 0.5% (defaultChecked → `checked` attribute seeds `:checked`) | supported/tw-group-peer, supported/tw-peer-checked |
 | transition / animation | 방침: 정적 비교만. Static render has no running timeline, so the comparison is the start state (= end state for hover-triggered transitions with no hover); `transition-*`/`duration-*` parse and are inert. `animate-spin/ping/pulse/bounce`: native does not run keyframes; not pixel-compared (frame 0 vs Chrome frame depends on capture time) — 미구현으로 기록 | (no fixture by design) |
 | indeterminate `<progress>` (no `value`) | 방침: 미지원 비교. Chrome animates the indeterminate bar, so no deterministic frame exists; native paints the empty track. Only determinate `value`/`max` is MATCH | supported/html-progress |
 | generic `sans-serif`/`serif` family | 구현됨: 정본은 Pretendard Variable (+JP Regular/Bold) / Source Serif 4 + Source Han Serif KR (Web: Meari Serif KR slices) (sot:meari/fonts); Chrome 비교 경로만 Chromium Linux defaults (Arimo/Tinos 호스트 폴백, 0.866% glyph AA) | supported/generic-font-family, supported/canonical-font |
@@ -118,7 +118,7 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | react-use-reducer | supported | MATCH | 0.042% | 0.500% | meari-native tests/hooks/use_reducer.rs |
 | react-use-reducer-switch | supported | MATCH | 0.410% | 0.500% | meari-native tests/hooks/use_reducer.rs |
 | tw-group-peer | supported | MATCH | 1.271% | 1.300% | visual-test pixel diff (bbox equal) |
-| tw-peer-checked | gap | KNOWN-GAP | 0.738% | 0.500% | native checkbox `:checked` not painted |
+| tw-peer-checked | supported | MATCH | 0.350% | 0.500% | fixed 2026-10-30 |
 
 ### Official React / Tailwind docs examples not covered
 Inventory 2026-10-30 (react.dev Learn/Reference, tailwindcss.com docs). Order = 영향 큰 순, status as of this run:
@@ -128,7 +128,7 @@ Inventory 2026-10-30 (react.dev Learn/Reference, tailwindcss.com docs). Order = 
 - React "Synchronizing with Effects" (deps, cleanup): 미구현 (see table).
 - React useRef (focus input, counter ref), useContext ("Passing Data Deeply with Context"): 미구현.
 - React custom hooks, async data fetching, Suspense/lazy, portals, forwardRef: 미구현.
-- Tailwind `group-*`/`peer-*`: 처리됨 except `peer-checked` (gap fixture).
+- Tailwind `group-*`/`peer-*`: 처리됨 (`peer-checked` 포함, 2026-10-30).
 - Tailwind transitions/animations, indeterminate progress, 15px classic scrollbars: 방침 기록 (see table), not pixel-compared.
 - Tailwind `backdrop-blur`/filters, container queries (`@container`), print/motion-reduce media: 미확인 (no fixture yet).
 - The web reference is meari's own static render projected in headless Chrome, not live React DOM; useEffect/state behaviour equals React's committed state by construction, not by running React.
