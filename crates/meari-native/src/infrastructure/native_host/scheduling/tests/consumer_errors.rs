@@ -1,101 +1,7 @@
+//! Split from the parent module to keep files under the 600-line structure limit.
 use super::*;
-use crate::{
-    application::window_lifecycle::*,
-    domain::Viewport,
-    infrastructure::{document::InteractiveDocument, native_host::*},
-};
-use std::{cell::RefCell, fmt, rc::Rc, task::Waker};
-#[derive(Debug)]
-struct Failure(u64);
-impl fmt::Display for Failure {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "canonical {}", self.0)
-    }
-}
-impl std::error::Error for Failure {}
-#[derive(Default)]
-struct Control {
-    after_error: Option<u64>,
-    wait: bool,
-    fail_close: bool,
-    unavailable_close: bool,
-    closes: usize,
-    close_observations: usize,
-    hints: usize,
-}
-struct Host(Rc<RefCell<Control>>);
-impl NativeWindowHost for Host {
-    type Error = Failure;
-    type CloseCheckpoint = ();
-    fn admit_callback(
-        &mut self,
-        _: &HostStamp,
-        _: &meari::application::host_callbacks::PendingCallback,
-    ) -> IntentAdmission<Failure> {
-        panic!("no callback")
-    }
-    fn after_dispatch(&mut self, _: HostTurn) -> Result<HostEffects, Failure> {
-        if let Some(value) = self.0.borrow().after_error {
-            Err(Failure(value))
-        } else {
-            Ok(HostEffects::default())
-        }
-    }
-    fn retry_after_dispatch(&self, error: &Failure) -> Option<HostRetry> {
-        (error.0 == 41).then_some(HostRetry::OnWake)
-    }
-    fn close(&mut self, _: CloseRequest<()>) -> CloseDecision<(), Failure> {
-        let mut state = self.0.borrow_mut();
-        state.closes += 1;
-        if state.unavailable_close {
-            CloseDecision::ObservationUnavailable {
-                checkpoint: (),
-                error: Failure(84),
-            }
-        } else if state.fail_close {
-            CloseDecision::RetryableFailure {
-                checkpoint: (),
-                error: Failure(82),
-            }
-        } else if state.wait {
-            CloseDecision::Pending { checkpoint: () }
-        } else {
-            CloseDecision::HostCleanupComplete { checkpoint: () }
-        }
-    }
-    fn next_close_observation(&self, _: &()) -> HostRetry {
-        self.0.borrow_mut().hints += 1;
-        HostRetry::After(Duration::from_millis(5))
-    }
-    fn observe_close(&mut self, request: CloseRequest<()>) -> CloseDecision<(), Failure> {
-        self.0.borrow_mut().close_observations += 1;
-        self.close(request)
-    }
-}
-fn document() -> NativeDocumentHandle {
-    let source = meari::parse(
-        "type Props={};export function App(props:Props){return <main>Schedule</main>;}",
-        meari::application::Language::Tsx,
-    )
-    .unwrap();
-    NativeDocumentHandle::new(
-        InteractiveDocument::new(
-            source,
-            "",
-            Viewport {
-                width: 320,
-                height: 240,
-                dark: false,
-            },
-        )
-        .unwrap(),
-        1,
-    )
-    .unwrap()
-}
-fn limits() -> HostScheduleLimits {
-    HostScheduleLimits::new(Duration::from_millis(2), Duration::from_secs(1), 3).unwrap()
-}
+use std::{cell::RefCell, rc::Rc, task::Waker};
+
 #[test]
 fn consumer_error_is_retained_without_string_based_retry_classification() {
     let control = Rc::new(RefCell::new(Control {
@@ -112,6 +18,7 @@ fn consumer_error_is_retained_without_string_based_retry_classification() {
     assert_eq!(runtime.turn_retry, None);
     assert_eq!(runtime.last_host_error().unwrap().0, 99);
 }
+
 #[test]
 fn pending_is_schedulable_but_true_failure_does_not_consult_a_retry_hint() {
     let control = Rc::new(RefCell::new(Control {
@@ -140,38 +47,7 @@ fn pending_is_schedulable_but_true_failure_does_not_consult_a_retry_hint() {
     assert!(runtime.observe_close(CloseCause::Host).is_err());
     assert_eq!(control.borrow().closes, closes);
 }
-#[derive(Clone)]
-struct Clock;
-impl MonotonicClock for Clock {
-    fn now(&self) -> Duration {
-        Duration::ZERO
-    }
-}
-#[derive(Default)]
-struct ChildState {
-    done: bool,
-    signal: Option<CompletionSignal>,
-}
-struct Child(Rc<RefCell<ChildState>>);
-impl NativeChild for Child {
-    type Error = std::io::Error;
-    fn parent_lost(&mut self) {}
-    fn begin_cleanup(
-        &mut self,
-        _: CleanupRequest,
-        signal: CompletionSignal,
-    ) -> Result<CleanupProgress, Self::Error> {
-        self.0.borrow_mut().signal = Some(signal);
-        Ok(CleanupProgress::Pending)
-    }
-    fn observe_cleanup(&mut self, _: CleanupRequest) -> Result<CleanupProgress, Self::Error> {
-        Ok(if self.0.borrow().done {
-            CleanupProgress::Complete
-        } else {
-            CleanupProgress::Pending
-        })
-    }
-}
+
 #[test]
 fn child_first_barrier_defers_host_deadline_until_the_actual_host_checkpoint_exists() {
     let children = Rc::new(
@@ -214,67 +90,12 @@ fn child_first_barrier_defers_host_deadline_until_the_actual_host_checkpoint_exi
     );
     assert_eq!(control.borrow().closes, 1);
 }
+
 #[test]
 fn legacy_constructor_keeps_timed_observation_opt_in() {
     let runtime =
         NativeHostRuntime::new(document(), Host(Rc::new(RefCell::new(Control::default()))));
     assert!(runtime.schedule_limits.is_none());
-}
-
-#[derive(Default)]
-struct ObservationState {
-    done: bool,
-    fail_once: bool,
-    pending: bool,
-    starts: usize,
-    observations: usize,
-    dropped: usize,
-    signal: Option<CompletionSignal>,
-}
-struct ObservationChild {
-    state: Rc<RefCell<ObservationState>>,
-    diagnostic: Failure,
-}
-impl Drop for ObservationChild {
-    fn drop(&mut self) {
-        self.state.borrow_mut().dropped += 1;
-    }
-}
-impl NativeChild for ObservationChild {
-    type Error = Failure;
-    fn parent_lost(&mut self) {}
-    fn begin_cleanup(
-        &mut self,
-        _: CleanupRequest,
-        signal: CompletionSignal,
-    ) -> Result<CleanupProgress, Failure> {
-        let mut state = self.state.borrow_mut();
-        state.starts += 1;
-        state.signal = Some(signal);
-        if state.fail_once {
-            state.fail_once = false;
-            return Err(Failure(99));
-        }
-        Ok(if state.pending {
-            CleanupProgress::Pending
-        } else {
-            CleanupProgress::ObservationUnavailable
-        })
-    }
-    fn observe_cleanup(&mut self, _: CleanupRequest) -> Result<CleanupProgress, Failure> {
-        let mut state = self.state.borrow_mut();
-        state.observations += 1;
-        Ok(if state.done {
-            CleanupProgress::Complete
-        } else if state.pending {
-            CleanupProgress::Pending
-        } else {
-            CleanupProgress::ObservationUnavailable
-        })
-    }
-    fn observation_error(&self) -> Option<&Failure> {
-        Some(&self.diagnostic)
-    }
 }
 
 #[test]
@@ -537,78 +358,4 @@ fn private_port_retains_initial_explicit_close_across_actual_runtime_borrow_conf
         runtime.borrow().document().lifecycle(),
         HostLifecycle::Closed
     );
-}
-
-#[test]
-#[cfg(feature = "window")]
-fn private_port_consumes_busy_explicit_retry_once_without_promoting_later_wakes() {
-    let children = Rc::new(
-        WindowLifecycle::new(
-            LifecycleLimits::new(2, Duration::from_secs(1)).unwrap(),
-            Clock,
-            Waker::noop().clone(),
-        )
-        .unwrap(),
-    );
-    let ready = children.ready(ReadyKind::NewWindow).unwrap();
-    let unknown = Rc::new(RefCell::new(ObservationState::default()));
-    let failed = Rc::new(RefCell::new(ObservationState {
-        fail_once: true,
-        pending: true,
-        ..Default::default()
-    }));
-    children
-        .register(ready, |_| {
-            Ok(ObservationChild {
-                state: unknown.clone(),
-                diagnostic: Failure(17),
-            })
-        })
-        .unwrap();
-    children
-        .register(ready, |_| {
-            Ok(ObservationChild {
-                state: failed.clone(),
-                diagnostic: Failure(18),
-            })
-        })
-        .unwrap();
-    let runtime = Rc::new(RefCell::new(NativeHostRuntime::with_schedule_limits(
-        document(),
-        ChildWindowHost::new(Host(Rc::new(RefCell::new(Control::default()))), children),
-        limits(),
-    )));
-    let port = crate::infrastructure::native_host::window_port::port(runtime.clone()).unwrap();
-    assert_eq!(
-        port.close(CloseCause::Host, true).unwrap().0,
-        HostCloseStatus::ObservationUnavailable
-    );
-    let original = unknown.borrow().signal.as_ref().unwrap().stamp();
-    let guard = runtime.borrow_mut();
-    assert_eq!(
-        port.close(CloseCause::Host, true).unwrap_err().error,
-        HostAccessError::Busy
-    );
-    assert_eq!(
-        port.close(CloseCause::Host, true).unwrap_err().error,
-        HostAccessError::Busy
-    );
-    drop(guard);
-    // A second terminal failure makes accidental repeated explicit consumption observable.
-    failed.borrow_mut().fail_once = true;
-    assert_eq!(
-        port.close(CloseCause::Host, false).unwrap().0,
-        HostCloseStatus::ObservationUnavailable
-    );
-    assert_eq!((unknown.borrow().starts, failed.borrow().starts), (1, 2));
-    for _ in 0..4 {
-        port.close(CloseCause::Host, false).unwrap();
-    }
-    assert_eq!((unknown.borrow().starts, failed.borrow().starts), (1, 2));
-    assert_eq!(unknown.borrow().signal.as_ref().unwrap().stamp(), original);
-    assert_eq!(
-        runtime.borrow().document().lifecycle(),
-        HostLifecycle::Closing
-    );
-    assert_eq!(runtime.borrow().close_retry, Some(HostRetry::OnWake));
 }
