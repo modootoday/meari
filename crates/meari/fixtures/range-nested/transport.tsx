@@ -1,0 +1,3 @@
+import {useId} from 'react';
+type Props={value:string;preview:string;positionLabel:string;durationLabel:string;disabled:boolean;onDraft:(value:string)=>void;onCommit:(value:string)=>void};
+export function Transport(props:Props){const field=useId();return <div aria-label="transport"><label id="range-label" htmlFor={field}>Seek</label><input id={field} aria-label="nested-range" type="range" min="0" max="100" step="10" value={props.value} disabled={props.disabled} onChange={event=>props.onDraft(event.currentTarget.value)} onValueCommit={props.onCommit}/><span id="preview">{props.preview}</span><span id="position">{props.positionLabel}</span><span id="duration">{props.durationLabel}</span></div>}

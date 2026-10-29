@@ -1,0 +1,20 @@
+This project is licensed under MIT OR Apache-2.0, as declared in Cargo.toml.
+Dependencies retain their own copyrights and licenses. Cargo.lock records
+resolved package versions; no dependency source is relicensed by this notice.
+
+The native CSS engine includes Stylo and Stylo traits, whose published package
+metadata declares MPL-2.0. This project's dual license does not replace it.
+The CPU renderer uses AnyRender/Vello CPU; the optional GL adapter uses published
+Rust interfaces to external Skia. Native system-font lookup is enabled.
+Redistributed executable bundles require their own complete dependency and
+font/asset license review before release.
+
+Collected upstream examples, internal research, generated captures, local
+compiler executables and runtime downloads are not public source assets.
+Library-authored fixtures and canonical SVG icons remain part of the source.
+
+packages/meari-paint retains the published blitz-paint 0.3.0-beta.4 Rust source
+from DioxusLabs/blitz revision 92b11f1bd8ab7975411328b0406a95a09445b4e7.
+Its original MIT OR Apache-2.0 license texts are included in that directory.
+Meari's vector SVG tiling and checked-frame modifications are identified in
+the changed source files and its README; this is a local implementation fork.

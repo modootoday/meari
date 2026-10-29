@@ -1,0 +1,11 @@
+[build]
+target-dir = "../../runtime/build-cache/meari-native"
+jobs = 1
+incremental = false
+
+[env]
+TMP = { value = "../../runtime/build-cache/tmp", relative = true, force = true }
+TEMP = { value = "../../runtime/build-cache/tmp", relative = true, force = true }
+
+[alias]
+xtask = "run --package xtask --"

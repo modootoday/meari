@@ -334,6 +334,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a814bfd3ad19e6d8d26f99c75188062baca499564f9abe44250230962427d183"
 dependencies = [
  "accesskit",
+ "anyrender",
  "app_units",
  "atomic_refcell",
  "bitflags 2.13.2",
@@ -389,8 +390,6 @@ dependencies = [
 [[package]]
 name = "blitz-paint"
 version = "0.3.0-beta.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28803328124d7b7ea5f8f41501513ccb005559e9f6baf33fa0c1fb7612654a93"
 dependencies = [
  "anyrender",
  "anyrender_svg",
@@ -406,6 +405,7 @@ dependencies = [
  "smallvec",
  "stylo",
  "taffy",
+ "tracing",
  "usvg",
 ]
 
@@ -2009,12 +2009,26 @@ dependencies = [
  "oxc_span",
  "oxc_syntax",
  "proc-macro2",
+ "ryu-js",
  "serde",
  "serde_json",
+ "sha2",
  "syn 2.0.117",
  "wasm-bindgen",
  "wasm-bindgen-test",
  "web-sys",
+]
+
+[[package]]
+name = "meari-builder"
+version = "0.1.0"
+dependencies = [
+ "getrandom",
+ "meari",
+ "meari-native",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]
@@ -2035,6 +2049,7 @@ dependencies = [
  "dioxus-shadcn-primitives",
  "glow",
  "glutin",
+ "image",
  "keyboard-types",
  "meari",
  "oxc_allocator",
@@ -2045,14 +2060,34 @@ dependencies = [
  "raw-window-handle",
  "regex",
  "rfd",
+ "roxmltree 0.21.1",
  "serde",
  "serde_json",
  "sha2",
  "skia-safe",
  "stylo",
  "stylo_traits",
+ "ttf-parser",
+ "usvg",
  "windows",
  "winit",
+]
+
+[[package]]
+name = "meari-native-tools"
+version = "0.1.0"
+dependencies = [
+ "meari-native",
+]
+
+[[package]]
+name = "meari-visual"
+version = "0.1.0"
+dependencies = [
+ "meari",
+ "meari-native",
+ "png",
+ "serde_json",
 ]
 
 [[package]]
@@ -2949,6 +2984,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "pollster"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f3a9f18d041e6d0e102a0a46750538147e5e8992d3b4873aaafee2520b00ce3"
+
+[[package]]
 name = "polycool"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3160,6 +3201,7 @@ dependencies = [
  "objc2-core-foundation",
  "objc2-foundation 0.3.2",
  "percent-encoding",
+ "pollster",
  "raw-window-handle",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -3228,6 +3270,12 @@ name = "rustversion"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
+
+[[package]]
+name = "ryu-js"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04d056b875a9d2e6cb9a61d127afee9ac5999b9f87bcb32079d1318e505be714"
 
 [[package]]
 name = "same-file"
@@ -4086,7 +4134,19 @@ checksum = "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100"
 dependencies = [
  "log",
  "pin-project-lite",
+ "tracing-attributes",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-attributes"
+version = "0.1.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7490cfa5ec963746568740651ac6781f701c9c5ea257c58e057f3ba8cf69e8da"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]
@@ -5082,6 +5142,10 @@ name = "xmlwriter"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
+
+[[package]]
+name = "xtask"
+version = "0.1.0"
 
 [[package]]
 name = "yeslogic-fontconfig-sys"

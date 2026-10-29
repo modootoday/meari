@@ -1,0 +1,2 @@
+max_ratio=0.016
+reason=glyph rasterization only (vello_cpu vs Skia anti-aliasing); layout identical: element bboxes equal and no ±2px shift lowers the diff; Chrome --disable-lcd-text / --font-render-hinting=full no change, --disable-font-subpixel-positioning worse (0.969% on heading-text); see docs/history/refactor-log.md. Measured 1.430% on 2026-10-29.

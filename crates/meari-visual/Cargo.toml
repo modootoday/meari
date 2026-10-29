@@ -1,0 +1,13 @@
+[package]
+name = "meari-visual"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "MIT OR Apache-2.0"
+description = "Visual regression harness: same TSX fixture rendered by meari-native (offscreen CPU) and by the Web DOM plan in headless Chrome, compared pixel by pixel."
+
+[dependencies]
+meari = { workspace = true }
+meari-native = { path = "../meari-native", version = "0.1.0" }
+png = "=0.18.1"
+serde_json = "1"
