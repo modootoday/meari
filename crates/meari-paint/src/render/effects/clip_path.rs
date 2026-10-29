@@ -1,4 +1,4 @@
-use super::ElementCx;
+use crate::render::ElementCx;
 use kurbo::{BezPath, Circle, Ellipse, Point, Rect, Shape, SvgArc, Vec2};
 use style::values::computed::basic_shape::{BasicShape, ClipPath};
 use style::values::computed::{Angle, CSSPixelLength, LengthPercentage};
@@ -13,7 +13,7 @@ impl ElementCx<'_, '_> {
     /// Compute the rectangle (in scaled pixels, relative to the border box origin) described by
     /// the CSS 2 `clip` property, if it applies. `clip` only applies to absolutely positioned
     /// elements; `auto` components resolve to the corresponding border box edge.
-    pub(super) fn css_clip_rect(&self) -> Option<Rect> {
+    pub(in crate::render) fn css_clip_rect(&self) -> Option<Rect> {
         use style::computed_values::position::T as Position;
         use style::values::computed::LengthOrAuto;
         use style::values::generics::ClipRectOrAuto;
@@ -43,7 +43,7 @@ impl ElementCx<'_, '_> {
 
     /// Compute the clip-path BezPath (if any) for this element.
     /// Returns `None` if clip-path is `none` or unsupported.
-    pub(super) fn clip_path_shape(&self) -> Option<BezPath> {
+    pub(in crate::render) fn clip_path_shape(&self) -> Option<BezPath> {
         let clip_path = self.style.clone_clip_path();
         match clip_path {
             ClipPath::None => None,

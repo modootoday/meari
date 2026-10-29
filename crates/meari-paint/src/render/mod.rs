@@ -1,10 +1,8 @@
 mod background;
 // Meari modification: bounded SVG tiling failures propagate to the owning host.
 mod border;
-mod box_shadow;
-mod clip_path;
+mod effects;
 mod form_controls;
-mod mask;
 
 use std::cell::RefCell;
 use std::collections::HashMap;

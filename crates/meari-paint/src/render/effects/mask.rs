@@ -16,8 +16,8 @@
 //! `background-*` properties share computed value types.
 use crate::render::background::get_cyclic;
 
-use super::ElementCx;
-use super::background::ImageLayerStyles;
+use crate::render::ElementCx;
+use crate::render::background::ImageLayerStyles;
 use anyrender::PaintScene;
 use peniko::{BlendMode, Compose, Fill, Mix};
 use style::properties::generated::longhands::mask_composite::single_value::computed_value::T as StyloMaskComposite;
@@ -36,7 +36,7 @@ const ALMOST_OPAQUE: f32 = 1.0 - f32::EPSILON;
 
 impl ElementCx<'_, '_> {
     /// Whether the element has any CSS `mask-image` layers
-    pub(super) fn has_css_mask(&self) -> bool {
+    pub(in crate::render) fn has_css_mask(&self) -> bool {
         self.style
             .get_svg()
             .mask_image
@@ -48,7 +48,7 @@ impl ElementCx<'_, '_> {
     /// If the element has a CSS mask, push an isolation layer for the masked content
     /// to be drawn into. Returns whether a layer was pushed, which should later be
     /// passed to [`maybe_pop_css_mask_layer`](Self::maybe_pop_css_mask_layer).
-    pub(super) fn maybe_push_css_mask_layer(&self, scene: &mut impl PaintScene) -> bool {
+    pub(in crate::render) fn maybe_push_css_mask_layer(&self, scene: &mut impl PaintScene) -> bool {
         if !self.has_css_mask() {
             return false;
         }
@@ -70,7 +70,11 @@ impl ElementCx<'_, '_> {
     /// Apply the CSS mask to the content drawn since the corresponding
     /// [`maybe_push_css_mask_layer`](Self::maybe_push_css_mask_layer) by drawing the
     /// mask image layers with `Compose::DestIn`, then pop the isolation layer.
-    pub(super) fn maybe_pop_css_mask_layer(&self, scene: &mut impl PaintScene, layer_pushed: bool) {
+    pub(in crate::render) fn maybe_pop_css_mask_layer(
+        &self,
+        scene: &mut impl PaintScene,
+        layer_pushed: bool,
+    ) {
         if !layer_pushed {
             return;
         }
