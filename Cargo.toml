@@ -1,11 +1,12 @@
 [workspace]
-members = ["crates/meari", "crates/meari-native", "crates/meari-native-tools", "crates/meari-builder", "crates/meari-cli", "crates/meari-paint", "crates/meari-visual", "crates/meari-demo", "xtask"]
+members = ["crates/meari", "crates/meari-native", "crates/meari-platform", "crates/meari-native-tools", "crates/meari-builder", "crates/meari-cli", "crates/meari-paint", "crates/meari-visual", "crates/meari-demo", "xtask"]
 default-members = ["crates/meari"]
 exclude = ["verification/native-hmr"]
 resolver = "3"
 
 [workspace.dependencies]
 meari = { path = "crates/meari", version = "0.1.0" }
+meari-platform = { path = "crates/meari-platform", version = "0.1.0" }
 
 [patch.crates-io]
 blitz-paint = { path = "crates/meari-paint" }

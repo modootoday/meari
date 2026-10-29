@@ -2,13 +2,15 @@
 //!
 //! Canonical profile (default): the bundled OFL faces come first, Pretendard Variable /
 //! Pretendard JP for `sans-serif` and Source Serif 4 then an installed Source Han Serif KR /
-//! Noto Serif KR for `serif`, then the Chromium Linux defaults below.
+//! Noto Serif KR for `serif`, then the Chromium Linux defaults below, then the OS host fallbacks chosen by the
+//! `meari-platform` adapter.
 //!
 //! Chrome comparison profile (`meari-visual` only): Chromium does not ask fontconfig for
 //! generics; it uses per-platform preferences (Linux: Arial / Times New Roman) which
 //! fontconfig substitutes with metric-compatible host faces (Arimo / Liberation, Tinos). Those
 //! faces are never bundled; this profile exists only so a pixel comparison against an
 //! unmodified Chrome picks the same host faces.
+use meari_platform::{OsFamily, PlatformHost};
 use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, GenericFamily, SourceCache};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -44,19 +46,33 @@ fn build(canonical: bool) -> parley::FontContext {
     });
     collection.register_fonts(Blob::new(Arc::new(blitz_dom::BULLET_FONT) as _), None);
     register_bundled(&mut collection);
+    let host = meari_platform::current();
     for (generic, chromium) in CHROMIUM {
         let mut names: Vec<&str> = Vec::new();
         if canonical {
             names.extend(canonical_names(*generic));
         }
-        if canonical || cfg!(target_os = "linux") {
+        if canonical || host.os_family() == OsFamily::Unix {
             names.extend(chromium.iter().copied());
+        }
+        if canonical {
+            names.extend(host_names(&host, *generic));
         }
         prefer(&mut collection, *generic, &names);
     }
     parley::FontContext {
         source_cache: SourceCache::new_shared(),
         collection,
+    }
+}
+
+/// OS host fallbacks from the platform adapter, after the canonical and Chromium names.
+fn host_names(host: &impl PlatformHost, generic: GenericFamily) -> Vec<&'static str> {
+    let fonts = host.font_fallbacks();
+    match generic {
+        GenericFamily::SansSerif => fonts.sans.to_vec(),
+        GenericFamily::Serif => fonts.serif.to_vec(),
+        _ => Vec::new(),
     }
 }
 

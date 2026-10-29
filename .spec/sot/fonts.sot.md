@@ -23,9 +23,11 @@ rel:
   bundled Source Han Serif KR Regular (native, unchanged OTF) / "Meari Serif KR" (Web,
   renamed unicode-range slices) for Hangul / hanja / kana, then host fallbacks (Noto Serif KR,
   AppleMyungjo, Hiragino Mincho ProN, Batang, Yu Mincho), Times New Roman, serif.
-- **Per-OS host fallbacks**: `MACOS_FALLBACKS` / `WINDOWS_FALLBACKS` / `LINUX_FALLBACKS`
-  (domain data) are all named in the CSS stacks (test `host_fallbacks_are_named_in_the_css_stacks`).
-  Selection at runtime belongs to the platform adapter (sot platform). **Unverified**: no
+- **Per-OS host fallbacks**: `meari-platform` adapters `adapter::{macos,windows,unix}::FONT_FALLBACKS`
+  (via `PlatformHost::font_fallbacks`) are all named in the CSS stacks (test
+  `host_fallbacks_are_named_in_the_css_stacks`). `meari_platform::CurrentOs` is the single
+  `cfg` selection point; native `generic_fonts` appends the live adapter's list after the
+  canonical and Chromium names (canonical profile only). **Unverified**: no
   Windows/macOS run; only the Linux box executes.
 - **One licence**: every bundled font is SIL OFL-1.1, from Google/Adobe-family upstreams
   (Pretendard is built on Inter / Source Han Sans / M PLUS 1p, all OFL). Holders and Reserved Font

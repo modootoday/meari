@@ -27,23 +27,7 @@ pub const SERIF_FAMILIES: [&str; 3] = [
     "Noto Serif KR",
 ];
 
-/// Host fallbacks per OS after the bundled faces (data only; the platform adapter selects).
-pub struct HostFallbacks {
-    pub sans: &'static [&'static str],
-    pub serif: &'static [&'static str],
-}
-pub const MACOS_FALLBACKS: HostFallbacks = HostFallbacks {
-    sans: &["Apple SD Gothic Neo", "Hiragino Sans"],
-    serif: &["AppleMyungjo", "Hiragino Mincho ProN", "Times New Roman"],
-};
-pub const WINDOWS_FALLBACKS: HostFallbacks = HostFallbacks {
-    sans: &["Segoe UI", "Malgun Gothic", "Yu Gothic UI", "Arial"],
-    serif: &["Batang", "Yu Mincho", "Times New Roman"],
-};
-pub const LINUX_FALLBACKS: HostFallbacks = HostFallbacks {
-    sans: &["Noto Sans CJK KR", "Noto Sans KR"],
-    serif: &["Noto Serif CJK KR", "Noto Serif KR"],
-};
+// Per-OS host fallbacks are selected by the `meari-platform` adapters (`PlatformHost::font_fallbacks`).
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FontFace {

@@ -260,16 +260,14 @@ fn unsupported_fallback_coverage_and_raster_guarantees_fail_explicitly() {
 /// unverified; this checks the code-level definition only.
 #[test]
 fn host_fallbacks_are_named_in_the_css_stacks() {
-    use meari::domain::design::fonts::{
-        LINUX_FALLBACKS, MACOS_FALLBACKS, SANS_FONT_FAMILY, SERIF_FONT_FAMILY, WINDOWS_FALLBACKS,
-    };
+    use meari::domain::design::fonts::{SANS_FONT_FAMILY, SERIF_FONT_FAMILY};
     let named = |stack: &str, family: &str| {
         stack
             .split(',')
             .map(|item| item.trim().trim_matches('"'))
             .any(|item| item == family)
     };
-    for host in [MACOS_FALLBACKS, WINDOWS_FALLBACKS, LINUX_FALLBACKS] {
+    for host in meari_platform::all_adapters().map(|host| host.font_fallbacks()) {
         for family in host.sans {
             assert!(named(SANS_FONT_FAMILY, family), "sans stack lacks {family}");
         }

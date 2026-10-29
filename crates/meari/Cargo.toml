@@ -239,3 +239,6 @@ path = "tests/environment/dom.rs"
 [[test]]
 name = "host_environment"
 path = "tests/environment/host_environment.rs"
+
+[dev-dependencies]
+meari-platform = { workspace = true }
