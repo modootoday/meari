@@ -150,6 +150,18 @@ fn value(binding: &Value, language: Language, props: &[Prop]) -> String {
                     StateUpdate::Reduce(expression) => state_expression::updater(expression),
                     StateUpdate::HookCapture(expression) => hook_expression::emit(expression),
                     StateUpdate::HookReduce(expression) => hook_expression::updater(expression),
+                    StateUpdate::Append { item, .. } => {
+                        format!(
+                            "previous => [...previous, {}]",
+                            serde_json::to_string(item).unwrap()
+                        )
+                    }
+                    StateUpdate::Remove { item, .. } => {
+                        format!(
+                            "previous => previous.filter(item => item !== {})",
+                            serde_json::to_string(item).unwrap()
+                        )
+                    }
                 };
                 format!("() => {}({update})", event.setter)
             }

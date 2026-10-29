@@ -28,6 +28,50 @@ pub enum StateUpdate {
     Reduce(super::state_expression::StateExpression),
     HookCapture(super::hook_expression::Expression),
     HookReduce(super::hook_expression::Expression),
+    /// `[...items, "x"]` on a string-list state. `source` names the spread state until the
+    /// parser confirms it is the setter's own state, after which it is `None`.
+    Append {
+        item: String,
+        source: Option<String>,
+    },
+    /// `items.filter(item => item !== "x")` on a string-list state; `source` as for `Append`.
+    Remove {
+        item: String,
+        source: Option<String>,
+    },
+}
+
+impl StateUpdate {
+    fn list(
+        &self,
+        binding: &StateBinding,
+        current: Option<&StateValue>,
+    ) -> Option<Result<StateValue, String>> {
+        let (item, source, append) = match self {
+            Self::Append { item, source } => (item, source, true),
+            Self::Remove { item, source } => (item, source, false),
+            _ => return None,
+        };
+        Some((|| {
+            if source.is_some() {
+                return Err("list update must spread or filter its own state".into());
+            }
+            let items = string_items(current.unwrap_or(&binding.initial))
+                .filter(|_| matches!(binding.initial, StateValue::Json(_)))
+                .ok_or("list update requires a string-list state")?;
+            let next: Vec<String> = if append {
+                if items.len() >= 16384 {
+                    return Err("list state exceeds item budget".into());
+                }
+                items.into_iter().chain([item.clone()]).collect()
+            } else {
+                items.into_iter().filter(|value| value != item).collect()
+            };
+            Ok(StateValue::Json(serde_json::Value::Array(
+                next.into_iter().map(serde_json::Value::String).collect(),
+            )))
+        })())
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -43,6 +87,9 @@ impl StateEvent {
             .iter()
             .find(|binding| binding.setter == self.setter)
             .ok_or("unknown state setter")?;
+        if let Some(result) = self.update.list(binding, None) {
+            return result.map(|_| ());
+        }
         if matches!(binding.initial, StateValue::Structured(_))
             || matches!(
                 self.update,
@@ -106,6 +153,16 @@ impl StateEvent {
         values: &std::collections::BTreeMap<String, StateValue>,
     ) -> Result<StateAction, String> {
         self.validate(bindings)?;
+        if let Some(binding) = bindings
+            .iter()
+            .find(|binding| binding.setter == self.setter)
+            && let Some(value) = self.update.list(binding, values.get(&binding.name))
+        {
+            return Ok(StateAction::Set {
+                slot: binding.name.clone(),
+                value: value?,
+            });
+        }
         if let StateUpdate::Capture(expression) | StateUpdate::Reduce(expression) = &self.update {
             if expression.capture(values)? != *expression {
                 return Err("updater free state must be captured during render".into());
@@ -155,7 +212,9 @@ impl StateEvent {
             StateUpdate::Capture(_)
             | StateUpdate::Reduce(_)
             | StateUpdate::HookCapture(_)
-            | StateUpdate::HookReduce(_) => {
+            | StateUpdate::HookReduce(_)
+            | StateUpdate::Append { .. }
+            | StateUpdate::Remove { .. } => {
                 return Err("state expression requires a render capture/runtime update".into());
             }
             _ => return Err("state setter update type mismatch".into()),

@@ -1,0 +1,2 @@
+max_ratio=0.013
+reason=glyph rasterization only (vello_cpu vs Skia anti-aliasing); ink bbox equal (24..279, 24..199) native vs web, variant colors (group-hover base, peer-[.is-on] blue semibold, group-[.is-open] emerald) identical in the native|web|diff sheet; text-dense fixture (semibold + text-sm). Measured 1.271% on 2026-10-30.

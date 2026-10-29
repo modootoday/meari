@@ -10,6 +10,7 @@ pub(super) mod effect;
 mod expression;
 mod input;
 pub(super) mod lists;
+pub(super) mod reducer;
 mod structured;
 
 fn captured(
@@ -183,6 +184,9 @@ pub(super) fn setter_call(call: &CallExpression<'_>) -> Result<StateEvent, Diagn
             return Err(err(parameter, "plain updater identifier required"));
         }
         match updater.body.as_expression() {
+            Some(body) if let Some(update) = lists::update(body, Some(previous.name.as_str())) => {
+                update
+            }
             Some(Expression::UnaryExpression(value))
                 if value.operator == UnaryOperator::LogicalNot
                     && matches!(&value.argument, Expression::Identifier(name) if name.name == previous.name) =>
@@ -213,6 +217,8 @@ pub(super) fn setter_call(call: &CallExpression<'_>) -> Result<StateEvent, Diagn
                 Some(previous.name.as_str()),
             )?,
         }
+    } else if let Some(update) = lists::update(argument, None) {
+        update
     } else if matches!(
         argument,
         Expression::ObjectExpression(_) | Expression::ArrayExpression(_)

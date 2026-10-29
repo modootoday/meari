@@ -11,6 +11,8 @@ use crate::domain::{
     node_slots::NodeSlot,
     state_program::{StateBinding, StateUpdate, string_items},
 };
+use oxc_ast::ast::{ArrayExpressionElement, BindingPattern, Expression};
+use oxc_syntax::operator::BinaryOperator;
 
 fn sources(node: &Node, out: &mut Vec<String>) {
     match &node.kind {
@@ -48,14 +50,93 @@ fn json(value: &StateValue) -> Option<StateValue> {
     })
 }
 
-fn events(node: &mut Node, setters: &[String]) {
+/// `[...items, "x"]` / `items.filter(item => item !== "x")`, or the same over an updater's
+/// `previous`; the spread source is kept until `admit` confirms it is the setter's own state.
+pub(super) fn update(expression: &Expression<'_>, previous: Option<&str>) -> Option<StateUpdate> {
+    let source = |expression: &Expression<'_>| match expression {
+        Expression::Identifier(name) if previous == Some(name.name.as_str()) => Some(None),
+        Expression::Identifier(name) if previous.is_none() => Some(Some(name.name.to_string())),
+        _ => None,
+    };
+    let text = |expression: &Expression<'_>| match expression {
+        Expression::StringLiteral(text) => Some(text.value.to_string()),
+        _ => None,
+    };
+    match expression {
+        Expression::ArrayExpression(array) => match array.elements.as_slice() {
+            [ArrayExpressionElement::SpreadElement(spread), item] => Some(StateUpdate::Append {
+                source: source(&spread.argument)?,
+                item: text(item.as_expression()?)?,
+            }),
+            _ => None,
+        },
+        Expression::CallExpression(call) => {
+            let Expression::StaticMemberExpression(member) = &call.callee else {
+                return None;
+            };
+            let [argument] = call.arguments.as_slice() else {
+                return None;
+            };
+            let Some(Expression::ArrowFunctionExpression(arrow)) = argument.as_expression() else {
+                return None;
+            };
+            let [parameter] = arrow.params.items.as_slice() else {
+                return None;
+            };
+            let BindingPattern::BindingIdentifier(parameter) = &parameter.pattern else {
+                return None;
+            };
+            let Some(Expression::BinaryExpression(test)) = arrow.body.as_expression() else {
+                return None;
+            };
+            let is_parameter = |expression: &Expression<'_>| matches!(expression, Expression::Identifier(name) if name.name == parameter.name);
+            let item = if is_parameter(&test.left) {
+                text(&test.right)
+            } else if is_parameter(&test.right) {
+                text(&test.left)
+            } else {
+                None
+            }?;
+            (member.property.name == "filter"
+                && !member.optional
+                && !call.optional
+                && call.type_arguments.is_none()
+                && !arrow.r#async
+                && arrow.params.rest.is_none()
+                && matches!(
+                    test.operator,
+                    BinaryOperator::StrictInequality | BinaryOperator::Inequality
+                ))
+            .then_some(())?;
+            Some(StateUpdate::Remove {
+                source: source(&member.object)?,
+                item,
+            })
+        }
+        _ => None,
+    }
+}
+
+fn events(node: &mut Node, setters: &[(String, String)]) {
     let convert = |value: &mut Value| {
-        if let Value::Event(event) = value
-            && setters.contains(&event.setter)
-            && let StateUpdate::Set(update) = &event.update
-            && let Some(update) = json(update)
-        {
-            event.update = StateUpdate::Set(update);
+        let Value::Event(event) = value else {
+            return;
+        };
+        let Some((_, name)) = setters.iter().find(|(setter, _)| *setter == event.setter) else {
+            return;
+        };
+        match &mut event.update {
+            StateUpdate::Set(update) => {
+                if let Some(update) = json(update) {
+                    event.update = StateUpdate::Set(update);
+                }
+            }
+            StateUpdate::Append { source, .. } | StateUpdate::Remove { source, .. }
+                if source.as_ref() == Some(name) =>
+            {
+                *source = None;
+            }
+            _ => {}
         }
     };
     match &mut node.kind {
@@ -90,7 +171,7 @@ pub(in super::super) fn admit(root: &mut Node, states: &mut [StateBinding]) {
     {
         if let Some(initial) = json(&state.initial) {
             state.initial = initial;
-            setters.push(state.setter.clone());
+            setters.push((state.setter.clone(), state.name.clone()));
         }
     }
     events(root, &setters);

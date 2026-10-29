@@ -1,0 +1,2 @@
+max_ratio=0.009
+reason=glyph rasterization only (vello_cpu vs Skia anti-aliasing); ink bbox equal (16,16)-(464,156) and fills identical at sampled button/border pixels; diff sheet shows glyph edges only, same evidence as heading-text. Measured 0.794% on 2026-10-30.
