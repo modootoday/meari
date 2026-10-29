@@ -28,7 +28,6 @@ readme = false
 categories = ["gui"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/dioxuslabs/blitz"
-resolver = "2"
 
 [features]
 apple-font-embolden = []
