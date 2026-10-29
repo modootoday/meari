@@ -5,6 +5,17 @@ version = "0.1.0"
 edition = "2024"
 publish = false
 license = "MIT OR Apache-2.0"
-description = "Meari OS port and per-OS adapters (host font fallbacks), selected once by CurrentOs"
+description = "Meari OS port and per-OS adapters, selected once by CurrentOs"
 repository = "https://github.com/modootoday/meari"
 include = ["src/**/*.rs", "Cargo.toml"]
+
+[features]
+window = ["dep:winit"]
+
+[dependencies]
+raw-window-handle = "=0.6.2"
+serde_json = "1"
+winit = { version = "=0.31.0-beta.3", optional = true, default-features = false }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "=0.62.2", features = ["Win32_Graphics_Gdi", "Win32_UI_Accessibility", "Win32_UI_WindowsAndMessaging", "Win32_System_Com", "Win32_System_Ole", "Win32_System_Variant"] }

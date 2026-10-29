@@ -55,18 +55,18 @@ fn execute(args: Vec<String>) -> Result<(), String> {
         );
         return Ok(());
     }
-    #[cfg(windows)]
     if matches!(
         args.first().map(String::as_str),
         Some("probe" | "probe-tabs")
     ) && args.len() == 3
     {
         let pid = args[1].parse::<u32>().map_err(|e| e.to_string())?;
-        let result = if args[0] == "probe-tabs" {
-            crate::infrastructure::uia_probe::verify_tabs(pid)
-        } else {
-            crate::infrastructure::uia_probe::verify(pid)
-        };
+        let result = meari_platform::OsPolicy::ui_automation_probe(
+            &meari_platform::current(),
+            pid,
+            args[0] == "probe-tabs",
+        )
+        .ok_or("probe requires the Windows UI Automation adapter")?;
         let report = match &result {
             Ok(report) => report.clone(),
             Err(error) => serde_json::json!({"pid":pid,"success":false,"error":error}),

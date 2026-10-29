@@ -22,3 +22,48 @@ pub trait PlatformHost {
     /// Host fallbacks for the CSS generic families on this OS.
     fn font_fallbacks(&self) -> HostFallbacks;
 }
+
+pub use raw_window_handle::RawWindowHandle;
+
+/// Raw client rectangle and its screen origin, as the OS reports them (unvalidated).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ClientArea {
+    pub left: i32,
+    pub top: i32,
+    pub right: i32,
+    pub bottom: i32,
+    pub screen_origin: (i32, i32),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ClientAreaError {
+    /// This OS (or this handle kind) has no client-area readback adapter.
+    Unsupported,
+    OsReadback(String),
+}
+
+/// OS operations; implemented by the live adapter (`adapter::{unix,windows}::sys`,
+/// `adapter::portable`) and reached through [`crate::CurrentOs`].
+pub trait OsPolicy {
+    /// Artifact-store check: no setuid/setgid/sticky, executables executable (no-op w/o modes).
+    fn executable_mode_matches(
+        &self,
+        path: &std::path::Path,
+        executable: bool,
+    ) -> std::io::Result<bool>;
+    /// Marks an artifact executable (no-op without POSIX mode bits).
+    fn mark_executable(&self, path: &std::path::Path) -> std::io::Result<()>;
+    /// True for symlinks (Unix) or any reparse point incl. junctions (Windows).
+    fn is_link(&self, metadata: &std::fs::Metadata) -> bool;
+    /// Whether [`Self::client_area`] can succeed on this OS.
+    fn supports_client_area(&self) -> bool;
+    /// Client rectangle and screen origin of a native window handle.
+    fn client_area(&self, handle: RawWindowHandle) -> Result<ClientArea, ClientAreaError>;
+    /// UI Automation verification of process `pid` (`tabs` selects the tab probe);
+    /// `None` where the OS has no UI Automation adapter.
+    fn ui_automation_probe(
+        &self,
+        pid: u32,
+        tabs: bool,
+    ) -> Option<Result<serde_json::Value, String>>;
+}

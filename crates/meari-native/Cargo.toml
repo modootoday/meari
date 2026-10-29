@@ -21,7 +21,7 @@ default = ["bundled-fonts"]
 bundled-fonts = ["meari/bundled-fonts"]
 test-support = ["window"]
 gl = ["dep:anyrender_skia", "dep:skia-safe", "dep:glutin", "dep:glow", "dep:raw-window-handle"]
-window = ["dep:blitz-shell", "dep:winit", "dep:accesskit_xplat", "anyrender_vello_cpu/softbuffer_window_renderer"]
+window = ["meari-platform/window", "dep:blitz-shell", "dep:winit", "dep:accesskit_xplat", "anyrender_vello_cpu/softbuffer_window_renderer"]
 
 [[test]]
 name = "bundled_font_catalog"

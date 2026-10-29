@@ -4,7 +4,7 @@
 pub mod adapter;
 pub mod port;
 
-pub use port::{HostFallbacks, OsFamily, PlatformHost};
+pub use port::{ClientArea, ClientAreaError, HostFallbacks, OsFamily, OsPolicy, PlatformHost};
 
 #[cfg(windows)]
 type Live = adapter::windows::WindowsHost;
@@ -12,6 +12,18 @@ type Live = adapter::windows::WindowsHost;
 type Live = adapter::macos::MacOsHost;
 #[cfg(not(any(windows, target_os = "macos")))]
 type Live = adapter::unix::UnixHost;
+
+#[cfg(unix)]
+type LiveOs = adapter::unix::sys::UnixOs;
+#[cfg(windows)]
+type LiveOs = adapter::windows::sys::WindowsOs;
+#[cfg(not(any(unix, windows)))]
+type LiveOs = adapter::portable::PortableOs;
+
+#[cfg(all(feature = "window", not(windows)))]
+use adapter::portable::prepare_event_loop as live_prepare_event_loop;
+#[cfg(all(feature = "window", windows))]
+use adapter::windows::sys::prepare_event_loop as live_prepare_event_loop;
 
 /// [`PlatformHost`] backed by the adapter for the OS this binary was built for.
 #[derive(Debug, Default, Clone, Copy)]
@@ -24,6 +36,42 @@ impl PlatformHost for CurrentOs {
     fn font_fallbacks(&self) -> HostFallbacks {
         Live::default().font_fallbacks()
     }
+}
+
+impl OsPolicy for CurrentOs {
+    fn executable_mode_matches(
+        &self,
+        path: &std::path::Path,
+        executable: bool,
+    ) -> std::io::Result<bool> {
+        LiveOs::default().executable_mode_matches(path, executable)
+    }
+    fn mark_executable(&self, path: &std::path::Path) -> std::io::Result<()> {
+        LiveOs::default().mark_executable(path)
+    }
+    fn is_link(&self, metadata: &std::fs::Metadata) -> bool {
+        LiveOs::default().is_link(metadata)
+    }
+    fn supports_client_area(&self) -> bool {
+        LiveOs::default().supports_client_area()
+    }
+    fn client_area(&self, handle: port::RawWindowHandle) -> Result<ClientArea, ClientAreaError> {
+        LiveOs::default().client_area(handle)
+    }
+    fn ui_automation_probe(
+        &self,
+        pid: u32,
+        tabs: bool,
+    ) -> Option<Result<serde_json::Value, String>> {
+        LiveOs::default().ui_automation_probe(pid, tabs)
+    }
+}
+
+/// Lets the event loop run on a non-main thread where the OS backend requires opting in
+/// (Windows: `with_any_thread`); no-op elsewhere.
+#[cfg(feature = "window")]
+pub fn prepare_event_loop(builder: &mut winit::event_loop::EventLoopBuilder) {
+    live_prepare_event_loop(builder);
 }
 
 /// Returns the adapter for the OS this binary was built for.

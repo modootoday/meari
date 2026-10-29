@@ -86,7 +86,13 @@ fn write_new(path: &Path, bytes: &[u8]) -> Result<(), String> {
 fn verify_file(path: &Path, expected: &OutputFile) -> Result<(), String> {
     normal(path, false)?;
     let executable = expected.role == OutputRole::NativeExecutable;
-    if !super::platform::executable_mode_matches(path, executable).map_err(io)? {
+    if !meari_platform::OsPolicy::executable_mode_matches(
+        &meari_platform::current(),
+        path,
+        executable,
+    )
+    .map_err(io)?
+    {
         return Err("artifact executable permissions differ from its role".into());
     }
     if expected.length > MAX_ARTIFACT || fs::metadata(path).map_err(io)?.len() != expected.length {
@@ -299,7 +305,11 @@ impl ArtifactStore for FsArtifactStore {
             let directory = directories(&staging, &format!("files/{parent}"), true)?;
             write_new(&directory.join(name), bytes)?;
             if bundle.manifest.outputs[path].role == OutputRole::NativeExecutable {
-                super::platform::mark_executable(&directory.join(name)).map_err(io)?;
+                meari_platform::OsPolicy::mark_executable(
+                    &meari_platform::current(),
+                    &directory.join(name),
+                )
+                .map_err(io)?;
             }
         }
         write_new(&staging.join("manifest.json"), &manifest)?;

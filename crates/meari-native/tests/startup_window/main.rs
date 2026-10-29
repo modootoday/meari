@@ -5,24 +5,8 @@ use meari_native::{
     domain::Viewport,
     infrastructure::{document::InteractiveDocument, native_host::*, window::*},
 };
-use std::{
-    cell::RefCell,
-    fmt,
-    rc::Rc,
-    sync::{
-        Arc,
-        atomic::{AtomicUsize, Ordering},
-        mpsc,
-    },
-    thread::{self, JoinHandle},
-    time::{Duration, Instant},
-};
-use windows::Win32::{
-    Foundation::{HWND, RECT},
-    UI::WindowsAndMessaging::{
-        FindWindowW, GetClientRect, GetWindowRect, GetWindowThreadProcessId, IsWindow, MoveWindow,
-    },
-};
+use std::{cell::RefCell, rc::Rc, sync::mpsc, thread::JoinHandle, time::Instant};
+use windows::Win32::Foundation::HWND;
 
 #[derive(Debug, PartialEq, Eq)]
 struct Failure(&'static str);
@@ -93,6 +77,5 @@ struct HookFailure {
 
 mod harness;
 use self::harness::*;
-mod ready_barrier;
-use self::ready_barrier::*;
 mod frame_stamps;
+mod ready_barrier;
