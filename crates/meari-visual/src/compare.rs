@@ -62,8 +62,12 @@ pub fn diff(a: &[u8], b: &[u8], tolerance: Tolerance) -> Result<Diff, String> {
 }
 
 pub fn write_png(path: &Path, rgba: &[u8]) -> Result<(), String> {
+    write_png_sized(path, rgba, crate::WIDTH, crate::HEIGHT)
+}
+
+pub fn write_png_sized(path: &Path, rgba: &[u8], width: u32, height: u32) -> Result<(), String> {
     let file = File::create(path).map_err(|e| e.to_string())?;
-    let mut encoder = png::Encoder::new(BufWriter::new(file), crate::WIDTH, crate::HEIGHT);
+    let mut encoder = png::Encoder::new(BufWriter::new(file), width, height);
     encoder.set_color(png::ColorType::Rgba);
     encoder.set_depth(png::BitDepth::Eight);
     let mut writer = encoder.write_header().map_err(|e| e.to_string())?;

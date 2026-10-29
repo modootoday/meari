@@ -79,7 +79,7 @@ fn execute() -> Result<(), String> {
     if args.len() < 2 {
         return Err("use --help".into());
     }
-    let compiler = TailwindCompiler::windows_x64(Path::new(&args[1]))?;
+    let compiler = TailwindCompiler::pinned(Path::new(&args[1]))?;
     let (source, theme) = showcase()?;
     let css = application::stylesheet(&source, &theme, &compiler)?;
     let viewport = Viewport {

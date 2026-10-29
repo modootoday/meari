@@ -52,7 +52,21 @@ pub(crate) fn to_peniko_gradient(
     scale: f64,
     current_color: &AbsoluteColor,
 ) -> (peniko::Gradient, Option<Affine>) {
-    match gradient {
+    let method = match gradient {
+        GenericGradient::Linear {
+            color_interpolation_method,
+            ..
+        }
+        | GenericGradient::Radial {
+            color_interpolation_method,
+            ..
+        }
+        | GenericGradient::Conic {
+            color_interpolation_method,
+            ..
+        } => *color_interpolation_method,
+    };
+    let (gradient, transform) = match gradient {
         // https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/linear-gradient
         GenericGradient::Linear {
             direction,
@@ -82,7 +96,41 @@ pub(crate) fn to_peniko_gradient(
             flags,
             ..
         } => conic_gradient((angle, position, items, *flags), origin_rect, current_color),
-    }
+    };
+    (with_interpolation(gradient, method), transform)
+}
+
+/// Honors `in <color-space> [<hue> hue]` (e.g. Tailwind v4's `to bottom right in oklab`).
+fn with_interpolation(
+    gradient: peniko::Gradient,
+    method: style::color::mix::ColorInterpolationMethod,
+) -> peniko::Gradient {
+    use color::{ColorSpaceTag as Tag, HueDirection};
+    use style::color::{ColorSpace as Space, mix::HueInterpolationMethod as Hue};
+    let tag = match method.space {
+        Space::Srgb => Tag::Srgb,
+        Space::Hsl => Tag::Hsl,
+        Space::Hwb => Tag::Hwb,
+        Space::Lab => Tag::Lab,
+        Space::Lch => Tag::Lch,
+        Space::Oklab => Tag::Oklab,
+        Space::Oklch => Tag::Oklch,
+        Space::SrgbLinear => Tag::LinearSrgb,
+        Space::DisplayP3 | Space::DisplayP3Linear => Tag::DisplayP3,
+        Space::A98Rgb => Tag::A98Rgb,
+        Space::ProphotoRgb => Tag::ProphotoRgb,
+        Space::Rec2020 => Tag::Rec2020,
+        Space::XyzD50 => Tag::XyzD50,
+        Space::XyzD65 => Tag::XyzD65,
+    };
+    let mut gradient = gradient.with_interpolation_cs(tag);
+    gradient.hue_direction = match method.hue {
+        Hue::Shorter | Hue::Specified => HueDirection::Shorter,
+        Hue::Longer => HueDirection::Longer,
+        Hue::Increasing => HueDirection::Increasing,
+        Hue::Decreasing => HueDirection::Decreasing,
+    };
+    gradient
 }
 
 fn linear_gradient(

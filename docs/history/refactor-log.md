@@ -45,3 +45,10 @@ Q4 분리 계획: xtask/src/structure → 별도 `modoo-conventions`(가칭) 크
 - Before (/workspace/meari-visual/before): 6 MATCH, heading-text MISMATCH 2.311% (generic `sans-serif` resolves to Noto Sans in Native but an Arial-like face in Chrome), button-input ERROR (`form` has no Native widget).
 - After (/workspace/meari-visual/after): fixtures pin `font-family:"Noto Sans"`; button-input uses `div` instead of `form`. 7 MATCH, heading-text MISMATCH 0.764% (glyph antialiasing/positioning, vello vs Skia; left unresolved, tolerance not raised).
 - Open gaps: Native `form` support; `sans-serif` generic-family mapping; the wasm-bindgen glue/Frame::build is not run (wasm-bindgen-cli unavailable, the harness mirrors it); Windows not verified.
+
+## Visual fixtures expansion + native gradient/input fixes (2026-10-29)
+- Tailwind wrapper: pinned linux-x64 v4.3.3 (sha256 verified vs official sha256sums.txt), scratch TMPDIR for the Bun binary.
+- meari-visual: supported/ vs gaps/ fixtures, Tailwind mode, per-fixture tolerance file, side-by-side native|web|diff sheets, index.html with "not human-verified automated pixel comparison" disclaimer. Only supported failures fail the run.
+- Native: gradients honor `in <color-space>` (Tailwind v4 `in oklab`) via peniko interpolation_cs; lowercase `<input>`/`<textarea>` `defaultValue` now renders.
+- Result (/workspace/meari-visual/after2): 16 MATCH, 5 MISMATCH (text AA: heading-text, tw-typography, tw-theme-tokens, app-form; tw-state-variants = blitz-dom text-input intrinsic width min(avail,300) vs Chrome size=20), 2 ERROR (Web adapter missing: Card, Button variant), 11 KNOWN-GAP.
+- Known pre-existing test failures unchanged: mixed_slots.rs:100, package_boundary NOTICE.

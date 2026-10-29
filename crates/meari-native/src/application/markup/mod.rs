@@ -320,7 +320,7 @@ fn visit(
     } else {
         None
     };
-    if tag == "Input"
+    if matches!(tag.as_ref(), "Input" | "input" | "textarea")
         && !attrs.contains_key("value")
         && let Some(value) = widgets::string(node, "defaultValue")
     {

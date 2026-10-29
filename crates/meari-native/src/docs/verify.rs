@@ -31,7 +31,7 @@ pub(super) fn verify_selected(
             return Err("selection requires nonempty, unique, valid example IDs".into());
         }
     }
-    let compiler = TailwindCompiler::windows_x64(executable)?;
+    let compiler = TailwindCompiler::pinned(executable)?;
     fs::create_dir(output).map_err(|e| e.to_string())?;
     write_json(
         &output.join("scope.json"),

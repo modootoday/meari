@@ -11,8 +11,13 @@ pub const VERSION: &str = "4.3.3";
 pub const WINDOWS_X64_SHA256: &str =
     "e0e260ce048014e9268f6237ff18f8ccf02cef521cbd0ae04e82c2cdf7aa3955";
 
+/// Official v4.3.3 `tailwindcss-linux-x64` release asset (matches upstream sha256sums.txt).
+pub const LINUX_X64_SHA256: &str =
+    "dc61b3ac6b8c9ca874c0cc4c57b2409791a64c5540404ca5f5367360babc313a";
+
 pub struct TailwindCompiler {
     executable: PathBuf,
+    artifact: String,
 }
 
 impl crate::application::StylesheetProjectCompiler for TailwindCompiler {
@@ -51,7 +56,7 @@ impl crate::application::StylesheetProjectCompiler for TailwindCompiler {
         Ok(super::stylesheet::receipt(
             project,
             css,
-            &format!("tailwindcss-{VERSION}-windows-x64/{WINDOWS_X64_SHA256}"),
+            &format!("tailwindcss-{VERSION}-{}", self.artifact),
         ))
     }
 }
@@ -68,15 +73,37 @@ impl crate::application::StylesheetCompiler for TailwindCompiler {
 
 impl TailwindCompiler {
     pub fn windows_x64(executable: &Path) -> Result<Self, String> {
+        Self::verified(executable, &[("windows-x64", WINDOWS_X64_SHA256)])
+    }
+
+    pub fn linux_x64(executable: &Path) -> Result<Self, String> {
+        Self::verified(executable, &[("linux-x64", LINUX_X64_SHA256)])
+    }
+
+    /// Accepts any pinned v4.3.3 standalone artifact (Windows x64 or Linux x64).
+    pub fn pinned(executable: &Path) -> Result<Self, String> {
+        Self::verified(
+            executable,
+            &[
+                ("windows-x64", WINDOWS_X64_SHA256),
+                ("linux-x64", LINUX_X64_SHA256),
+            ],
+        )
+    }
+
+    fn verified(executable: &Path, pins: &[(&str, &'static str)]) -> Result<Self, String> {
         let executable = executable.canonicalize().map_err(|e| e.to_string())?;
         let bytes = fs::read(&executable).map_err(|e| e.to_string())?;
         let hash = format!("{:x}", Sha256::digest(&bytes));
-        if hash != WINDOWS_X64_SHA256 {
-            return Err(
-                "Tailwind executable hash does not match pinned v4.3.3 Windows x64 artifact".into(),
-            );
-        }
-        Ok(Self { executable })
+        let artifact = pins
+            .iter()
+            .find(|(_, pin)| *pin == hash)
+            .map(|(name, pin)| format!("{name}/{pin}"))
+            .ok_or("Tailwind executable hash does not match a pinned v4.3.3 artifact")?;
+        Ok(Self {
+            executable,
+            artifact,
+        })
     }
 
     /// Backwards-compatible generated profile input. Custom CSS uses compile_project.
@@ -99,6 +126,10 @@ impl TailwindCompiler {
         fs::write(directory.join("input.css"), input).map_err(|e| e.to_string())?;
         let output = Command::new(&self.executable)
             .current_dir(directory)
+            // The standalone (Bun) binary aborts when TMP/TEMP point at a missing directory.
+            .env("TMPDIR", directory)
+            .env("TMP", directory)
+            .env("TEMP", directory)
             .args(["--input", "input.css", "--output", "output.css", "--minify"])
             .output()
             .map_err(|e| e.to_string())?;

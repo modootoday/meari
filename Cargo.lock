@@ -2087,6 +2087,7 @@ dependencies = [
  "meari",
  "meari-native",
  "png",
+ "serde_json",
 ]
 
 [[package]]

@@ -21,7 +21,7 @@ pub fn execute(args: &[String]) -> Result<(), String> {
             let executable = args
                 .get(3)
                 .ok_or("Tailwind mode requires pinned TAILWIND_EXE")?;
-            let compiler = TailwindCompiler::windows_x64(Path::new(executable))?;
+            let compiler = TailwindCompiler::pinned(Path::new(executable))?;
             application::prepare_stylesheet(&request, &compiler)?
         }
     };

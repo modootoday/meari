@@ -10,7 +10,7 @@ use std::{fs, path::Path};
 
 pub(super) fn run(executable: &Path, output: &Path) -> Result<(), String> {
     fs::create_dir(output).map_err(|e| e.to_string())?;
-    let compiler = TailwindCompiler::windows_x64(executable)?;
+    let compiler = TailwindCompiler::pinned(executable)?;
     let mut report = Vec::new();
     for (name, json, tailwind) in [
         (

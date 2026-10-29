@@ -13,7 +13,7 @@ const child = spawn(chrome, [
   "--headless", "--no-sandbox", "--disable-gpu", "--disable-extensions", "--no-first-run",
   "--hide-scrollbars", "--force-device-scale-factor=1", "--force-color-profile=srgb",
   "--font-render-hinting=none", `--user-data-dir=${profile}`, "--remote-debugging-pipe",
-  `--window-size=${width},${height}`, "about:blank",
+  `--window-size=${width},${height}`, ...(process.env.MEARI_CHROME_FLAGS ? process.env.MEARI_CHROME_FLAGS.split(" ") : []), "about:blank",
 ], { stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] });
 const [, , , toChrome, fromChrome] = child.stdio;
 let id = 0, buf = "";

@@ -10,3 +10,4 @@ description = "Visual regression harness: same TSX fixture rendered by meari-nat
 meari = { workspace = true }
 meari-native = { path = "../meari-native", version = "0.1.0" }
 png = "=0.18.1"
+serde_json = "1"
