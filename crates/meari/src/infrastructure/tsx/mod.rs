@@ -10,6 +10,7 @@ mod prop_type;
 mod repeat;
 mod source_modules;
 mod state;
+mod usage;
 
 fn location(n: &impl GetSpan) -> domain::Span {
     let s = n.span();
@@ -291,6 +292,9 @@ fn parse_source(source: &str, local_modules: bool) -> Result<Component, Diagnost
     let mut use_id = false;
     let mut use_state = false;
     let mut use_effect = false;
+    let mut use_reducer = false;
+    let mut reducers = std::collections::BTreeMap::new();
+    let mut dispatchers = std::collections::BTreeMap::new();
     for statement in &parsed.program.body {
         match statement {
             Statement::ImportDeclaration(import) => {
@@ -336,6 +340,15 @@ fn parse_source(source: &str, local_modules: bool) -> Result<Component, Diagnost
                         && !use_effect
                     {
                         use_effect = true;
+                        continue;
+                    }
+                    if import.source.value == "react"
+                        && name.name == "useReducer"
+                        && specifier.local.name == "useReducer"
+                        && specifier.import_kind == ImportOrExportKind::Value
+                        && !use_reducer
+                    {
+                        use_reducer = true;
                         continue;
                     }
                     if import.source.value == "react"
@@ -412,6 +425,9 @@ fn parse_source(source: &str, local_modules: bool) -> Result<Component, Diagnost
                 };
                 function = Some(f.as_ref());
             }
+            Statement::FunctionDeclaration(reducer) if use_reducer => {
+                state::reducer::function(reducer, &mut reducers)?;
+            }
             _ => {
                 return Err(err(
                     statement,
@@ -483,6 +499,12 @@ fn parse_source(source: &str, local_modules: bool) -> Result<Component, Diagnost
             effects += 1;
             continue;
         }
+        if use_reducer && state::reducer::is_declaration(statement) {
+            let binding = state::reducer::declaration(statement, &reducers, &mut dispatchers)?;
+            hook_order.push(crate::domain::hooks::HookSlot::State(binding.name.clone()));
+            states.push(binding);
+            continue;
+        }
         if use_state
             && matches!(statement, Statement::VariableDeclaration(declaration) if declaration.declarations.iter().any(|binding| matches!(binding.id, BindingPattern::ArrayPattern(_))))
         {
@@ -537,39 +559,22 @@ fn parse_source(source: &str, local_modules: bool) -> Result<Component, Diagnost
         return Err(err(expr, "JSX element root required"));
     };
     let mut root = element(root)?;
+    state::reducer::resolve(&mut root, &reducers, &dispatchers)?;
     state::resolve(&mut root, &states);
     state::lists::admit(&mut root, &mut states);
     if use_effect && effects == 0 {
         return Err(err(f, "unused useEffect import"));
     }
-    if use_state && states.is_empty() {
+    if use_reducer && (dispatchers.is_empty() || dispatchers.len() != reducers.len()) {
+        return Err(err(f, "unused useReducer import or reducer function"));
+    }
+    if use_state && states.len() == dispatchers.len() {
         return Err(err(f, "unused useState import"));
     }
     if crate::domain::hooks::ids(&root) != ids || (use_id && ids.is_empty()) {
         return Err(err(f, "unbound identifier or unused useId binding/import"));
     }
-    fn uses(node: &Node, name: &str) -> bool {
-        fn slot(value: &Value, name: &str) -> bool {
-            matches!(value,Value::NodeSlot(node_slots::NodeSlot::Content(nodes)) if nodes.iter().any(|node|uses(node,name)))
-        }
-        match &node.kind {
-            NodeKind::Text(value) if slot(value, name) => true,
-            NodeKind::Text(Value::Repeat(repeat)) => uses(&repeat.template, name),
-            NodeKind::Element {
-                tag,
-                children,
-                attributes,
-            } => {
-                tag == name
-                    || attributes
-                        .iter()
-                        .any(|attribute| slot(&attribute.value, name))
-                    || children.iter().any(|child| uses(child, name))
-            }
-            _ => false,
-        }
-    }
-    if imported.iter().any(|name| !uses(&root, name)) {
+    if imported.iter().any(|name| !usage::uses(&root, name)) {
         return Err(err(
             f,
             "unused component dependency cannot be silently discarded",

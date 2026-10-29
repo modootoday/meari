@@ -92,6 +92,12 @@ impl StateEvent {
             },
             StateUpdate::Capture(value) | StateUpdate::Reduce(value) => legacy(value, span, 0)?,
             StateUpdate::HookCapture(value) | StateUpdate::HookReduce(value) => value.clone(),
+            StateUpdate::Append { .. } | StateUpdate::Remove { .. } => {
+                return Err(Diagnostic::unsupported(
+                    span,
+                    "list append/filter updates require a string-list state",
+                ));
+            }
         })
     }
 }
