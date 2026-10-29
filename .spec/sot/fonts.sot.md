@@ -1,7 +1,7 @@
 ---
 id: sot:meari/fonts
 title: Canonical fonts, licensing and delivery (Native TTF / Web WOFF2)
-status: draft
+status: active
 verify: cargo test -p meari --features bundled-fonts --test font_catalog; cargo test -p meari-native --test bundled_font_catalog; cargo xtask visual-test
 created: 2026-10-30
 updated: 2026-10-30
@@ -46,6 +46,9 @@ rel:
   (`format("woff2")`, `font-display:swap`); `native_css` + `assets` serve the TTF of the
   same faces to native (blitz build has no WOFF2 decoder; WOFF2 in native preflight is
   rejected: "Native compressed fonts require a bounded WOFF decoder adapter").
+
+- **Chrome pixel tolerance**: a fixture's tolerance is never raised to make a font change pass;
+  any increase needs owner approval plus per-line ink-bbox evidence that the diff is AA only.
 
 ## Chrome comparison path (separate)
 
