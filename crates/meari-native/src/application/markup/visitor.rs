@@ -98,6 +98,15 @@ pub(super) fn visit(
             write!(class, " {value}").unwrap();
             continue;
         }
+        // Host `<input defaultChecked>`: React writes the initial checkedness as the `checked`
+        // content attribute, which seeds `:checked` (component Checkbox/Switch handle it above).
+        if tag == "input"
+            && attribute.name == "defaultChecked"
+            && attribute.value == Value::Bool(true)
+        {
+            attrs.insert("checked".into(), String::new());
+            continue;
+        }
         if [
             "id",
             "variant",
