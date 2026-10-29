@@ -1,10 +1,26 @@
+---
+id: sot:meari/implementation-status
+title: Implementation status (React + Tailwind on Native/Web)
+status: draft
+verify: cargo xtask visual-test
+created: 2026-10-29
+updated: 2026-10-29
+rel:
+  governs: [crates/meari-visual]
+---
+
 # Implementation status (React + Tailwind on Native/Web)
+
+## Rule
+
+이 표가 React + Tailwind 기능별 Native/Web 지원 현황의 정본이다. 기능을 추가·변경하면 visual-test 픽스처와 함께 이 표를 갱신한다.
+
 
 Evidence: `cargo xtask visual-test` (Native blitz/vello_cpu offscreen vs headless Chrome, same Tailwind v4.3.3 CSS).
 Fixtures in `crates/meari-visual/fixtures/{supported,gaps}`. Last run 2026-10-29: 30 MATCH (6 via `.tolerance`), 0 MISMATCH, 5 KNOWN-GAP.
 This is automated pixel comparison only; **no human visual check, no Windows, no real wasm-bindgen glue run**.
 
-## Tailwind
+### Tailwind
 
 | Feature | Status | Evidence |
 |---|---|---|
@@ -20,7 +36,7 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | state variants (hover/focus/disabled) | 부분 (input needs explicit width) | tw-state-variants |
 | generic `sans-serif` family | 미구현 (Native→Noto Sans, Chrome→Arial-like) | gaps/generic-font-family |
 
-## React / TSX
+### React / TSX
 
 | Feature | Status | Evidence |
 |---|---|---|
@@ -36,5 +52,13 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | input intrinsic width | 미구현 (blitz min(avail,300) shrinkable vs Chrome size=20) | gaps/input-intrinsic-width |
 | `<progress>` | 미구현 | gaps/html-progress |
 
-## Open decisions (user)
+### Open decisions (user)
 - NOTICE copy mismatch (tests/package_boundary.rs) and mixed_slots.rs:100 failure: untouched pending decision.
+
+## Why
+
+meari의 목표는 같은 TSX가 Native와 Web에서 같아 보이는 것이므로, 지원 경계를 증거(픽스처)와 함께 한 곳에 둔다.
+
+## Verification
+
+`cargo xtask visual-test` 결과 index.html. 자동 픽셀 비교일 뿐 사람 눈 검증이 아니다.
