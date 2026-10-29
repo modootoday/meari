@@ -1,7 +1,7 @@
 [build]
 target-dir = "../../runtime/build-cache/meari-native"
 jobs = 1
-incremental = false
+incremental = false # same as CARGO_INCREMENTAL=0 (also set in runtime/env.sh)
 
 [env]
 TMP = { value = "../../runtime/build-cache/tmp", relative = true, force = true }

@@ -9,3 +9,16 @@ meari = { path = "crates/meari", version = "0.1.0" }
 
 [patch.crates-io]
 blitz-paint = { path = "crates/meari-paint" }
+
+[profile.dev]
+debug = "line-tables-only"
+split-debuginfo = "unpacked"
+incremental = false
+
+[profile.test]
+debug = "line-tables-only"
+split-debuginfo = "unpacked"
+incremental = false
+
+[profile.dev.package."*"]
+debug = false
