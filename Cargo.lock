@@ -2003,6 +2003,7 @@ dependencies = [
 name = "meari"
 version = "0.1.0"
 dependencies = [
+ "meari-platform",
  "oxc_allocator",
  "oxc_ast",
  "oxc_parser",
@@ -2070,6 +2071,7 @@ dependencies = [
  "image",
  "keyboard-types",
  "meari",
+ "meari-platform",
  "oxc_allocator",
  "oxc_ast",
  "oxc_parser",
@@ -2098,6 +2100,10 @@ version = "0.1.0"
 dependencies = [
  "meari-native",
 ]
+
+[[package]]
+name = "meari-platform"
+version = "0.1.0"
 
 [[package]]
 name = "meari-visual"

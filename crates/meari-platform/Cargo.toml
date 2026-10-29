@@ -1,0 +1,10 @@
+[package]
+workspace = "../.."
+name = "meari-platform"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "MIT OR Apache-2.0"
+description = "Meari OS port and per-OS adapters (host font fallbacks), selected once by CurrentOs"
+repository = "https://github.com/modootoday/meari"
+include = ["src/**/*.rs", "Cargo.toml"]
