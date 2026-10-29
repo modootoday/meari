@@ -2074,6 +2074,7 @@ dependencies = [
  "oxc_ast",
  "oxc_parser",
  "oxc_span",
+ "parley",
  "png",
  "raw-window-handle",
  "regex",

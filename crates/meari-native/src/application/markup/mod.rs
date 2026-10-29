@@ -813,7 +813,7 @@ fn html_tag(tag: &str) -> Option<&str> {
                 | "img" | "dl" | "dt" | "dd" | "fieldset" | "legend" | "details" | "summary"
                 | "pre" | "video" | "form" | "a" | "abbr" | "address" | "b" | "blockquote"
                 | "br" | "caption" | "code" | "del" | "figcaption" | "figure" | "i" | "kbd"
-                | "mark" | "s" | "small" | "sub" | "sup" | "time" | "u" => tag,
+                | "mark" | "progress" | "s" | "small" | "sub" | "sup" | "time" | "u" => tag,
                 _ => return None,
             })
         })

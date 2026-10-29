@@ -166,6 +166,28 @@ impl StateEvent {
 mod hook_update;
 pub(crate) use hook_update::literal as hook_literal;
 
+/// A dense string array: the one state collection a keyed `.map` renders as siblings.
+pub fn string_items(value: &StateValue) -> Option<Vec<String>> {
+    use super::hook_expression::Kind;
+    match value {
+        StateValue::Structured(expression) => match &expression.kind {
+            Kind::Array(items) => items
+                .iter()
+                .map(|item| match &item.kind {
+                    Kind::Text(text) => Some(text.clone()),
+                    _ => None,
+                })
+                .collect(),
+            _ => None,
+        },
+        StateValue::Json(serde_json::Value::Array(items)) => items
+            .iter()
+            .map(|item| item.as_str().map(str::to_owned))
+            .collect(),
+        _ => None,
+    }
+}
+
 pub fn render_value(value: &StateValue) -> Result<Value, String> {
     match value {
         StateValue::Bool(value) => Ok(Value::Bool(*value)),

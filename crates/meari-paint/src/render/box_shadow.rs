@@ -78,6 +78,20 @@ impl ElementCx<'_, '_> {
                         let radius = self.frame.border_radii.average();
                         let rect = self.frame.border_box.inflate(spread, spread);
 
+                        // A spread-only shadow (e.g. Tailwind `ring-*`) is a solid shape: fill it
+                        // directly, since a zero-std-dev blurred rect is not a crisp fill.
+                        if blur == 0.0 {
+                            let grown = if radius > 0.0 { radius + spread } else { 0.0 };
+                            scene.fill(
+                                Fill::NonZero,
+                                transform,
+                                shadow_color,
+                                None,
+                                &kurbo::RoundedRect::from_rect(rect, grown.max(0.0)),
+                            );
+                            continue;
+                        }
+
                         // Fill the color
                         scene.draw_box_shadow(transform, rect, shadow_color, radius, blur);
                     }

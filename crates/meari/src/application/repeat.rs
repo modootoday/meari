@@ -66,6 +66,10 @@ pub(super) fn expand(component: &mut Component, scope: Option<&str>) -> Result<(
             }
         }
         if let NodeKind::Text(Value::Repeat(repeat)) = &node.kind {
+            if matches!(repeat.source, Value::State(_)) {
+                // State-driven lists expand per state projection, with the current items.
+                return Ok(vec![node]);
+            }
             let Value::Array(array) = &repeat.source else {
                 return Err("repeat source was not bound".into());
             };

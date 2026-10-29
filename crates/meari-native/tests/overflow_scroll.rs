@@ -88,3 +88,59 @@ fn overflow_hidden_clips_but_ignores_user_wheel() {
     wheel(&mut doc, 250.0, 50.0, -40.0);
     assert_eq!(offset_y(&doc, "hidden"), 0.0);
 }
+
+fn pointer(x: f32, y: f32, buttons: MouseEventButtons) -> BlitzPointerEvent {
+    BlitzPointerEvent {
+        id: BlitzPointerId::Mouse,
+        is_primary: true,
+        coords: coords(x, y),
+        button: MouseEventButton::Main,
+        buttons,
+        mods: Modifiers::empty(),
+        details: Default::default(),
+        element: Default::default(),
+        active_pointers: Default::default(),
+    }
+}
+
+#[test]
+fn dragging_the_scrollbar_thumb_scrolls_proportionally() {
+    let mut doc = document();
+    // Reveal the overlay bar, then grab the thumb near the right edge at the top.
+    wheel(&mut doc, 50.0, 50.0, -1.0);
+    wheel(&mut doc, 50.0, 50.0, 1.0);
+    assert_eq!(offset_y(&doc, "auto"), 0.0);
+    doc.handle_ui_event(UiEvent::PointerMove(pointer(
+        97.0,
+        10.0,
+        MouseEventButtons::None,
+    )));
+    doc.handle_ui_event(UiEvent::PointerDown(pointer(
+        97.0,
+        10.0,
+        MouseEventButtons::Primary,
+    )));
+    doc.handle_ui_event(UiEvent::PointerMove(pointer(
+        97.0,
+        40.0,
+        MouseEventButtons::Primary,
+    )));
+    let dragged = offset_y(&doc, "auto");
+    doc.handle_ui_event(UiEvent::PointerUp(pointer(
+        97.0,
+        40.0,
+        MouseEventButtons::None,
+    )));
+    // Thumb travel maps track space onto the 200px scroll range (ratio > 1).
+    assert!(dragged > 30.0 && dragged <= 200.0, "dragged to {dragged}");
+    doc.handle_ui_event(UiEvent::PointerMove(pointer(
+        97.0,
+        90.0,
+        MouseEventButtons::None,
+    )));
+    assert_eq!(
+        offset_y(&doc, "auto"),
+        dragged,
+        "released thumb no longer drags"
+    );
+}

@@ -165,6 +165,20 @@ impl Repeat {
                     ));
                 }
             },
+            Value::State(name) => match component
+                .states
+                .iter()
+                .find(|state| state.name == *name)
+                .and_then(|state| super::state_program::string_items(&state.initial))
+            {
+                Some(items) if !items.is_empty() => PropType::String,
+                _ => {
+                    return Err(fail(
+                        self.source_span,
+                        "repeat state source requires a non-empty string array literal",
+                    ));
+                }
+            },
             _ => {
                 return Err(fail(
                     self.source_span,

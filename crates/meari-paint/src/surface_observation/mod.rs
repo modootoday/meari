@@ -222,12 +222,14 @@ impl Collector {
                 _ if target.later_overlap != Overlap::Overlap => {
                     if diagnostics < 8 {
                         use std::{io::Write, sync::atomic::Ordering};
-                        if UNKNOWN_DIAGNOSTICS
+                        // `try_update` (its 1.95 rename) is above the 1.91 MSRV.
+                        #[allow(deprecated)]
+                        let admitted = UNKNOWN_DIAGNOSTICS
                             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |count| {
                                 (count < 16).then_some(count + 1)
                             })
-                            .is_ok()
-                        {
+                            .is_ok();
+                        if admitted {
                             let _ = writeln!(
                                 std::io::stderr().lock(),
                                 "meari-paint-unknown-blocker kind={primitive:?} owner={owner:?} target={} clip={current_clip:?} bound={unknown_bound:?} uncertain={uncertain}",

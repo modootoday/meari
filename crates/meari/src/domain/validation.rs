@@ -122,6 +122,16 @@ pub fn validate(component: &Component) -> Result<(), Diagnostic> {
         }
         if let component_state::StateValue::Structured(expression) = &binding.initial {
             expression.validate_literal()?;
+        } else if matches!(binding.initial, component_state::StateValue::Json(_)) {
+            // JSON state is admitted only as a dense string list for a keyed `.map`.
+            if crate::domain::state_program::string_items(&binding.initial)
+                .is_none_or(|items| items.is_empty())
+            {
+                return Err(Diagnostic::unsupported(
+                    binding.span,
+                    "JSON state requires a non-empty string array list source",
+                ));
+            }
         } else {
             crate::domain::state_program::render_value(&binding.initial)
                 .map_err(|message| Diagnostic::unsupported(binding.span, message))?;

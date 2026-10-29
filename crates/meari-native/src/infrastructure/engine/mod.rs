@@ -4,6 +4,9 @@ use crate::{
 };
 use anyrender::ImageRenderer;
 use blitz_html::HtmlDocument;
+mod generic_fonts;
+mod input_width;
+mod progress;
 #[cfg(feature = "window")]
 pub(crate) mod surface_slots;
 
@@ -16,6 +19,9 @@ pub struct NativeRenderer {
     layout_time: f64,
     pub last_paint: Option<crate::domain::graphics::FrameReceipt>,
     asset_host: Option<std::sync::Arc<super::asset_provider::AssetProvider>>,
+    input_fonts: parley::FontContext,
+    input_widths: std::collections::HashMap<(blitz_dom::NodeId, bool), String>,
+    progress_fills: std::collections::HashMap<blitz_dom::NodeId, String>,
     #[cfg(all(feature = "gl", windows))]
     gl_host: Option<std::rc::Rc<std::cell::RefCell<super::gl::GlHost>>>,
 }
@@ -100,9 +106,11 @@ impl NativeRenderer {
         assets: meari::application::assets::VerifiedAssets,
     ) -> Result<Self, String> {
         let provider = super::asset_provider::AssetProvider::new(assets)?;
+        let fonts = generic_fonts::context();
         let config = blitz_dom::DocumentConfig {
             base_url: Some(super::asset_provider::BASE_URL.into()),
             net_provider: Some(provider.clone()),
+            font_ctx: Some(fonts.clone()),
             ..Default::default()
         };
         Ok(Self {
@@ -112,10 +120,13 @@ impl NativeRenderer {
             surface_observation: std::cell::RefCell::new(
                 surface_slots::SurfaceObservationState::default(),
             ),
-            document: super::range_input::configure(HtmlDocument::from_html(html, config)),
+            document: configure(HtmlDocument::from_html(html, config)),
             layout_time: 0.0,
             last_paint: None,
             asset_host: Some(provider),
+            input_fonts: fonts,
+            input_widths: Default::default(),
+            progress_fills: Default::default(),
             #[cfg(all(feature = "gl", windows))]
             gl_host: super::gl::current(),
         })
@@ -144,6 +155,25 @@ impl NativeRenderer {
         Ok(())
     }
     pub(crate) fn resolve_assets(&mut self, time: f64) -> Result<(), String> {
+        self.settle_assets(time)?;
+        // Intrinsic input widths read resolved fonts and progress looks read resolved borders
+        // and backgrounds; publishing either restyles. Input minimums need the published
+        // width, so this settles in up to three rounds.
+        for _ in 0..3 {
+            let inputs = input_width::refresh(
+                &mut self.document,
+                &mut self.input_fonts,
+                &mut self.input_widths,
+            );
+            let bars = progress::refresh(&mut self.document, &mut self.progress_fills);
+            if !inputs && !bars {
+                break;
+            }
+            self.settle_assets(time)?;
+        }
+        Ok(())
+    }
+    fn settle_assets(&mut self, time: f64) -> Result<(), String> {
         super::range_input::refresh(&mut self.document)?;
         let Some(host) = &self.asset_host else {
             self.document.resolve(time);
@@ -232,6 +262,7 @@ impl NativeRenderer {
     }
 
     pub fn from_html(html: &str) -> Self {
+        let fonts = generic_fonts::context();
         Self {
             #[cfg(feature = "window")]
             surface_identity: std::rc::Rc::new(()),
@@ -239,15 +270,27 @@ impl NativeRenderer {
             surface_observation: std::cell::RefCell::new(
                 surface_slots::SurfaceObservationState::default(),
             ),
-            document: super::range_input::configure(HtmlDocument::from_html(
+            document: configure(HtmlDocument::from_html(
                 html,
-                Default::default(),
+                blitz_dom::DocumentConfig {
+                    font_ctx: Some(fonts.clone()),
+                    ..Default::default()
+                },
             )),
             layout_time: 0.0,
             last_paint: None,
             asset_host: None,
+            input_fonts: fonts,
+            input_widths: Default::default(),
+            progress_fills: Default::default(),
             #[cfg(all(feature = "gl", windows))]
             gl_host: super::gl::current(),
         }
     }
+}
+
+fn configure(mut doc: HtmlDocument) -> HtmlDocument {
+    doc.add_user_agent_stylesheet(blitz_dom::UserAgentStylesheet::parse(input_width::CSS));
+    doc.add_user_agent_stylesheet(blitz_dom::UserAgentStylesheet::parse(progress::CSS));
+    super::range_input::configure(doc)
 }

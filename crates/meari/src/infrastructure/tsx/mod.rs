@@ -219,8 +219,8 @@ fn jsx_children(input: &[JSXChild<'_>]) -> Result<Vec<Node>, Diagnostic> {
                     c.expression.as_expression()
                 {
                     children.extend(repeat::nodes(expression)?);
-                } else if let Some(node) = conditional::node(c.expression.as_expression())? {
-                    children.push(node);
+                } else if let Some(nodes) = conditional::nodes(c.expression.as_expression())? {
+                    children.extend(nodes);
                 } else {
                     children.push(Node {
                         kind: NodeKind::Text(jsx_value(&c.expression)?),
@@ -290,6 +290,7 @@ fn parse_source(source: &str, local_modules: bool) -> Result<Component, Diagnost
     let mut imported = std::collections::BTreeSet::new();
     let mut use_id = false;
     let mut use_state = false;
+    let mut use_effect = false;
     for statement in &parsed.program.body {
         match statement {
             Statement::ImportDeclaration(import) => {
@@ -326,6 +327,15 @@ fn parse_source(source: &str, local_modules: bool) -> Result<Component, Diagnost
                         && !use_state
                     {
                         use_state = true;
+                        continue;
+                    }
+                    if import.source.value == "react"
+                        && name.name == "useEffect"
+                        && specifier.local.name == "useEffect"
+                        && specifier.import_kind == ImportOrExportKind::Value
+                        && !use_effect
+                    {
+                        use_effect = true;
                         continue;
                     }
                     if import.source.value == "react"
@@ -466,7 +476,13 @@ fn parse_source(source: &str, local_modules: bool) -> Result<Component, Diagnost
     let mut ids = std::collections::BTreeSet::new();
     let mut states = Vec::new();
     let mut hook_order = Vec::new();
+    let mut effects = 0;
     for statement in declarations {
+        if use_effect && state::effect::is_effect(statement) {
+            state::effect::apply(statement, &mut states)?;
+            effects += 1;
+            continue;
+        }
         if use_state
             && matches!(statement, Statement::VariableDeclaration(declaration) if declaration.declarations.iter().any(|binding| matches!(binding.id, BindingPattern::ArrayPattern(_))))
         {
@@ -522,6 +538,10 @@ fn parse_source(source: &str, local_modules: bool) -> Result<Component, Diagnost
     };
     let mut root = element(root)?;
     state::resolve(&mut root, &states);
+    state::lists::admit(&mut root, &mut states);
+    if use_effect && effects == 0 {
+        return Err(err(f, "unused useEffect import"));
+    }
     if use_state && states.is_empty() {
         return Err(err(f, "unused useState import"));
     }
