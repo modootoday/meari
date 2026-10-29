@@ -4,6 +4,7 @@ use crate::{
 };
 use anyrender::ImageRenderer;
 use blitz_html::HtmlDocument;
+mod generic_fonts;
 #[cfg(feature = "window")]
 pub(crate) mod surface_slots;
 
@@ -103,6 +104,7 @@ impl NativeRenderer {
         let config = blitz_dom::DocumentConfig {
             base_url: Some(super::asset_provider::BASE_URL.into()),
             net_provider: Some(provider.clone()),
+            font_ctx: Some(generic_fonts::context()),
             ..Default::default()
         };
         Ok(Self {
@@ -241,7 +243,10 @@ impl NativeRenderer {
             ),
             document: super::range_input::configure(HtmlDocument::from_html(
                 html,
-                Default::default(),
+                blitz_dom::DocumentConfig {
+                    font_ctx: Some(generic_fonts::context()),
+                    ..Default::default()
+                },
             )),
             layout_time: 0.0,
             last_paint: None,

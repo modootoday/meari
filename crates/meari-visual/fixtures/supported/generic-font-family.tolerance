@@ -1,0 +1,2 @@
+max_ratio=0.010
+reason=glyph rasterization only (vello_cpu vs Skia anti-aliasing); same face (Arimo via Chromium Linux default Arial) and ink bbox equal (x 25..357, y 27/28..45). Measured 0.866% on 2026-10-30.

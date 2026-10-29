@@ -33,6 +33,7 @@ blitz-dom = { version = "=0.3.0-beta.4", default-features = false, features = ["
 blitz-html = "=0.3.0-beta.4"
 blitz-paint = { version = "=0.3.0-beta.4", path = "../meari-paint", features = ["scrollbars"] }
 blitz-traits = "=0.3.0-beta.4"
+parley = { version = "=0.12.0", default-features = false, features = ["std", "system"] }
 blitz-shell = { version = "=0.3.0-beta.4", optional = true, default-features = false, features = ["clipboard"] }
 winit = { version = "=0.31.0-beta.3", optional = true }
 accesskit_xplat = { version = "=0.2.0", optional = true, default-features = false }
