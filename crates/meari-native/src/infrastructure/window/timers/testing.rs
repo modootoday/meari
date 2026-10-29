@@ -1,4 +1,5 @@
 //! Bounded private recording at real queue firing and actual host dispatch, never authority.
+#![cfg_attr(not(windows), allow(dead_code))] // Fields are read only by the Windows timer_os tests.
 use crate::infrastructure::native_host::{HostAccessError, HostStamp, HostTurnReceipt};
 use std::time::Instant;
 
