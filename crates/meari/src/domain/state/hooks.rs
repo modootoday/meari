@@ -1,4 +1,4 @@
-use super::{Node, NodeKind, Value};
+use super::super::{Node, NodeKind, Value};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 
@@ -15,7 +15,7 @@ pub fn ids(root: &Node) -> BTreeSet<String> {
             if let Value::Id(name) = v {
                 out.insert(name.clone());
             }
-            if let Value::NodeSlot(super::node_slots::NodeSlot::Content(nodes)) = v {
+            if let Value::NodeSlot(super::super::node_slots::NodeSlot::Content(nodes)) = v {
                 for child in nodes {
                     visit(child, out);
                 }

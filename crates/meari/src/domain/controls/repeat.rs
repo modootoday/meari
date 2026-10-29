@@ -1,5 +1,5 @@
 //! Source-preserving keyed Array.map expression; expansion belongs to runtime projection.
-use super::{Component, Diagnostic, Node, NodeKind, Prop, PropType, Span, Value};
+use super::super::{Component, Diagnostic, Node, NodeKind, Prop, PropType, Span, Value};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -23,7 +23,7 @@ pub fn map_values(node: &mut Node, map: &mut impl FnMut(&mut Value)) {
     }
     match &mut node.kind {
         NodeKind::Text(value) => {
-            if let Value::NodeSlot(super::node_slots::NodeSlot::Content(nodes)) = value {
+            if let Value::NodeSlot(super::super::node_slots::NodeSlot::Content(nodes)) = value {
                 for child in nodes {
                     map_values(child, map);
                 }
@@ -43,7 +43,7 @@ pub fn map_values(node: &mut Node, map: &mut impl FnMut(&mut Value)) {
             ..
         } => {
             for attribute in attributes {
-                if let Value::NodeSlot(super::node_slots::NodeSlot::Content(nodes)) =
+                if let Value::NodeSlot(super::super::node_slots::NodeSlot::Content(nodes)) =
                     &mut attribute.value
                 {
                     for child in nodes {
@@ -65,7 +65,7 @@ pub fn substitute_local(node: &mut Node, name: &str, replacement: &Value) {
         if let Value::Predicate(expression) = value {
             expression.substitute_local(name, replacement);
         }
-        if let Value::NodeSlot(super::node_slots::NodeSlot::Content(nodes)) = value {
+        if let Value::NodeSlot(super::super::node_slots::NodeSlot::Content(nodes)) = value {
             for node in nodes {
                 substitute_local(node, name, replacement);
             }
@@ -169,7 +169,7 @@ impl Repeat {
                 .states
                 .iter()
                 .find(|state| state.name == *name)
-                .and_then(|state| super::state_program::string_items(&state.initial))
+                .and_then(|state| super::super::state_program::string_items(&state.initial))
             {
                 Some(items) if !items.is_empty() => PropType::String,
                 _ => {
@@ -189,7 +189,7 @@ impl Repeat {
         let key_type = if self.key_path.is_empty() {
             element.clone()
         } else {
-            super::member_value::MemberValue::field_type(element.clone(), &self.key_path)
+            super::super::member_value::MemberValue::field_type(element.clone(), &self.key_path)
                 .map_err(|message| Diagnostic::unsupported(self.key_span, message))?
         };
         if key_type != PropType::String {
@@ -200,7 +200,7 @@ impl Repeat {
         }
         let mut scoped = component.clone();
         let mut local_name = format!("meariLexical{}", scoped.props.len());
-        let id_bindings = super::hooks::ids(&scoped.root);
+        let id_bindings = super::super::hooks::ids(&scoped.root);
         while scoped.props.iter().any(|prop| prop.name == local_name)
             || scoped
                 .states
@@ -216,16 +216,16 @@ impl Repeat {
         });
         scoped.root = self.template.clone();
         substitute_local(&mut scoped.root, &self.item, &Value::Prop(local_name));
-        let ids = super::hooks::ids(&scoped.root);
+        let ids = super::super::hooks::ids(&scoped.root);
         if scoped.states.is_empty() || ids.is_empty() {
             scoped.hook_order.clear();
         } else {
             scoped.hook_order.retain(|slot| match slot {
-                super::hooks::HookSlot::Id(name) => ids.contains(name),
-                super::hooks::HookSlot::State(_) => true,
+                super::super::hooks::HookSlot::Id(name) => ids.contains(name),
+                super::super::hooks::HookSlot::State(_) => true,
             });
         }
-        super::validation::validate(&scoped)
+        super::super::validation::validate(&scoped)
     }
 
     pub(crate) fn erase_spans(&mut self) {

@@ -42,7 +42,7 @@ impl CallbackArguments {
 pub struct CallbackInvocation {
     pub prop: String,
     pub arguments: CallbackArguments,
-    pub span: super::Span,
+    pub span: super::super::Span,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -61,7 +61,7 @@ pub enum CallbackSource {
 pub struct CallbackHandler {
     pub prop: String,
     pub source: CallbackSource,
-    pub span: super::Span,
+    pub span: super::super::Span,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capture_prop: Option<String>,
 }
@@ -92,7 +92,7 @@ impl CallbackReference {
 pub struct BoundCallback {
     pub reference: CallbackReference,
     pub source: CallbackSource,
-    pub span: super::Span,
+    pub span: super::super::Span,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub captured_text: Option<String>,
 }
@@ -173,29 +173,31 @@ impl BoundCallback {
     }
 }
 
-pub(crate) fn contains_runtime(node: &super::Node) -> bool {
-    fn runtime_value(value: &super::Value) -> bool {
+pub(crate) fn contains_runtime(node: &super::super::Node) -> bool {
+    fn runtime_value(value: &super::super::Value) -> bool {
         match value {
-            super::Value::NodeSlot(
-                super::node_slots::NodeSlot::Owned(_) | super::node_slots::NodeSlot::Captured(_),
+            super::super::Value::NodeSlot(
+                super::super::node_slots::NodeSlot::Owned(_)
+                | super::super::node_slots::NodeSlot::Captured(_),
             ) => true,
-            super::Value::NodeSlot(super::node_slots::NodeSlot::Content(nodes)) => {
+            super::super::Value::NodeSlot(super::super::node_slots::NodeSlot::Content(nodes)) => {
                 nodes.iter().any(contains_runtime)
             }
-            super::Value::CallbackReference(_)
-            | super::Value::BoundCallback(_)
-            | super::Value::Array(_)
-            | super::Value::Record(_) => true,
-            super::Value::Member(member) => runtime_value(&member.root),
+            super::super::Value::CallbackReference(_)
+            | super::super::Value::BoundCallback(_)
+            | super::super::Value::Array(_)
+            | super::super::Value::Record(_) => true,
+            super::super::Value::Member(member) => runtime_value(&member.root),
             _ => false,
         }
     }
     match &node.kind {
-        super::NodeKind::Text(super::Value::Repeat(repeat)) => {
-            matches!(repeat.source, super::Value::Array(_)) || contains_runtime(&repeat.template)
+        super::super::NodeKind::Text(super::super::Value::Repeat(repeat)) => {
+            matches!(repeat.source, super::super::Value::Array(_))
+                || contains_runtime(&repeat.template)
         }
-        super::NodeKind::Text(value) => runtime_value(value),
-        super::NodeKind::Element {
+        super::super::NodeKind::Text(value) => runtime_value(value),
+        super::super::NodeKind::Element {
             attributes,
             children,
             ..

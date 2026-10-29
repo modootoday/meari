@@ -1,4 +1,4 @@
-use super::viewport::Viewport;
+use super::super::viewport::Viewport;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

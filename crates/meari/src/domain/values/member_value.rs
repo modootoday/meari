@@ -1,5 +1,5 @@
 //! Bounded own-field reads from declared immutable records.
-use super::{Prop, PropType, Value};
+use super::super::{Prop, PropType, Value};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -15,7 +15,7 @@ impl MemberValue {
         }
         kind.validate()?;
         for name in path {
-            if !super::validation::identifier(name) {
+            if !super::super::validation::identifier(name) {
                 return Err("record member requires a portable field name".into());
             }
             let PropType::Record(fields) = kind else {

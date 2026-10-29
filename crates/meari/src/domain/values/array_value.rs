@@ -1,5 +1,5 @@
 //! Prepared typed array binding value; retain the declared element type for empty arrays.
-use super::{PropType, Value};
+use super::super::{PropType, Value};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -15,7 +15,7 @@ impl ArrayValue {
         }
     }
     pub fn validate(&self) -> Result<(), String> {
-        super::prop_values::validate_array(self)
+        super::super::prop_values::validate_array(self)
     }
 }
 

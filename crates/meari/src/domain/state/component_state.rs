@@ -19,7 +19,7 @@ pub enum StateValue {
     Number(serde_json::Number),
     Json(serde_json::Value),
     /// Static source description, never a live runtime root or its equality policy.
-    Structured(Box<super::hook_expression::Expression>),
+    Structured(Box<super::super::hook_expression::Expression>),
 }
 
 impl StateValue {

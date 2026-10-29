@@ -1,5 +1,5 @@
 //! Declaration identity for source components, separate from mounted instances.
-use super::{
+use super::super::{
     Component, Span,
     build::{BuildGraph, BuildPath, ContentHash, InputFile, InputRole},
 };

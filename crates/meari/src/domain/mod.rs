@@ -1,29 +1,29 @@
+pub use self::values::array_value;
 use serde::{Deserialize, Serialize};
-pub mod array_value;
 pub mod assets;
 pub mod bool_expression;
 pub mod build;
-pub mod component_state;
+pub use self::state::component_state;
 pub mod design;
-pub(crate) mod hook_value;
-pub mod hooks;
-pub mod host;
-pub mod host_callbacks;
-pub mod input_event;
-pub mod member_value;
-pub mod node_slots;
+pub use self::host_boundary::host;
+pub use self::host_boundary::host_callbacks;
+pub use self::host_boundary::input_event;
+pub use self::sources::node_slots;
+pub use self::state::hooks;
+pub(crate) use self::values::hook_value;
+pub use self::values::member_value;
 pub mod plugins;
-mod prop_values;
-pub mod radio_group;
-pub mod range_parts;
-pub mod record_value;
-pub mod repeat;
-pub mod source_modules;
-pub mod source_schema;
-pub mod state_expression;
+pub use self::controls::radio_group;
+pub use self::controls::range_parts;
+pub use self::controls::repeat;
+pub use self::sources::source_modules;
+pub use self::sources::source_schema;
+pub use self::state::state_expression;
+use self::values::prop_values;
+pub use self::values::record_value;
 pub mod state_program;
 pub mod validation;
-pub mod viewport;
+pub use self::host_boundary::viewport;
 
 /// Half-open UTF-8 byte offsets in the original source.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -262,5 +262,10 @@ impl Component {
         a == b
     }
 }
+mod controls;
 pub mod hook_expression;
+mod host_boundary;
 pub mod range_interaction;
+mod sources;
+mod state;
+mod values;

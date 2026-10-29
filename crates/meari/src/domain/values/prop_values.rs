@@ -1,5 +1,5 @@
 //! One budget across all immutable prop containers, including alternating records/arrays.
-use super::{PropType, Value, array_value::ArrayValue, record_value::RecordValue};
+use super::super::{PropType, Value, array_value::ArrayValue, record_value::RecordValue};
 use std::collections::BTreeSet;
 
 #[derive(Default)]
@@ -46,7 +46,8 @@ fn type_visit(kind: &PropType, depth: usize, budget: &mut Budget) -> Result<(), 
         PropType::Record(fields) => {
             let mut names = BTreeSet::new();
             for field in fields {
-                if !super::validation::identifier(&field.name) || !names.insert(&field.name) {
+                if !super::super::validation::identifier(&field.name) || !names.insert(&field.name)
+                {
                     return Err("record fields require unique portable identifiers".into());
                 }
                 if field.kind == PropType::Node {
@@ -61,7 +62,7 @@ fn type_visit(kind: &PropType, depth: usize, budget: &mut Budget) -> Result<(), 
     Ok(())
 }
 
-pub(super) fn validate_type(kind: &PropType) -> Result<(), String> {
+pub(in super::super) fn validate_type(kind: &PropType) -> Result<(), String> {
     type_visit(kind, 0, &mut Budget::default())
 }
 
@@ -91,7 +92,7 @@ fn value_visit(
             Ok(())
         }
         (PropType::Record(schema), Value::Record(record))
-            if super::record_value::same_schema(schema, record.schema()) =>
+            if super::super::record_value::same_schema(schema, record.schema()) =>
         {
             record_visit(record, depth, budget)
         }
@@ -113,12 +114,12 @@ fn record_visit(record: &RecordValue, depth: usize, budget: &mut Budget) -> Resu
     Ok(())
 }
 
-pub(super) fn validate_record(record: &RecordValue) -> Result<(), String> {
+pub(in super::super) fn validate_record(record: &RecordValue) -> Result<(), String> {
     validate_type(&record.kind())?;
     record_visit(record, 0, &mut Budget::default())
 }
 
-pub(super) fn validate_array(array: &ArrayValue) -> Result<(), String> {
+pub(in super::super) fn validate_array(array: &ArrayValue) -> Result<(), String> {
     type_visit(&array.element, 1, &mut Budget::default())?;
     let mut budget = Budget::default();
     for item in &array.items {

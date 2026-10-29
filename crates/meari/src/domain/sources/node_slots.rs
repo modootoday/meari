@@ -1,5 +1,5 @@
 //! Authoring subtrees and opaque graph-owned runtime slots, never HTML or host authority.
-use super::{Node, Value, source_modules::ComponentReference};
+use super::super::{Node, Value, source_modules::ComponentReference};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -52,8 +52,8 @@ fn validate_tree_budget(root: &Node, max_nodes: usize, max_depth: usize) -> Resu
             return Err("source node/slot depth or size budget exceeded".into());
         }
         match &node.kind {
-            super::NodeKind::Text(value) => slot(value, depth, &mut pending),
-            super::NodeKind::Element {
+            super::super::NodeKind::Text(value) => slot(value, depth, &mut pending),
+            super::super::NodeKind::Element {
                 attributes,
                 children,
                 ..
@@ -73,13 +73,12 @@ mod tests {
     #[test]
     fn source_slot_size_and_depth_are_checked_before_recursive_visitors() {
         let leaf = crate::runtime::text("leaf");
-        let content =
-            Node {
-                kind: super::super::NodeKind::Text(Value::NodeSlot(NodeSlot::Content(
-                    vec![leaf.clone(); 5],
-                ))),
-                span: Default::default(),
-            };
+        let content = Node {
+            kind: super::super::super::NodeKind::Text(Value::NodeSlot(NodeSlot::Content(
+                vec![leaf.clone(); 5],
+            ))),
+            span: Default::default(),
+        };
         assert!(validate_tree_budget(&content, 4, 8).is_err());
         assert!(validate_tree_budget(&content, 6, 1).is_ok());
         let mut deep = leaf;

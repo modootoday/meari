@@ -1,9 +1,9 @@
 //! Validated immutable host input; never a substitute for live hook object identity.
-use super::{Prop, PropType, Value};
+use super::super::{Prop, PropType, Value};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-pub(super) fn same_schema(left: &[Prop], right: &[Prop]) -> bool {
+pub(in super::super) fn same_schema(left: &[Prop], right: &[Prop]) -> bool {
     if left.len() != right.len() {
         return false;
     }
@@ -48,7 +48,7 @@ impl RecordValue {
 
     /// Deserialization is intentionally followed by the same validation as host binding.
     pub fn validate(&self) -> Result<(), String> {
-        super::prop_values::validate_record(self)
+        super::super::prop_values::validate_record(self)
     }
 }
 

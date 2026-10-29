@@ -1,5 +1,5 @@
 //! Original declaration identity retained separately from resolved runtime bindings.
-use super::{
+use super::super::{
     Component, Prop,
     build::ContentHash,
     component_state::StateType,
@@ -16,7 +16,7 @@ enum Hook {
         name: String,
         value_type: StateType,
         #[serde(skip_serializing_if = "Option::is_none")]
-        shape: Option<super::hook_expression::LiteralShape>,
+        shape: Option<super::super::hook_expression::LiteralShape>,
     },
 }
 
@@ -30,7 +30,7 @@ pub struct SourceSchema {
 }
 impl SourceSchema {
     pub fn from_component(component: &Component) -> Result<Self, String> {
-        super::validation::validate(component).map_err(|error| error.message)?;
+        super::super::validation::validate(component).map_err(|error| error.message)?;
         let state_hook = |name: &str| -> Result<Hook, String> {
             let state = component
                 .states
@@ -41,7 +41,7 @@ impl SourceSchema {
                 name: name.into(),
                 value_type: state.initial.kind(),
                 shape: match &state.initial {
-                    super::component_state::StateValue::Structured(expression) => {
+                    super::super::component_state::StateValue::Structured(expression) => {
                         Some(expression.literal_shape().map_err(|error| error.message)?)
                     }
                     _ => None,
@@ -77,20 +77,20 @@ impl SourceSchema {
             } else if component.states.iter().any(|state| {
                 matches!(
                     state.initial,
-                    super::component_state::StateValue::Structured(_)
+                    super::super::component_state::StateValue::Structured(_)
                 )
             }) {
                 4
             } else if component
                 .props
                 .iter()
-                .any(|prop| matches!(prop.kind, super::PropType::Array(_)))
+                .any(|prop| matches!(prop.kind, super::super::PropType::Array(_)))
             {
                 3
             } else if component
                 .props
                 .iter()
-                .any(|prop| matches!(prop.kind, super::PropType::Callback(_)))
+                .any(|prop| matches!(prop.kind, super::super::PropType::Callback(_)))
             {
                 2
             } else {
