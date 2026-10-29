@@ -20,3 +20,7 @@ meari-builder = { path = "../meari-builder", version = "0.1.0" }
 [[bin]]
 name = "meari"
 path = "src/main.rs"
+
+[[test]]
+name = "dispatch"
+path = "tests/cli/dispatch.rs"

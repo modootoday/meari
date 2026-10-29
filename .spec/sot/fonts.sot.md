@@ -165,6 +165,15 @@ unmodified OTF under its original name.
   their unicode-range union equals the native OTF cmap (23,126; all 11,172 syllables).
 - visual: `supported/canonical-font` (6 lines: + JP bold, + serif Hangul) MATCH 1.597%
   (tolerance 1.7%, was 1.2% for 4 lines; per-line ink bbox equal on all 6 lines; AA only).
+  **Pending owner approval** (the 1.2 → 1.7% raise predates the no-raise rule). Root-cause
+  check 2026-10-30 on the 320×480 capture: differing pixels (channel >16) 2,453 = 1.597%, spread
+  over every line at 22–50% of that line's ink (sans 616, sans600 312, jp 305, jpbold 340,
+  serif 464, serifKR 416); no ±1 px shift helps (best is 0,0; others 7,548–10,132); signed error
+  is unbiased (mean −2.3/255, 47% native-lighter) and total ink matches (1,203,471 vs
+  1,196,625); a coverage-gamma remap only worsens it (γ 0.8–1.45 ⇒ 2,617–4,289). So the residual
+  is vello_cpu vs Skia glyph AA/sub-pixel placement, not a face, weight, metric or gamma mismatch,
+  and cannot reach ≤1.2% without changing the rasterizer. Splitting the fixture would only dilute
+  the area ratio and was not done. Options for the owner: approve 1.7%, or split/shrink the fixture.
 
 ## Limits
 

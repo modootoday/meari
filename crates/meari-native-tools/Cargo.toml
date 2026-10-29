@@ -29,3 +29,7 @@ path = "src/main.rs"
 [[bin]]
 name = "meari-kitchen-sink"
 path = "src/bin/kitchen_sink.rs"
+
+[[test]]
+name = "cli_entrypoints"
+path = "tests/cli/cli_entrypoints.rs"

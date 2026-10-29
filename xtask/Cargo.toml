@@ -4,3 +4,7 @@ version = "0.1.0"
 edition = "2024"
 publish = false
 description = "Meari development automation (structure lint). Shared-convention crate split planned; see .spec/plan/20261029124634-refactor-log.plan.md."
+
+[[test]]
+name = "runtime_root"
+path = "tests/runtime/runtime_root.rs"

@@ -30,7 +30,11 @@ pub fn dir() -> PathBuf {
 
 pub fn load() -> Result<Vec<Fixture>, String> {
     let mut all = load_kind(&dir().join("supported"), Kind::Supported)?;
-    all.extend(load_kind(&dir().join("gaps"), Kind::Gap)?);
+    // git does not track empty directories: no gaps left means no `gaps/` dir.
+    let gaps = dir().join("gaps");
+    if gaps.is_dir() {
+        all.extend(load_kind(&gaps, Kind::Gap)?);
+    }
     Ok(all)
 }
 
