@@ -4,7 +4,7 @@ use crate::{
 };
 use anyrender::ImageRenderer;
 use blitz_html::HtmlDocument;
-mod generic_fonts;
+pub mod generic_fonts;
 mod input_width;
 mod progress;
 #[cfg(feature = "window")]

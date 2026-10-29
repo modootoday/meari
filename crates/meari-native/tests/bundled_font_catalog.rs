@@ -2,7 +2,7 @@ use meari::{
     application::fonts::prepare_font_catalog,
     domain::{
         build::BuildPath,
-        design::fonts::{FontRequirement, UI_FACES},
+        design::fonts::{FontFace, FontFormat, FontRequirement, UI_FACES},
     },
 };
 use meari_native::{
@@ -21,7 +21,7 @@ fn common_font_faces_pass_native_preflight() {
         let (media_type, bytes) = catalog.assets.resource(&output).unwrap();
         assert_eq!(media_type, "font/ttf");
         let face = ttf_parser::Face::parse(bytes, 0).unwrap();
-        assert_eq!(face.weight().to_number(), expected.weight());
+        assert_eq!(face.weight().to_number(), expected.default_weight());
         assert!(
             face.names().into_iter().any(|name| {
                 matches!(
@@ -57,9 +57,10 @@ fn common_font_catalog_css_delivers_all_faces_headlessly() {
         body{{margin:0;font-family:var(--meari-font-ui)}}
         #regular{{font-weight:400}}#semibold{{font-weight:600}}
         #jp{{font-family:"Pretendard JP";font-weight:400}}
+        #serif{{font-family:"Source Serif 4 Variable"}}
         </style><body><div id="regular">Meari 한글</div>
-        <div id="semibold">Meari 한글</div><div id="jp">Meari 日本語</div></body>"#,
-        catalog.css,
+        <div id="semibold">Meari 한글</div><div id="jp">Meari 日本語</div><div id="serif">Meari</div></body>"#,
+        catalog.native_css,
     );
     let mut renderer = NativeRenderer::from_html_with_assets(&html, catalog.assets).unwrap();
     renderer
@@ -81,7 +82,7 @@ fn common_font_catalog_css_delivers_all_faces_headlessly() {
     );
     assert!(report.delivered.values().all(|count| *count > 0));
     assert!(!renderer.document.has_pending_critical_resources());
-    for id in ["regular", "semibold", "jp"] {
+    for id in ["regular", "semibold", "jp", "serif"] {
         let bounds = renderer.bounds(id).unwrap();
         assert!(
             [bounds.x, bounds.y, bounds.width, bounds.height]
@@ -91,4 +92,41 @@ fn common_font_catalog_css_delivers_all_faces_headlessly() {
         assert!(bounds.width > 0.0 && bounds.height > 0.0);
     }
     // Delivery and nonempty layout do not identify the selected font or certify glyphs.
+}
+
+/// Hangul, Latin and Japanese coverage of the canonical faces, read from the upstream TTF
+/// (the WOFF2 of each face is checked against it by meari's font_catalog header test).
+#[test]
+fn canonical_faces_cover_hangul_latin_and_japanese() {
+    let glyphs = |face: FontFace| {
+        let bytes = meari::application::fonts::face_bytes(face, FontFormat::Truetype);
+        let parsed = ttf_parser::Face::parse(bytes, 0).unwrap();
+        let count = parsed.number_of_glyphs();
+        let covers = |text: &str| text.chars().all(|ch| parsed.glyph_index(ch).is_some());
+        (
+            count,
+            covers("가힣한글"),
+            covers("AZaz09"),
+            covers("あんアン"),
+            covers("日本語"),
+        )
+    };
+    assert_eq!(
+        glyphs(FontFace::PretendardVariable),
+        (14_757, true, true, true, false)
+    );
+    assert_eq!(
+        glyphs(FontFace::PretendardJpRegular),
+        (22_936, true, true, true, true)
+    );
+    assert_eq!(
+        glyphs(FontFace::SourceSerif4Variable),
+        (1_464, false, true, false, false)
+    );
+    // All 11,172 precomposed Hangul syllables in the sans canonical face.
+    let bytes =
+        meari::application::fonts::face_bytes(FontFace::PretendardVariable, FontFormat::Truetype);
+    let parsed = ttf_parser::Face::parse(bytes, 0).unwrap();
+    assert!((0xAC00..=0xD7A3).all(|cp| parsed.glyph_index(char::from_u32(cp).unwrap()).is_some()));
+    assert!(parsed.is_variable());
 }

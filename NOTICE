@@ -6,13 +6,13 @@ their separately reviewed source revision and content hashes.
 Dependencies retain their own copyrights and licenses. Cargo.lock records
 resolved package versions; no dependency source is relicensed by this notice.
 
-The optional shared font catalog contains unchanged Pretendard Regular,
-Pretendard SemiBold and Pretendard JP Regular from retained v1.3.9 product
-assets, copyright (c) 2021 Kil Hyung-jin. These fonts retain SIL OFL-1.1 and
-Reserved Font Names Pretendard / Pretendard JP. Complete original notices are
-assets/fonts/pretendard/LICENSE.txt and LICENSE-JP.txt. Font bytes and notices
-are content-pinned; they are not relicensed under this project's dual license.
-Catalog integrity does not certify glyph coverage, shaping or fallback parity.
+The bundled font catalog (Pretendard Variable, Pretendard JP Regular,
+Source Serif 4 Variable) contains unchanged upstream files under SIL OFL-1.1
+only. Copyright holders, Reserved Font Names and sources are collected in
+THIRD_PARTY_NOTICES.md; complete original notices stay beside the fonts in
+assets/fonts. Font bytes and notices are content-pinned; they are not
+relicensed under this project's dual license. Catalog integrity does not
+certify shaping or fallback parity.
 
 The native CSS engine includes Stylo and Stylo traits, whose published package
 metadata declares MPL-2.0. This project's dual license does not replace it.

@@ -4,7 +4,8 @@ use crate::domain::{
     assets::{AssetDescriptor, AssetManifest},
     build::{BuildPath, ContentHash, InputRole},
     design::fonts::{
-        FontFace, FontLicense, FontRequirement, FontSupport, UI_FACES, UI_FONT_FAMILY,
+        FontFace, FontFile, FontFormat, FontLicense, FontRequirement, FontSupport, LICENSES,
+        SANS_FONT_FAMILY, SERIF_FONT_FAMILY, UI_FACES, UI_FONT_FAMILY,
     },
 };
 use std::collections::BTreeMap;
@@ -18,8 +19,14 @@ pub enum FontCatalogError {
 }
 
 pub struct PreparedFontCatalog {
+    /// Native resources: upstream TTF (native has no WOFF2 decoder).
     pub assets: VerifiedAssets,
+    /// Web resources: upstream WOFF2 of the same faces.
+    pub web_assets: VerifiedAssets,
+    /// Web `@font-face` rules: upstream WOFF2, `font-display:swap`.
     pub css: String,
+    /// Native `@font-face` rules over the same faces' upstream TTF.
+    pub native_css: String,
     pub support: FontSupport,
 }
 
@@ -36,51 +43,73 @@ pub fn prepare_font_catalog(
     if requirement != FontRequirement::PinnedAssets {
         return Err(FontCatalogError::UnsupportedRequirement(requirement));
     }
-    for license in [FontLicense::Pretendard, FontLicense::PretendardJp] {
+    for license in LICENSES {
         verify_license(license, license_text(license).as_bytes())?;
     }
-    let mut files = BTreeMap::new();
-    let mut blobs = BTreeMap::new();
+    let mut files = [BTreeMap::new(), BTreeMap::new()];
+    let mut blobs = [BTreeMap::new(), BTreeMap::new()];
     let mut css = String::new();
+    let mut native_css = String::new();
     for face in UI_FACES {
-        let bytes = font_bytes(face);
-        verify_font(face, bytes)?;
-        let hash = ContentHash::of(bytes);
-        let descriptor = AssetDescriptor {
-            role: InputRole::Font,
-            content: hash.clone(),
-            length: face.length(),
-            media_type: "font/ttf".into(),
-            license: Some(format!("OFL-1.1; {}", face.license().path())),
-        };
-        let output = descriptor.output_path().map_err(FontCatalogError::Assets)?;
-        css.push_str(&format!(
-            "@font-face{{font-family:\"{}\";src:url(\"/{}\") format(\"truetype\");font-style:normal;font-weight:{};font-display:swap;}}\n",
-            face.family(), output.as_str(), face.weight(),
-        ));
-        let source =
-            BuildPath::try_from(face.source_path().to_owned()).map_err(FontCatalogError::Assets)?;
-        files.insert(source, descriptor);
-        blobs.insert(hash, bytes.to_vec());
+        for format in [FontFormat::Woff2, FontFormat::Truetype] {
+            let file = face.file(format);
+            let bytes = face_bytes(face, format);
+            verify_font(face, &file, bytes)?;
+            let hash = ContentHash::of(bytes);
+            let descriptor = AssetDescriptor {
+                role: InputRole::Font,
+                content: hash.clone(),
+                length: file.length,
+                media_type: format.media_type().into(),
+                license: Some(format!("OFL-1.1; {}", face.license().path())),
+            };
+            let output = descriptor.output_path().map_err(FontCatalogError::Assets)?;
+            let rule = format!(
+                "@font-face{{font-family:\"{}\";src:url(\"/{}\") format(\"{}\");font-style:normal;font-weight:{};font-display:swap;}}\n",
+                face.family(),
+                output.as_str(),
+                format.css(),
+                face.weight(),
+            );
+            match format {
+                FontFormat::Woff2 => css.push_str(&rule),
+                FontFormat::Truetype => native_css.push_str(&rule),
+            }
+            let source =
+                BuildPath::try_from(file.path.to_owned()).map_err(FontCatalogError::Assets)?;
+            let slot = usize::from(format == FontFormat::Woff2);
+            files[slot].insert(source, descriptor);
+            blobs[slot].insert(hash, bytes.to_vec());
+        }
     }
-    css.push_str(&format!(":root{{--meari-font-ui:{UI_FONT_FAMILY};}}\n"));
-    let assets = VerifiedAssets::new(
-        AssetManifest {
-            schema_version: 1,
-            files,
-        },
-        blobs,
-    )
-    .map_err(FontCatalogError::Assets)?;
+    let root = format!(
+        ":root{{--meari-font-ui:{UI_FONT_FAMILY};--font-sans:{SANS_FONT_FAMILY};--default-font-family:{SANS_FONT_FAMILY};--font-serif:{SERIF_FONT_FAMILY};}}\n"
+    );
+    css.push_str(&root);
+    native_css.push_str(&root);
+    let [native_files, web_files] = files;
+    let [native_blobs, web_blobs] = blobs;
+    let verified = |files, blobs| {
+        VerifiedAssets::new(
+            AssetManifest {
+                schema_version: 1,
+                files,
+            },
+            blobs,
+        )
+        .map_err(FontCatalogError::Assets)
+    };
     Ok(PreparedFontCatalog {
-        assets,
+        assets: verified(native_files, native_blobs)?,
+        web_assets: verified(web_files, web_blobs)?,
         css,
+        native_css,
         support: FontSupport::PinnedAssetsOnly,
     })
 }
 
-fn verify_font(face: FontFace, bytes: &[u8]) -> Result<(), FontCatalogError> {
-    if bytes.len() as u64 != face.length() || ContentHash::of(bytes).as_str() != face.sha256() {
+fn verify_font(face: FontFace, file: &FontFile, bytes: &[u8]) -> Result<(), FontCatalogError> {
+    if bytes.len() as u64 != file.length || ContentHash::of(bytes).as_str() != file.sha256 {
         return Err(FontCatalogError::FontIntegrity(face));
     }
     Ok(())
@@ -93,24 +122,37 @@ fn verify_license(license: FontLicense, bytes: &[u8]) -> Result<(), FontCatalogE
     Ok(())
 }
 
-fn font_bytes(face: FontFace) -> &'static [u8] {
-    match face {
-        FontFace::PretendardRegular => {
-            include_bytes!("../../assets/fonts/pretendard/Pretendard-Regular.ttf")
+/// Unchanged upstream bytes of one face in one container.
+pub fn face_bytes(face: FontFace, format: FontFormat) -> &'static [u8] {
+    use FontFormat::*;
+    match (face, format) {
+        (FontFace::PretendardVariable, Truetype) => {
+            include_bytes!("../../assets/fonts/pretendard/PretendardVariable.ttf")
         }
-        FontFace::PretendardSemiBold => {
-            include_bytes!("../../assets/fonts/pretendard/Pretendard-SemiBold.ttf")
+        (FontFace::PretendardVariable, Woff2) => {
+            include_bytes!("../../assets/fonts/pretendard/PretendardVariable.woff2")
         }
-        FontFace::PretendardJpRegular => {
+        (FontFace::PretendardJpRegular, Truetype) => {
             include_bytes!("../../assets/fonts/pretendard/PretendardJP-Regular.ttf")
+        }
+        (FontFace::PretendardJpRegular, Woff2) => {
+            include_bytes!("../../assets/fonts/pretendard/PretendardJP-Regular.woff2")
+        }
+        (FontFace::SourceSerif4Variable, Truetype) => {
+            include_bytes!("../../assets/fonts/source-serif-4/SourceSerif4Variable-Roman.ttf")
+        }
+        (FontFace::SourceSerif4Variable, Woff2) => {
+            include_bytes!("../../assets/fonts/source-serif-4/SourceSerif4Variable-Roman.woff2")
         }
     }
 }
 
-fn license_text(license: FontLicense) -> &'static str {
+/// Complete upstream notice text for one license.
+pub fn license_text(license: FontLicense) -> &'static str {
     match license {
         FontLicense::Pretendard => include_str!("../../assets/fonts/pretendard/LICENSE.txt"),
         FontLicense::PretendardJp => include_str!("../../assets/fonts/pretendard/LICENSE-JP.txt"),
+        FontLicense::SourceSerif4 => include_str!("../../assets/fonts/source-serif-4/LICENSE.md"),
     }
 }
 
@@ -120,11 +162,12 @@ mod tests {
 
     #[test]
     fn same_length_font_tampering_is_rejected() {
-        let face = FontFace::PretendardRegular;
-        let mut bytes = font_bytes(face).to_vec();
+        let face = FontFace::PretendardVariable;
+        let format = FontFormat::Woff2;
+        let mut bytes = face_bytes(face, format).to_vec();
         bytes[0] ^= 1;
         assert_eq!(
-            verify_font(face, &bytes),
+            verify_font(face, &face.file(format), &bytes),
             Err(FontCatalogError::FontIntegrity(face)),
         );
     }
