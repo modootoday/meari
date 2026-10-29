@@ -36,8 +36,8 @@ pub fn run_one(fixture: &Fixture, cx: &Context) -> Row {
             .map_err(|e| e.to_string())?
             .join("web.html");
         std::fs::write(&html_path, html).map_err(|e| e.to_string())?;
-        let web = web::screenshot(cx.chrome, &html_path, &dir.join("web.png"))?;
-        let native = native::render(&fixture.source, &css, fixture.dark)
+        let web = web::screenshot(cx.chrome, &html_path, &dir.join("web.png"), &fixture.scroll)?;
+        let native = native::render(&fixture.source, &css, fixture.dark, &fixture.scroll)
             .map_err(|e| format!("native: {e}"))?;
         compare::write_png(&dir.join("native.png"), &native)?;
         let diff = compare::diff(&native, &web, cx.tolerance)?;

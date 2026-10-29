@@ -1,0 +1,4 @@
+type Props = {};
+export function Fixture(props: Props) {
+  return <div className="flex gap-4 p-6"><div id="vy" className="h-40 w-36 overflow-y-auto rounded border border-zinc-300"><div className="h-16 bg-sky-200"></div><div className="h-16 bg-sky-400"></div><div className="h-16 bg-sky-600"></div><div className="h-16 bg-sky-800"></div></div><div id="vx" className="h-40 w-36 overflow-x-scroll overflow-y-hidden rounded border border-zinc-300"><div className="flex h-full w-96"><div className="w-24 bg-rose-200"></div><div className="w-24 bg-rose-400"></div><div className="w-24 bg-rose-600"></div><div className="w-24 bg-rose-800"></div></div></div><div id="vb" className="h-40 w-36 overflow-auto rounded border border-zinc-300"><div className="h-80 w-80 bg-gradient-to-br from-amber-200 to-emerald-600"></div></div></div>;
+}

@@ -3,7 +3,8 @@
 //! `fixtures/supported/<name>.tsx` must match; `fixtures/gaps/<name>.tsx` records known Native gaps
 //! (reported, never hidden, but not counted as regressions). Styling comes from `<name>.css` when
 //! present, otherwise the component's Tailwind classes are compiled with the pinned standalone
-//! Tailwind v4.3.3 binary. An optional `<name>.tolerance` holds `max_ratio=<f64>` plus a reason.
+//! Tailwind v4.3.3 binary. An optional `<name>.tolerance` holds `max_ratio=<f64>` plus a reason;
+//! an optional `<name>.scroll` pins scroll offsets (`<selector> <x> <y>` per line).
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -19,6 +20,8 @@ pub struct Fixture {
     pub css: Option<String>,
     pub dark: bool,
     pub tolerance: Option<(f64, String)>,
+    /// Fixed scroll offsets from `<name>.scroll`, applied identically to both renderers.
+    pub scroll: Vec<crate::scroll::Offset>,
 }
 
 pub fn dir() -> PathBuf {
@@ -51,6 +54,11 @@ fn load_kind(dir: &Path, kind: Kind) -> Result<Vec<Fixture>, String> {
                 css: read("css").ok(),
                 kind,
                 tolerance,
+                scroll: read("scroll")
+                    .ok()
+                    .map(|t| crate::scroll::parse(&t))
+                    .transpose()?
+                    .unwrap_or_default(),
                 name,
             })
         })

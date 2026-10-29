@@ -31,7 +31,7 @@ required-features = ["bundled-fonts"]
 meari = { workspace = true }
 blitz-dom = { version = "=0.3.0-beta.4", default-features = false, features = ["accessibility", "system-fonts", "svg", "complex-scripts"] }
 blitz-html = "=0.3.0-beta.4"
-blitz-paint = { version = "=0.3.0-beta.4", path = "../meari-paint" }
+blitz-paint = { version = "=0.3.0-beta.4", path = "../meari-paint", features = ["scrollbars"] }
 blitz-traits = "=0.3.0-beta.4"
 blitz-shell = { version = "=0.3.0-beta.4", optional = true, default-features = false, features = ["clipboard"] }
 winit = { version = "=0.31.0-beta.3", optional = true }

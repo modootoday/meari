@@ -31,7 +31,10 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | typography | 부분 (text AA tolerance 1.6%) | tw-typography.tolerance |
 | theme tokens | 구현됨 (AA tolerance) | tw-theme-tokens |
 | responsive breakpoints | 구현됨 | tw-responsive |
-| overflow / scroll | 구현됨 | tw-scroll-overflow |
+| overflow clip (`overflow-hidden`) | 구현됨 | tw-scroll-overflow |
+| internal scroll (`overflow-{x,y}-{auto,scroll,hidden}`, pinned scroll offsets) | 구현됨 (clip + offset pixel-matched; idle frame) | tw-overflow-scroll-offset + `.scroll` |
+| wheel scroll, clamping, `overflow:hidden` ignores wheel | 구현됨 (blitz scroll chain) | meari-native tests/overflow_scroll.rs |
+| scrollbars | 구현됨 (overlay, Chromium fade timing, thumb drag via blitz `scrollbars`); visual test compares the idle frame with Chrome `--hide-scrollbars` — classic 15px Chrome scrollbars are not reproduced | overflow_scroll.rs (opacity) |
 | dark mode | 구현됨 | dark-tw-dark-mode, dark-scheme |
 | state variants (hover/focus/disabled) | 부분 (input needs explicit width) | tw-state-variants |
 | generic `sans-serif` family | 미구현 (Native→Noto Sans, Chrome→Arial-like) | gaps/generic-font-family |
