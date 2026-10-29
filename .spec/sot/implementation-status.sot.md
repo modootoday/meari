@@ -53,7 +53,7 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | input `defaultValue` | 구현됨 | app-form |
 | input placeholder (`::placeholder` color) | 구현됨 (meari-native projects `::placeholder{color}` onto the host as `text-decoration-color`, UA default #757575; meari-paint lays out the attribute with the editor's style when empty). Limits: only `color` from `::placeholder` (no font/opacity), placeholder layout uses system fonts only (no `@font-face`) | input-placeholder (0.349%, glyph AA), tests/input_placeholder.rs |
 | input intrinsic width | 미구현 (blitz min(avail,300) shrinkable vs Chrome size=20) | gaps/input-intrinsic-width |
-| `<progress>` | 미구현 | gaps/html-progress |
+| `<progress>` | 구현 (native/fallback 두 모양, 0.000%) | supported/html-progress, tests/html_progress.rs |
 
 ### Open decisions (user)
 - NOTICE copy mismatch (tests/package_boundary.rs) and mixed_slots.rs:100 failure: untouched pending decision.

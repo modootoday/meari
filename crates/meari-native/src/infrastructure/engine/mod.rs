@@ -6,6 +6,7 @@ use anyrender::ImageRenderer;
 use blitz_html::HtmlDocument;
 mod generic_fonts;
 mod input_width;
+mod progress;
 #[cfg(feature = "window")]
 pub(crate) mod surface_slots;
 
@@ -20,6 +21,7 @@ pub struct NativeRenderer {
     asset_host: Option<std::sync::Arc<super::asset_provider::AssetProvider>>,
     input_fonts: parley::FontContext,
     input_widths: std::collections::HashMap<(blitz_dom::NodeId, bool), String>,
+    progress_fills: std::collections::HashMap<blitz_dom::NodeId, String>,
     #[cfg(all(feature = "gl", windows))]
     gl_host: Option<std::rc::Rc<std::cell::RefCell<super::gl::GlHost>>>,
 }
@@ -124,6 +126,7 @@ impl NativeRenderer {
             asset_host: Some(provider),
             input_fonts: fonts,
             input_widths: Default::default(),
+            progress_fills: Default::default(),
             #[cfg(all(feature = "gl", windows))]
             gl_host: super::gl::current(),
         })
@@ -153,14 +156,17 @@ impl NativeRenderer {
     }
     pub(crate) fn resolve_assets(&mut self, time: f64) -> Result<(), String> {
         self.settle_assets(time)?;
-        // Intrinsic input widths read resolved fonts; publishing them restyles once more.
-        // The automatic minimum needs the published width, so this settles in two rounds.
-        for _ in 0..2 {
-            if !input_width::refresh(
+        // Intrinsic input widths read resolved fonts and progress looks read resolved borders
+        // and backgrounds; publishing either restyles. Input minimums need the published
+        // width, so this settles in up to three rounds.
+        for _ in 0..3 {
+            let inputs = input_width::refresh(
                 &mut self.document,
                 &mut self.input_fonts,
                 &mut self.input_widths,
-            ) {
+            );
+            let bars = progress::refresh(&mut self.document, &mut self.progress_fills);
+            if !inputs && !bars {
                 break;
             }
             self.settle_assets(time)?;
@@ -276,6 +282,7 @@ impl NativeRenderer {
             asset_host: None,
             input_fonts: fonts,
             input_widths: Default::default(),
+            progress_fills: Default::default(),
             #[cfg(all(feature = "gl", windows))]
             gl_host: super::gl::current(),
         }
@@ -284,5 +291,6 @@ impl NativeRenderer {
 
 fn configure(mut doc: HtmlDocument) -> HtmlDocument {
     doc.add_user_agent_stylesheet(blitz_dom::UserAgentStylesheet::parse(input_width::CSS));
+    doc.add_user_agent_stylesheet(blitz_dom::UserAgentStylesheet::parse(progress::CSS));
     super::range_input::configure(doc)
 }
