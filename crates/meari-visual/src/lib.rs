@@ -8,6 +8,7 @@ pub mod compare;
 pub mod fixtures;
 pub mod render;
 pub mod report;
+pub mod scroll;
 pub mod sheet;
 
 pub const WIDTH: u32 = 480;

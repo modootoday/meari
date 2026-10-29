@@ -1,12 +1,13 @@
 // Headless Chrome screenshot over the DevTools pipe (no npm deps, Node >= 22).
 // `chrome --screenshot` does not terminate in this sandbox, so drive CDP directly.
-// usage: node cdp-screenshot.mjs CHROME URL OUT.png WIDTH HEIGHT
+// usage: node cdp-screenshot.mjs CHROME URL OUT.png WIDTH HEIGHT [SCRIPT]
+// SCRIPT (optional) runs after load, e.g. fixed scrollTo offsets from `<fixture>.scroll`.
 import { spawn } from "node:child_process";
 import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const [chrome, url, out, w, h] = process.argv.slice(2);
+const [chrome, url, out, w, h, script = ""] = process.argv.slice(2);
 const width = Number(w), height = Number(h);
 const profile = mkdtempSync(join(tmpdir(), "meari-visual-"));
 const child = spawn(chrome, [
@@ -44,6 +45,11 @@ try {
   const loaded = once("Page.loadEventFired");
   await send("Page.navigate", { url }, sessionId);
   await loaded;
+  if (script) {
+    const r = await send("Runtime.evaluate", { expression: script }, sessionId);
+    if (r.exceptionDetails) throw new Error("script: " + JSON.stringify(r.exceptionDetails));
+    await send("Runtime.evaluate", { expression: "new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))", awaitPromise: true }, sessionId);
+  }
   const { data } = await send("Page.captureScreenshot", { format: "png", clip: { x: 0, y: 0, width, height, scale: 1 } }, sessionId);
   writeFileSync(out, Buffer.from(data, "base64"));
   finish(0);

@@ -70,7 +70,12 @@ fn serialize(node: &DomNode, out: &mut String) {
 
 /// `chrome --screenshot` never exits in the box sandbox, so a dependency-free Node CDP driver
 /// (`scripts/cdp-screenshot.mjs`, `--remote-debugging-pipe`) captures the viewport instead.
-pub fn screenshot(chrome: &str, html_path: &Path, png_path: &Path) -> Result<Vec<u8>, String> {
+pub fn screenshot(
+    chrome: &str,
+    html_path: &Path,
+    png_path: &Path,
+    scroll: &[crate::scroll::Offset],
+) -> Result<Vec<u8>, String> {
     let script = Path::new(env!("CARGO_MANIFEST_DIR")).join("scripts/cdp-screenshot.mjs");
     let output = Command::new("node")
         .env("TMPDIR", "/tmp") // .cargo/config.toml points TMPDIR outside the repo
@@ -80,6 +85,7 @@ pub fn screenshot(chrome: &str, html_path: &Path, png_path: &Path) -> Result<Vec
         .arg(png_path)
         .arg(crate::WIDTH.to_string())
         .arg(crate::HEIGHT.to_string())
+        .arg(crate::scroll::script(scroll))
         .output()
         .map_err(|e| format!("node: {e}"))?;
     if !output.status.success() {
