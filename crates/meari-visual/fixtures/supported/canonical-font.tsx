@@ -6,7 +6,9 @@ export function Fixture(props: Props) {
       <p className="text-xl">Pretendard 기본 글꼴 Hangul 한글</p>
       <p className="text-xl font-semibold">Variable 600 굵게 Bold</p>
       <p className="text-lg">日本語のかな カナ</p>
+      <p className="text-lg font-bold">日本語の太字 カナ</p>
       <p className="font-serif text-xl">Source Serif 4 canonical serif</p>
+      <p className="font-serif text-xl">본명조 한글 명조체</p>
     </div>
   );
 }

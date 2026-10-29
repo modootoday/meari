@@ -11,19 +11,25 @@ pub const FONT_PIN: &str = ":root{--default-font-family:\"Noto Sans\";--font-san
 /// Marker comment: the fixture renders with the canonical bundled fonts instead of FONT_PIN.
 pub const CANONICAL_MARKER: &str = "// meari-visual: canonical-fonts";
 
-/// `@font-face` rules for the bundled faces, served to Chrome as the same upstream WOFF2 the
-/// Web build ships. Native resolves the same families from the bundled upstream TTF
-/// (registered by the font context); its blitz build has no WOFF2 decoder.
+/// `@font-face` rules for the bundled faces, served to Chrome as the same WOFF2 files the
+/// Web build ships (upstream WOFF2, or the renamed `Meari Serif KR` unicode-range slices).
+/// Native resolves the same faces from the bundled upstream TTF/OTF (registered by the font
+/// context); its blitz build has no WOFF2 decoder.
 pub fn canonical_faces() -> String {
-    use meari::domain::design::fonts::{FontFormat, UI_FACES};
+    use meari::{application::fonts::web_files, domain::design::fonts::UI_FACES};
     let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../meari");
     UI_FACES
         .iter()
-        .map(|face| {
+        .flat_map(|face| web_files(*face).into_iter().map(move |web| (*face, web)))
+        .map(|(face, web)| {
+            let range = web
+                .unicode_range
+                .map(|range| format!(";unicode-range:{range}"))
+                .unwrap_or_default();
             format!(
-                "@font-face{{font-family:\"{}\";src:url(\"file://{root}/{}\") format(\"woff2\");font-style:normal;font-weight:{};font-display:block}}",
-                face.family(),
-                face.file(FontFormat::Woff2).path,
+                "@font-face{{font-family:\"{}\";src:url(\"file://{root}/{}\") format(\"woff2\");font-style:normal;font-weight:{};font-display:block{range}}}",
+                face.web_family(),
+                web.file.path,
                 face.weight()
             )
         })

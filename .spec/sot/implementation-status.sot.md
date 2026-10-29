@@ -43,7 +43,7 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | `group-*` / `peer-*` variants | 부분: `group-hover:*` (idle frame), `group-[.cls]:*`, `peer-[.cls]:*` MATCH (1.271%, glyph AA tolerance 1.3% with bbox evidence). `peer-checked:*` with `defaultChecked` is a KNOWN-GAP: native checkbox does not paint/match `:checked` from the `checked` attribute (web shows checked box + blue label, native neither) | supported/tw-group-peer, gaps/tw-peer-checked |
 | transition / animation | 방침: 정적 비교만. Static render has no running timeline, so the comparison is the start state (= end state for hover-triggered transitions with no hover); `transition-*`/`duration-*` parse and are inert. `animate-spin/ping/pulse/bounce`: native does not run keyframes; not pixel-compared (frame 0 vs Chrome frame depends on capture time) — 미구현으로 기록 | (no fixture by design) |
 | indeterminate `<progress>` (no `value`) | 방침: 미지원 비교. Chrome animates the indeterminate bar, so no deterministic frame exists; native paints the empty track. Only determinate `value`/`max` is MATCH | supported/html-progress |
-| generic `sans-serif`/`serif` family | 구현됨: 정본은 Pretendard Variable / Source Serif 4 (sot:meari/fonts); Chrome 비교 경로만 Chromium Linux defaults (Arimo/Tinos 호스트 폴백, 0.866% glyph AA) | supported/generic-font-family, supported/canonical-font |
+| generic `sans-serif`/`serif` family | 구현됨: 정본은 Pretendard Variable (+JP Regular/Bold) / Source Serif 4 + Source Han Serif KR (Web: Meari Serif KR slices) (sot:meari/fonts); Chrome 비교 경로만 Chromium Linux defaults (Arimo/Tinos 호스트 폴백, 0.866% glyph AA) | supported/generic-font-family, supported/canonical-font |
 
 ### React / TSX
 
@@ -81,7 +81,7 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | flex-row | supported | MATCH | 0.000% | 0.500% | visual-test pixel diff |
 | form-tag | supported | MATCH | 0.311% | 0.500% | visual-test pixel diff |
 | generic-font-family | supported | MATCH | 0.866% | 1.000% | visual-test pixel diff |
-| canonical-font | supported | MATCH | 1.105% | 1.200% | visual-test pixel diff + per-line ink bbox |
+| canonical-font | supported | MATCH | 1.597% | 1.700% | visual-test pixel diff + per-line ink bbox |
 | grid-cards | supported | MATCH | 0.000% | 0.500% | visual-test pixel diff |
 | heading-text | supported | MATCH | 0.764% | 0.900% | visual-test pixel diff |
 | html-a | supported | MATCH | 0.157% | 0.500% | visual-test pixel diff |
