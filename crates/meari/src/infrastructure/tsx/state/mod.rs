@@ -9,6 +9,7 @@ use oxc_syntax::operator::{BinaryOperator, UnaryOperator};
 pub(super) mod effect;
 mod expression;
 mod input;
+pub(super) mod lists;
 mod structured;
 
 fn captured(
@@ -243,7 +244,10 @@ pub(super) fn resolve(root: &mut Node, states: &[StateBinding]) {
         }
     };
     match &mut root.kind {
-        NodeKind::Text(Value::Repeat(repeat)) => self::resolve(&mut repeat.template, states),
+        NodeKind::Text(Value::Repeat(repeat)) => {
+            resolve(&mut repeat.source);
+            self::resolve(&mut repeat.template, states)
+        }
         NodeKind::Text(value) => {
             resolve(value);
             if let Value::NodeSlot(crate::domain::node_slots::NodeSlot::Content(nodes)) = value {

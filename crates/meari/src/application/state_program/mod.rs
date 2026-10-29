@@ -82,7 +82,9 @@ impl StateProgram {
     pub fn project(&self) -> Result<StateProjection, String> {
         let snapshot = self.snapshot()?;
         for value in snapshot.values.values() {
-            crate::domain::state_program::render_value(value)?;
+            if crate::domain::state_program::string_items(value).is_none() {
+                crate::domain::state_program::render_value(value)?;
+            }
         }
         Self::project_bindings(&self.definition, &snapshot.values, false)
     }
@@ -93,6 +95,7 @@ impl StateProgram {
         defer_hook_events: bool,
     ) -> Result<StateProjection, String> {
         let mut component = definition.clone();
+        state_lists(&mut component, values)?;
         let mut events = BTreeMap::new();
         let mut inputs = BTreeMap::new();
         let mut callbacks = BTreeMap::new();
@@ -225,4 +228,47 @@ impl StateProgram {
             callbacks,
         })
     }
+}
+
+/// Bind state-driven `.map` sources to the current string items, then expand them with the
+/// same keyed identities as prop-driven lists, before events and reads inside are projected.
+fn state_lists(
+    component: &mut Component,
+    values: &BTreeMap<String, crate::domain::component_state::StateValue>,
+) -> Result<(), String> {
+    fn visit(
+        node: &mut Node,
+        values: &BTreeMap<String, crate::domain::component_state::StateValue>,
+        found: &mut bool,
+    ) -> Result<(), String> {
+        match &mut node.kind {
+            NodeKind::Text(Value::Repeat(repeat)) => {
+                if let Value::State(name) = &repeat.source {
+                    let items = values
+                        .get(name)
+                        .and_then(crate::domain::state_program::string_items)
+                        .ok_or("repeat state source requires a string array projection")?;
+                    repeat.source =
+                        Value::Array(crate::domain::array_value::ArrayValue::strings(items));
+                    *found = true;
+                }
+                visit(&mut repeat.template, values, found)
+            }
+            NodeKind::Text(Value::NodeSlot(crate::domain::node_slots::NodeSlot::Content(
+                nodes,
+            ))) => nodes
+                .iter_mut()
+                .try_for_each(|child| visit(child, values, found)),
+            NodeKind::Text(_) => Ok(()),
+            NodeKind::Element { children, .. } => children
+                .iter_mut()
+                .try_for_each(|child| visit(child, values, found)),
+        }
+    }
+    let mut found = false;
+    visit(&mut component.root, values, &mut found)?;
+    if found {
+        super::repeat::expand(component, None)?;
+    }
+    Ok(())
 }

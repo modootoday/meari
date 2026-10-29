@@ -538,6 +538,7 @@ fn parse_source(source: &str, local_modules: bool) -> Result<Component, Diagnost
     };
     let mut root = element(root)?;
     state::resolve(&mut root, &states);
+    state::lists::admit(&mut root, &mut states);
     if use_effect && effects == 0 {
         return Err(err(f, "unused useEffect import"));
     }
