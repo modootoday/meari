@@ -80,6 +80,9 @@ pub trait OsPolicy {
     fn window_state(&self, _handle: RawWindowHandle) -> Option<WindowState> {
         None
     }
+    /// Asks process `pid` to terminate gracefully (Unix `SIGTERM`); best effort, no-op where
+    /// the OS has no graceful request (callers still kill after their grace period).
+    fn request_terminate(&self, _pid: u32) {}
 }
 
 /// Current GL context with a proc-address loader, owned by the OS adapter (GL feature).

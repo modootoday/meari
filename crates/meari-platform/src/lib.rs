@@ -95,6 +95,9 @@ impl OsPolicy for CurrentOs {
     fn window_state(&self, handle: port::RawWindowHandle) -> Option<WindowState> {
         LiveOs::default().window_state(handle)
     }
+    fn request_terminate(&self, pid: u32) {
+        LiveOs::default().request_terminate(pid)
+    }
 }
 
 /// Lets the event loop run on a non-main thread where the OS backend requires opting in

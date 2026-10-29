@@ -31,4 +31,9 @@ impl OsPolicy for UnixOs {
     ) -> Option<Result<serde_json::Value, String>> {
         None
     }
+    fn request_terminate(&self, pid: u32) {
+        let _ = std::process::Command::new("kill")
+            .args(["-TERM", &pid.to_string()])
+            .status();
+    }
 }
