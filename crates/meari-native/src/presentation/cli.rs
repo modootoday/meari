@@ -7,7 +7,7 @@ use meari::{
     application::Language,
     domain::design::{theme::Theme, utilities::COLORS},
 };
-use std::{collections::BTreeMap, env, fs, path::Path, process::ExitCode};
+use std::{collections::BTreeMap, fs, path::Path, process::ExitCode};
 
 fn showcase() -> Result<(meari::domain::Component, Theme), String> {
     let component = meari::parse(include_str!("../../fixtures/showcase.tsx"), Language::Tsx)
@@ -45,8 +45,7 @@ fn showcase() -> Result<(meari::domain::Component, Theme), String> {
     ))
 }
 
-fn execute() -> Result<(), String> {
-    let args: Vec<_> = env::args().skip(1).collect();
+fn execute(args: Vec<String>) -> Result<(), String> {
     if args.first().map(String::as_str) == Some("styles") {
         return super::styles::execute(&args);
     }
@@ -176,7 +175,12 @@ fn execute() -> Result<(), String> {
 }
 
 pub fn run() -> ExitCode {
-    match execute() {
+    run_with(std::env::args().skip(1).collect())
+}
+
+/// Runs this command group with explicit arguments (used by the unified `meari` CLI).
+pub fn run_with(args: Vec<String>) -> ExitCode {
+    match execute(args) {
         Ok(()) => ExitCode::SUCCESS,
         Err(message) => {
             eprintln!(

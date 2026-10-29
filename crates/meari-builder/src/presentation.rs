@@ -1,8 +1,7 @@
 use meari::application::builder::BuildFailure;
 use std::{io::Read, path::Path};
 
-fn execute() -> Result<(), BuildFailure> {
-    let args: Vec<_> = std::env::args().skip(1).collect();
+fn execute(args: Vec<String>) -> Result<(), BuildFailure> {
     match args.as_slice() {
         [argument] if argument == "--version" => {
             println!("meari-builder {}", env!("CARGO_PKG_VERSION"))
@@ -21,7 +20,7 @@ fn execute() -> Result<(), BuildFailure> {
                 return Err("build request exceeds size budget".into());
             }
             let request = serde_json::from_str(&text).map_err(|error| error.to_string())?;
-            let publication = meari_builder::application::build::execute(request)?;
+            let publication = crate::application::build::execute(request)?;
             println!(
                 "{}",
                 serde_json::to_string(&publication).map_err(|error| error.to_string())?
@@ -30,14 +29,19 @@ fn execute() -> Result<(), BuildFailure> {
         [command, store, port, seconds] if command == "serve" => {
             let port = port.parse().map_err(|_| "invalid server port")?;
             let seconds = seconds.parse().map_err(|_| "invalid server duration")?;
-            meari_builder::infrastructure::server::serve(Path::new(store), port, seconds)?;
+            crate::infrastructure::server::serve(Path::new(store), port, seconds)?;
         }
         _ => return Err("expected build or serve; use --help".into()),
     }
     Ok(())
 }
 pub fn run() -> std::process::ExitCode {
-    match execute() {
+    run_with(std::env::args().skip(1).collect())
+}
+
+/// Runs this command group with explicit arguments (used by the unified `meari` CLI).
+pub fn run_with(args: Vec<String>) -> std::process::ExitCode {
+    match execute(args) {
         Ok(()) => std::process::ExitCode::SUCCESS,
         Err(error) => {
             eprintln!(

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/meari", "crates/meari-native", "crates/meari-native-tools", "crates/meari-builder", "crates/meari-paint", "crates/meari-visual", "xtask"]
+members = ["crates/meari", "crates/meari-native", "crates/meari-native-tools", "crates/meari-builder", "crates/meari-cli", "crates/meari-paint", "crates/meari-visual", "xtask"]
 default-members = ["crates/meari"]
 exclude = ["verification/native-hmr"]
 resolver = "3"

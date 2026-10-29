@@ -1,0 +1,22 @@
+[package]
+workspace = "../.."
+name = "meari-cli"
+version = "0.1.0"
+edition = "2024"
+publish = false
+license = "MIT OR Apache-2.0"
+description = "Unified `meari` command line: convert, native, build"
+repository = "https://github.com/modootoday/meari"
+
+[features]
+window = ["meari-native/window"]
+gl = ["meari-native/gl"]
+
+[dependencies]
+meari = { workspace = true }
+meari-native = { path = "../meari-native", version = "0.1.0" }
+meari-builder = { path = "../meari-builder", version = "0.1.0" }
+
+[[bin]]
+name = "meari"
+path = "src/main.rs"

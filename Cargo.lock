@@ -2032,6 +2032,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "meari-cli"
+version = "0.1.0"
+dependencies = [
+ "meari",
+ "meari-builder",
+ "meari-native",
+]
+
+[[package]]
 name = "meari-native"
 version = "0.1.0"
 dependencies = [

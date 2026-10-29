@@ -45,3 +45,13 @@ Q4 분리 계획: xtask/src/structure → 별도 `modoo-conventions`(가칭) 크
 - Before (/workspace/meari-visual/before): 6 MATCH, heading-text MISMATCH 2.311% (generic `sans-serif` resolves to Noto Sans in Native but an Arial-like face in Chrome), button-input ERROR (`form` has no Native widget).
 - After (/workspace/meari-visual/after): fixtures pin `font-family:"Noto Sans"`; button-input uses `div` instead of `form`. 7 MATCH, heading-text MISMATCH 0.764% (glyph antialiasing/positioning, vello vs Skia; left unresolved, tolerance not raised).
 - Open gaps: Native `form` support; `sans-serif` generic-family mapping; the wasm-bindgen glue/Frame::build is not run (wasm-bindgen-cli unavailable, the harness mirrors it); Windows not verified.
+
+## 구조 리팩터링 단계 (refactor/structure-phase, worktree /workspace/meari-refactor, 기준 f6a36d7)
+기능 executor(/workspace/meari)와 병렬. 렌더러·스타일·Tailwind·React 런타임 파일은 최소 변경.
+clippy는 `-D warnings -A deprecated`로 실행: 의존 크레이트 blitz-paint(meari-paint) `fetch_update` deprecated 경고(toolchain 1.99.1) 1건이 기존부터 존재, 페인트 코드는 기능 쪽 소유라 미수정.
+
+### 3단계: 단일 `meari` CLI
+- 신규 `crates/meari-cli`(바이너리 `meari`): `meari convert|native|build ...` → 각 크레이트 presentation `run_with(args)`로 위임. 테스트 `tests/dispatch.rs`.
+- `meari::presentation`(변환 CLI)과 `meari_builder::presentation`을 bin 전용 모듈에서 lib 모듈로 이동(추가 공개 경로만, 기존 API 불변).
+- 기존 바이너리 `meari-cli`, `meari-native`, `meari-builder`는 호환 별칭으로 유지(동작 동일, 테스트가 CARGO_BIN_EXE_*로 참조).
+- `has_pending_turn`: window feature 없을 때 dead_code → `cfg_attr(not(feature="window"), allow(dead_code))`.
