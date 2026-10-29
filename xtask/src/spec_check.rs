@@ -8,7 +8,19 @@ const SPEC_BIN_ENV: &str = "MEARI_SPEC_BIN";
 
 pub fn run(args: &[String]) -> ExitCode {
     let bin = std::env::var(SPEC_BIN_ENV).unwrap_or_else(|_| "spec".to_owned());
-    match Command::new(&bin).arg("check").args(args).status() {
+    let root = match crate::workspace::root() {
+        Ok(root) => root,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::FAILURE;
+        }
+    };
+    match Command::new(&bin)
+        .current_dir(root)
+        .arg("check")
+        .args(args)
+        .status()
+    {
         Ok(status) if status.success() => ExitCode::SUCCESS,
         Ok(status) => {
             eprintln!("spec check failed ({status}); run `spec check` for details");
