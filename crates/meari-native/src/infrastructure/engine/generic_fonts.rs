@@ -162,7 +162,7 @@ mod tests {
         else {
             return; // no metric-compatible face installed: generics stay as fontconfig says
         };
-        if cfg!(target_os = "linux") {
+        if meari_platform::current().os_family() == OsFamily::Unix {
             assert_eq!(
                 collection.generic_families(GenericFamily::SansSerif).next(),
                 Some(expected)

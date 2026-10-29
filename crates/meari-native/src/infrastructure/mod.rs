@@ -31,8 +31,6 @@ pub use source_callbacks::PendingCallback;
 pub mod stylesheet_assets;
 use self::patching::text_patch;
 pub use self::styling::tailwind;
-#[cfg(windows)]
-pub use self::verification::uia_probe;
 pub use asset_provider::{AssetLoadReport, AssetRejection};
 mod environment;
 mod patching;

@@ -4,12 +4,8 @@ use std::{
     cell::RefCell,
     fmt,
     rc::Rc,
-    sync::{
-        Arc,
-        atomic::{AtomicUsize, Ordering},
-        mpsc,
-    },
-    thread::{self, JoinHandle},
+    sync::mpsc,
+    thread::{self},
     time::{Duration, Instant},
 };
 use windows::Win32::{

@@ -26,7 +26,7 @@ pub struct ProjectInputs {
     root: PathBuf,
 }
 pub(super) fn is_link(metadata: &fs::Metadata) -> bool {
-    super::platform::is_link(metadata)
+    meari_platform::OsPolicy::is_link(&meari_platform::current(), metadata)
 }
 impl ProjectInputs {
     pub fn new(root: &Path) -> Result<Self, String> {

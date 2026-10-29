@@ -155,57 +155,40 @@ fn read_client(parent: &NativeScopedParent<'_>) -> Result<ClientReadback, Native
     parent
         .validate_live()
         .map_err(NativeSurfaceAccessError::Parent)?;
-    #[cfg(windows)]
-    {
-        use windows::Win32::{
-            Foundation::{HWND, POINT, RECT},
-            Graphics::Gdi::ClientToScreen,
-            UI::WindowsAndMessaging::GetClientRect,
-        };
-        use winit::raw_window_handle::{HasWindowHandle, RawWindowHandle};
-        let raw = parent
-            .window_handle()
-            .map_err(|e| NativeParentClientError::OsReadback(e.to_string()))?;
-        let RawWindowHandle::Win32(raw) = raw.as_raw() else {
-            return Err(NativeParentClientError::UnsupportedPlatform);
-        };
-        let hwnd = HWND(raw.hwnd.get() as *mut std::ffi::c_void);
-        let mut rect = RECT::default();
-        let mut origin = POINT::default();
-        // The parent borrow keeps the original window owner alive. No retained raw handle.
-        unsafe {
-            GetClientRect(hwnd, &mut rect)
-                .map_err(|e| NativeParentClientError::OsReadback(e.to_string()))?;
-            ClientToScreen(hwnd, &mut origin)
-                .ok()
-                .map_err(|e| NativeParentClientError::OsReadback(e.to_string()))?;
-        }
-        parent
-            .validate_live()
-            .map_err(NativeSurfaceAccessError::Parent)?;
-        let width = rect
-            .right
-            .checked_sub(rect.left)
-            .and_then(|v| u32::try_from(v).ok());
-        let height = rect
-            .bottom
-            .checked_sub(rect.top)
-            .and_then(|v| u32::try_from(v).ok());
-        match (width, height) {
-            (Some(width), Some(height))
-                if rect.left == 0 && rect.top == 0 && width > 0 && height > 0 =>
-            {
-                Ok(ClientReadback {
-                    size: (width, height),
-                    screen_origin: (origin.x, origin.y),
-                })
-            }
-            _ => Err(NativeParentClientError::PlacementMismatch),
-        }
+    use meari_platform::{ClientAreaError, OsPolicy};
+    use winit::raw_window_handle::HasWindowHandle;
+    let os = meari_platform::current();
+    if !os.supports_client_area() {
+        return Err(NativeParentClientError::UnsupportedPlatform);
     }
-    #[cfg(not(windows))]
-    {
-        Err(NativeParentClientError::UnsupportedPlatform)
+    let raw = parent
+        .window_handle()
+        .map_err(|e| NativeParentClientError::OsReadback(e.to_string()))?;
+    let area = os.client_area(raw.as_raw()).map_err(|error| match error {
+        ClientAreaError::Unsupported => NativeParentClientError::UnsupportedPlatform,
+        ClientAreaError::OsReadback(message) => NativeParentClientError::OsReadback(message),
+    })?;
+    parent
+        .validate_live()
+        .map_err(NativeSurfaceAccessError::Parent)?;
+    let width = area
+        .right
+        .checked_sub(area.left)
+        .and_then(|v| u32::try_from(v).ok());
+    let height = area
+        .bottom
+        .checked_sub(area.top)
+        .and_then(|v| u32::try_from(v).ok());
+    match (width, height) {
+        (Some(width), Some(height))
+            if area.left == 0 && area.top == 0 && width > 0 && height > 0 =>
+        {
+            Ok(ClientReadback {
+                size: (width, height),
+                screen_origin: area.screen_origin,
+            })
+        }
+        _ => Err(NativeParentClientError::PlacementMismatch),
     }
 }
 

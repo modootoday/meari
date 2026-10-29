@@ -2,7 +2,6 @@
 pub mod artifact_store;
 pub(crate) mod generate;
 #[cfg(not(target_arch = "wasm32"))]
-pub(crate) mod platform;
 pub(crate) mod rust;
 pub mod source_callbacks;
 pub(crate) mod tsx;

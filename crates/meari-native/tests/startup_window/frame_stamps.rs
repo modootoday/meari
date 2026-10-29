@@ -2,22 +2,16 @@
 use super::*;
 use std::{
     cell::RefCell,
-    fmt,
     rc::Rc,
     sync::{
         Arc,
         atomic::{AtomicUsize, Ordering},
         mpsc,
     },
-    thread::{self, JoinHandle},
+    thread::{self},
     time::{Duration, Instant},
 };
-use windows::Win32::{
-    Foundation::{HWND, RECT},
-    UI::WindowsAndMessaging::{
-        FindWindowW, GetClientRect, GetWindowRect, GetWindowThreadProcessId, IsWindow, MoveWindow,
-    },
-};
+use windows::Win32::UI::WindowsAndMessaging::IsWindow;
 
 #[test]
 #[ignore = "explicit Windows plain observed startup technical window slot"]

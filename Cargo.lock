@@ -2027,6 +2027,7 @@ dependencies = [
  "getrandom",
  "meari",
  "meari-native",
+ "meari-platform",
  "serde",
  "serde_json",
  "sha2",
@@ -2104,6 +2105,12 @@ dependencies = [
 [[package]]
 name = "meari-platform"
 version = "0.1.0"
+dependencies = [
+ "raw-window-handle",
+ "serde_json",
+ "windows",
+ "winit",
+]
 
 [[package]]
 name = "meari-visual"

@@ -42,11 +42,7 @@ impl NativeLoopOwner {
     pub fn new(limits: HostScheduleLimits) -> Result<Self, NativeStartupError> {
         let mut builder = blitz_shell::EventLoop::builder();
         // This !Send owner keeps the loop on the creating thread, including Rust test UI threads.
-        #[cfg(windows)]
-        {
-            use winit::platform::windows::EventLoopBuilderExtWindows;
-            builder.with_any_thread(true);
-        }
+        meari_platform::prepare_event_loop(&mut builder);
         let event_loop = builder.build().map_err(NativeStartupError::Loop)?;
         Ok(Self {
             event_loop: Some(event_loop),

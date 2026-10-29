@@ -1,23 +1,6 @@
 //! Split from the parent module to keep files under the 600-line structure limit.
 use super::*;
-use std::{
-    cell::RefCell,
-    fmt,
-    rc::Rc,
-    sync::{
-        Arc,
-        atomic::{AtomicUsize, Ordering},
-        mpsc,
-    },
-    thread::{self, JoinHandle},
-    time::{Duration, Instant},
-};
-use windows::Win32::{
-    Foundation::{HWND, RECT},
-    UI::WindowsAndMessaging::{
-        FindWindowW, GetClientRect, GetWindowRect, GetWindowThreadProcessId, IsWindow, MoveWindow,
-    },
-};
+use std::{cell::RefCell, rc::Rc};
 
 impl NativeStartupController for HookFailure {
     type Host = Host;

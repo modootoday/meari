@@ -5,5 +5,3 @@ pub mod artifacts;
 pub mod checked_scene;
 #[cfg(feature = "window")]
 pub mod checked_window;
-#[cfg(windows)]
-pub mod uia_probe;
