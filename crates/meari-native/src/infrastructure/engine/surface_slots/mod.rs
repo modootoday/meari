@@ -275,5 +275,5 @@ impl NativeRenderer {
 }
 
 #[cfg(test)]
-#[path = "surface_slots/tests.rs"]
+#[path = "tests.rs"]
 mod tests;

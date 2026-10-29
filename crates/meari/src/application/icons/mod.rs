@@ -8,8 +8,8 @@ use std::collections::BTreeMap;
 
 fn asset(token: IconToken) -> &'static str {
     match token {
-        IconToken::SelectionCheck => include_str!("../../assets/icons/selection-check.svg"),
-        IconToken::ToggleThumb => include_str!("../../assets/icons/toggle-thumb.svg"),
+        IconToken::SelectionCheck => include_str!("../../../assets/icons/selection-check.svg"),
+        IconToken::ToggleThumb => include_str!("../../../assets/icons/toggle-thumb.svg"),
     }
 }
 

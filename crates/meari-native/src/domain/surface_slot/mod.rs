@@ -98,5 +98,5 @@ impl std::fmt::Display for SurfaceError {
 impl std::error::Error for SurfaceError {}
 
 #[cfg(test)]
-#[path = "surface_slot/tests.rs"]
+#[path = "tests.rs"]
 mod tests;

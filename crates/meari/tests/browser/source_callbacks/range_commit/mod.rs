@@ -1,7 +1,7 @@
 use super::*;
-#[path = "range_commit/nested_slots.rs"]
+#[path = "nested_slots.rs"]
 mod nested_slots;
-#[path = "range_commit/parts.rs"]
+#[path = "parts.rs"]
 mod parts;
 use web_sys::{HtmlInputElement, KeyboardEvent, KeyboardEventInit, PointerEvent, PointerEventInit};
 const SOURCE: &str = "type Props={disabled:boolean;onDraft:(value:string)=>void;onCommit:(value:string)=>void};export function Range(props:Props){return <main><input type=\"range\" min=\"0\" max=\"100\" step=\"10\" value=\"20\" disabled={props.disabled} onChange={event=>props.onDraft(event.currentTarget.value)} onValueCommit={props.onCommit}/></main>}";

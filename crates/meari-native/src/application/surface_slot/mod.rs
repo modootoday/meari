@@ -64,5 +64,5 @@ impl Reservation {
     }
 }
 #[cfg(test)]
-#[path = "surface_slot/tests.rs"]
+#[path = "tests.rs"]
 mod tests;

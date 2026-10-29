@@ -7,7 +7,7 @@ use meari::{
     },
     infrastructure::web_document::WebDocument,
 };
-#[path = "source_callbacks/range_commit.rs"]
+#[path = "range_commit/mod.rs"]
 mod range_commit;
 use std::{
     cell::RefCell,
@@ -17,17 +17,17 @@ use std::{
 use wasm_bindgen::JsCast;
 use wasm_bindgen_test::*;
 use web_sys::{Element, Event, HtmlElement, HtmlTextAreaElement};
-const REVIEW: &str = include_str!("../../fixtures/host-callback-review.tsx");
-const CONVERT: &str = include_str!("../../fixtures/host-callback-convert.tsx");
-#[path = "source_callbacks/captured_text.rs"]
+const REVIEW: &str = include_str!("../../../fixtures/host-callback-review.tsx");
+const CONVERT: &str = include_str!("../../../fixtures/host-callback-convert.tsx");
+#[path = "captured_text.rs"]
 mod captured_text;
-#[path = "source_callbacks/mixed_migration.rs"]
+#[path = "mixed_migration.rs"]
 mod mixed_migration;
-#[path = "source_callbacks/radio_group.rs"]
+#[path = "radio_group.rs"]
 mod radio_group;
-#[path = "source_callbacks/record_predicates.rs"]
+#[path = "record_predicates.rs"]
 mod record_predicates;
-#[path = "source_callbacks/scalar_predicates.rs"]
+#[path = "scalar_predicates.rs"]
 mod scalar_predicates;
 fn hash(value: &str) -> ContentHash {
     ContentHash::of(value.as_bytes())
@@ -318,12 +318,12 @@ fn browser_repeat_original_graphs_keep_all_refs_disclosure_and_action_callbacks(
     for (entry, source) in [
         (
             "studio/cards/proposal-panel.tsx",
-            include_str!("../../fixtures/array-callback-graph/studio/cards/proposal-panel.tsx"),
+            include_str!("../../../fixtures/array-callback-graph/studio/cards/proposal-panel.tsx"),
         ),
         (
             "studio/clips/highlight-proposal-panel.tsx",
             include_str!(
-                "../../fixtures/array-callback-graph/studio/clips/highlight-proposal-panel.tsx"
+                "../../../fixtures/array-callback-graph/studio/clips/highlight-proposal-panel.tsx"
             ),
         ),
     ] {
@@ -338,7 +338,7 @@ fn browser_repeat_original_graphs_keep_all_refs_disclosure_and_action_callbacks(
                         .try_into()
                         .unwrap(),
                     include_str!(
-                        "../../fixtures/array-callback-graph/components/proposal-source.tsx"
+                        "../../../fixtures/array-callback-graph/components/proposal-source.tsx"
                     )
                     .into(),
                 ),
@@ -348,7 +348,7 @@ fn browser_repeat_original_graphs_keep_all_refs_disclosure_and_action_callbacks(
                         .try_into()
                         .unwrap(),
                     include_str!(
-                        "../../fixtures/array-callback-graph/components/proposal-actions.tsx"
+                        "../../../fixtures/array-callback-graph/components/proposal-actions.tsx"
                     )
                     .into(),
                 ),

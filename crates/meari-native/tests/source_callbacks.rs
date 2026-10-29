@@ -6,7 +6,7 @@ use meari::{
         host_callbacks::{CallbackArguments, CallbackReference},
     },
 };
-#[path = "source_callbacks/range_commit.rs"]
+#[path = "source_callbacks/range_commit/mod.rs"]
 mod range_commit;
 use meari_native::{
     domain::{Viewport, widgets::Action},

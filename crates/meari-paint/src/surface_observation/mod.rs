@@ -325,5 +325,5 @@ impl Drop for NodeGuard {
     }
 }
 #[cfg(test)]
-#[path = "surface_observation/tests.rs"]
+#[path = "tests.rs"]
 mod tests;

@@ -1,9 +1,9 @@
 use super::*;
-#[path = "range_commit/gesture_observation.rs"]
+#[path = "gesture_observation.rs"]
 mod gesture_observation;
-#[path = "range_commit/nested_slots.rs"]
+#[path = "nested_slots.rs"]
 mod nested_slots;
-#[path = "range_commit/parts.rs"]
+#[path = "parts.rs"]
 mod parts;
 use blitz_dom::Document;
 use blitz_traits::events::*;

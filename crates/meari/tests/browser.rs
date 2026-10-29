@@ -14,7 +14,7 @@ mod dom;
 mod node_slots;
 #[path = "browser/repeat.rs"]
 mod repeat;
-#[path = "browser/source_callbacks.rs"]
+#[path = "browser/source_callbacks/mod.rs"]
 mod source_callbacks;
 #[path = "browser/source_modules.rs"]
 mod source_modules;
