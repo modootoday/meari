@@ -36,3 +36,12 @@
 meari-platform 분리(cfg 격리), core/web/builder 분할, meari-cli 통합(Q3), tests/<맥락>/main.rs 재편, 800줄 분해, xtask --strict CI 강제.
 Actions 매트릭스(문서만): ubuntu-latest + windows-latest × {fmt --check, clippy -D warnings, test, xtask lint-structure}.
 Q4 분리 계획: xtask/src/structure → 별도 `modoo-conventions`(가칭) 크레이트로 추출, kinekino·meari가 동일 git rev 고정.
+
+## Visual test (refactor/visual-test)
+
+- New crate `crates/meari-visual` (publish=false; deps meari, meari-native, png 0.18.1, all already in Cargo.lock) and `cargo xtask visual-test [--out DIR --chrome PATH --channel-tolerance N --max-ratio R]`.
+- The same 8 TSX+CSS fixtures, 480x320: Native = InteractiveDocument -> blitz -> anyrender_vello_cpu `rasterize()` (offscreen CPU, **no window/GUI/Xvfb needed**). Web = the WebDocument::mount_internal pipeline (bind_with_scope -> StateProgram -> dom::prepare) serialized to HTML and captured by headless Chrome over CDP (`scripts/cdp-screenshot.mjs`; `chrome --screenshot` hangs in this box).
+- Tolerance: a pixel counts as different if any channel differs by >16; a fixture passes if ≤0.5% of pixels differ. Per-fixture native.png / web.png / web.html / diff.png (magenta = differs) and report.md.
+- Before (/workspace/meari-visual/before): 6 MATCH, heading-text MISMATCH 2.311% (generic `sans-serif` resolves to Noto Sans in Native but an Arial-like face in Chrome), button-input ERROR (`form` has no Native widget).
+- After (/workspace/meari-visual/after): fixtures pin `font-family:"Noto Sans"`; button-input uses `div` instead of `form`. 7 MATCH, heading-text MISMATCH 0.764% (glyph antialiasing/positioning, vello vs Skia; left unresolved, tolerance not raised).
+- Open gaps: Native `form` support; `sans-serif` generic-family mapping; the wasm-bindgen glue/Frame::build is not run (wasm-bindgen-cli unavailable, the harness mirrors it); Windows not verified.

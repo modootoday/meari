@@ -1,6 +1,8 @@
 # Meari
 
-Rust UI framework and WASM-based Native+Web builder under development. Meari shares typed UI contracts across source conversion, native rendering and browser adapters. CLI tools exercise those same APIs.
+> **Write once, echo everywhere.**
+
+Meari (메아리, "echo"; Multi-platform Experience Across Renderers Interface) is a Rust UI framework and WASM-based Native+Web builder under development. Meari shares typed UI contracts across source conversion, native rendering and browser adapters. CLI tools exercise those same APIs.
 
 ## Packages
 

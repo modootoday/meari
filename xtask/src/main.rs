@@ -1,4 +1,5 @@
-//! Meari development tasks. Usage: `cargo xtask lint-structure [--strict]`.
+//! Meari development tasks.
+//! Usage: `cargo xtask lint-structure [--strict]` | `cargo xtask visual-test [--out DIR] [...]`.
 
 mod structure;
 
@@ -19,8 +20,22 @@ fn main() -> ExitCode {
                 ExitCode::SUCCESS
             }
         }
+        Some("visual-test") => {
+            // Native (offscreen CPU) vs Web (headless Chrome) pixel comparison; see crates/meari-visual.
+            let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".into());
+            let status = std::process::Command::new(cargo)
+                .args(["run", "-q", "-p", "meari-visual", "--"])
+                .args(&args[1..])
+                .status();
+            match status {
+                Ok(s) if s.success() => ExitCode::SUCCESS,
+                _ => ExitCode::FAILURE,
+            }
+        }
         _ => {
-            eprintln!("usage: cargo xtask lint-structure [--strict]");
+            eprintln!(
+                "usage: cargo xtask lint-structure [--strict] | cargo xtask visual-test [--out DIR]"
+            );
             ExitCode::from(2)
         }
     }
