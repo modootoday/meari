@@ -76,9 +76,9 @@ impl BuildInputs for ProjectInputs {
 pub fn framework_hash(root: &Path) -> Result<ContentHash, String> {
     let mut paths = vec![PathBuf::from("Cargo.toml"), PathBuf::from("Cargo.lock")];
     for package in ["meari", "meari-native", "meari-paint"] {
-        paths.push(PathBuf::from(format!("packages/{package}/Cargo.toml")));
+        paths.push(PathBuf::from(format!("crates/{package}/Cargo.toml")));
         for folder in ["src", "fixtures", "assets"] {
-            let base = PathBuf::from(format!("packages/{package}/{folder}"));
+            let base = PathBuf::from(format!("crates/{package}/{folder}"));
             if !root.join(&base).is_dir() {
                 continue;
             }

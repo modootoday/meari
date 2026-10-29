@@ -28,7 +28,7 @@ fn package_license_and_notice_copies_preserve_original_bytes() {
     for name in CRATES {
         for legal in LEGAL {
             assert_eq!(
-                fs::read(workspace().join("packages").join(name).join(legal)).unwrap(),
+                fs::read(workspace().join("crates").join(name).join(legal)).unwrap(),
                 fs::read(workspace().join(legal)).unwrap(),
                 "{name}/{legal} differs from the existing library notice"
             );
@@ -38,9 +38,9 @@ fn package_license_and_notice_copies_preserve_original_bytes() {
 
 #[test]
 fn native_owned_counter_preserves_the_original_source_and_parse_result() {
-    let core = fs::read(workspace().join("packages/meari/fixtures/state-counter.tsx")).unwrap();
+    let core = fs::read(workspace().join("crates/meari/fixtures/state-counter.tsx")).unwrap();
     let native =
-        fs::read(workspace().join("packages/meari-native/fixtures/state-counter.tsx")).unwrap();
+        fs::read(workspace().join("crates/meari-native/fixtures/state-counter.tsx")).unwrap();
     assert_eq!(native, core);
     meari::parse(
         std::str::from_utf8(&native).unwrap(),
@@ -107,15 +107,15 @@ fn prepare_isolated_cargo_package_boundary_inputs() {
     ] {
         fs::copy(workspace().join(file), root.join(file)).unwrap();
     }
-    fs::create_dir(root.join("packages")).unwrap();
+    fs::create_dir(root.join("crates")).unwrap();
     for name in ["meari", "meari-native", "meari-builder", "meari-paint"] {
         copy_tree(
-            &workspace().join("packages").join(name),
-            &root.join("packages").join(name),
+            &workspace().join("crates").join(name),
+            &root.join("crates").join(name),
         );
     }
     for name in CRATES {
-        let package = root.join("packages").join(name);
+        let package = root.join("crates").join(name);
         for relative in sentinel_paths() {
             let path = package.join(relative);
             fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -160,14 +160,14 @@ fn actual_package_lists_preserve_sources_and_reject_private_sentinels() {
         let listed: BTreeSet<_> = text.lines().map(|line| line.replace('\\', "/")).collect();
         assert!(!listed.is_empty(), "zero package paths is not acceptance");
         for private in sentinel_paths() {
-            assert!(root.join("packages").join(name).join(&private).is_file());
+            assert!(root.join("crates").join(name).join(&private).is_file());
             assert!(!listed.contains(&private), "{name} leaked {private}");
         }
         for legal in LEGAL {
             assert!(listed.contains(*legal), "{name} omitted {legal}");
         }
         assert!(listed.contains("Cargo.toml"));
-        let package = workspace().join("packages").join(name);
+        let package = workspace().join("crates").join(name);
         let mut inputs = BTreeSet::new();
         for directory in ["src", "tests", "fixtures", "assets"] {
             let directory = package.join(directory);

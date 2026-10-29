@@ -101,7 +101,7 @@ fn real_asset_apps_ship_original_bytes_and_native_reports_delivery() {
         if artifact.target.kind == TargetKind::Native {
             let generated = std::fs::read_to_string(files.join("Cargo.toml")).unwrap();
             assert!(generated.contains("[patch.crates-io]"));
-            assert!(generated.contains("packages/meari-paint"));
+            assert!(generated.contains("crates/meari-paint"));
             let lock = std::fs::read_to_string(files.join("build/Cargo.lock")).unwrap();
             let paint = lock
                 .split("[[package]]")
