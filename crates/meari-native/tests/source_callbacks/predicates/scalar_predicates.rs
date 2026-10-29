@@ -1,7 +1,8 @@
 use super::*;
 
-const NAVIGATION: &str = include_str!("../../../meari/fixtures/node-slots/studio/navigation.tsx");
-const ITEM: &str = include_str!("../../../meari/fixtures/node-slots/studio/navigation-item.tsx");
+const NAVIGATION: &str =
+    include_str!("../../../../meari/fixtures/node-slots/studio/navigation.tsx");
+const ITEM: &str = include_str!("../../../../meari/fixtures/node-slots/studio/navigation-item.tsx");
 
 #[test]
 fn original_navigation_comparison_updates_selected_button_without_changing_capture_identity() {

@@ -12,20 +12,20 @@ fn original_frame_declares_four_typed_node_slots() {
         &BTreeMap::from([
             (
                 path("studio/frame.tsx"),
-                include_str!("../fixtures/node-slots/studio/frame.tsx").into(),
+                include_str!("../../fixtures/node-slots/studio/frame.tsx").into(),
             ),
             (
                 path("components/window-chrome.tsx"),
-                include_str!("../fixtures/node-slots/components/window-chrome.tsx").into(),
+                include_str!("../../fixtures/node-slots/components/window-chrome.tsx").into(),
             ),
         ]),
     )
     .unwrap();
     assert_eq!(graph.modules.len(), 2);
 }
-#[path = "node_slots/graph.rs"]
+#[path = "graph.rs"]
 mod graph;
-#[path = "../fixtures/node-slots/support.rs"]
+#[path = "../../fixtures/node-slots/support.rs"]
 mod support;
 
 #[test]
@@ -33,15 +33,15 @@ fn original_empty_caller_mounts_and_application_parses_with_typed_comparison() {
     let sources = BTreeMap::from([
         (
             path("studio/frame.tsx"),
-            include_str!("../fixtures/node-slots/studio/frame.tsx").into(),
+            include_str!("../../fixtures/node-slots/studio/frame.tsx").into(),
         ),
         (
             path("components/window-chrome.tsx"),
-            include_str!("../fixtures/node-slots/components/window-chrome.tsx").into(),
+            include_str!("../../fixtures/node-slots/components/window-chrome.tsx").into(),
         ),
         (
             path("verification/studio-frame-empty.tsx"),
-            include_str!("../fixtures/node-slots/verification/studio-frame-empty.tsx").into(),
+            include_str!("../../fixtures/node-slots/verification/studio-frame-empty.tsx").into(),
         ),
     ]);
     let graph =
@@ -74,31 +74,31 @@ fn original_empty_caller_mounts_and_application_parses_with_typed_comparison() {
     let original = BTreeMap::from([
         (
             path("studio/application.tsx"),
-            include_str!("../fixtures/node-slots/studio/application.tsx").into(),
+            include_str!("../../fixtures/node-slots/studio/application.tsx").into(),
         ),
         (
             path("studio/frame.tsx"),
-            include_str!("../fixtures/node-slots/studio/frame.tsx").into(),
+            include_str!("../../fixtures/node-slots/studio/frame.tsx").into(),
         ),
         (
             path("components/window-chrome.tsx"),
-            include_str!("../fixtures/node-slots/components/window-chrome.tsx").into(),
+            include_str!("../../fixtures/node-slots/components/window-chrome.tsx").into(),
         ),
         (
             path("studio/navigation.tsx"),
-            include_str!("../fixtures/node-slots/studio/navigation.tsx").into(),
+            include_str!("../../fixtures/node-slots/studio/navigation.tsx").into(),
         ),
         (
             path("studio/navigation-item.tsx"),
-            include_str!("../fixtures/node-slots/studio/navigation-item.tsx").into(),
+            include_str!("../../fixtures/node-slots/studio/navigation-item.tsx").into(),
         ),
         (
             path("studio/inspector-dock.tsx"),
-            include_str!("../fixtures/node-slots/studio/inspector-dock.tsx").into(),
+            include_str!("../../fixtures/node-slots/studio/inspector-dock.tsx").into(),
         ),
         (
             path("studio/queue-footer.tsx"),
-            include_str!("../fixtures/node-slots/studio/queue-footer.tsx").into(),
+            include_str!("../../fixtures/node-slots/studio/queue-footer.tsx").into(),
         ),
     ]);
     let graph = meari::parse_module_graph(&path("studio/application.tsx"), &original).unwrap();

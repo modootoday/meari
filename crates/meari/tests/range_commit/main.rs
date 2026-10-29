@@ -7,7 +7,7 @@ use meari::{
     },
 };
 use std::collections::BTreeMap;
-#[path = "range_commit/nested_slots.rs"]
+#[path = "nested_slots.rs"]
 mod nested_slots;
 const SOURCE: &str = "type Props={onDraft:(value:string)=>void;onCommit:(value:string)=>void};export function Range(props:Props){return <input type=\"range\" value=\"20\" onChange={event=>props.onDraft(event.currentTarget.value)} onValueCommit={value=>props.onCommit(value)}/>;}";
 #[test]

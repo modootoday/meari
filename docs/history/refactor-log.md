@@ -62,3 +62,9 @@ clippy는 `-D warnings -A deprecated`로 실행: 의존 크레이트 blitz-paint
 - `meari-native/infrastructure/window/actions.rs` → `actions/mod.rs` + `actions/observation/{windows,portable}.rs`(Win32 창 상태 관찰, 코드 그대로 이동).
 - 남은 OS cfg(의도적 유지): native `uia_probe` 모듈 게이트, `parent_client` 좌표 변환 블록, `startup/owner.rs` winit any_thread, native CLI `probe` 명령 — 창 호스트(기능 쪽 영역)라 이번엔 미변경.
 - 기존 문제(미수정): `--features window` 테스트 빌드에서 timers/testing.rs dead_code 3건(clippy -D 시 실패), 본 변경과 무관.
+
+### 4단계(일부): 테스트 재편
+- 최상위 테스트 타깃 10곳 `tests/x.rs` + `tests/x/` → `tests/x/main.rs`(Cargo 자동탐색 유지, 타깃 이름 불변). `#[path]`/`include_str!` 상대경로 보정.
+- `meari-native/tests/shared_font_catalog.rs` → `bundled_font_catalog.rs`(금지 이름 해소, [[test]] 이름도 변경; bundled-fonts feature 빌드는 미실행).
+- `source_callbacks/{record,scalar}_predicates.rs` → `source_callbacks/predicates/`(직속 .rs 9→7, 모듈 이름 불변).
+- lint-structure: 금지 이름 1→0, x.rs+x/ 10→0, 과밀 디렉토리 8(불변), 600줄 초과 21(불변, 미착수).

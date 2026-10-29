@@ -6,7 +6,7 @@ use meari::{
         host_callbacks::{CallbackArguments, CallbackReference},
     },
 };
-#[path = "source_callbacks/range_commit/mod.rs"]
+#[path = "range_commit/mod.rs"]
 mod range_commit;
 use meari_native::{
     domain::{Viewport, widgets::Action},
@@ -17,25 +17,25 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     rc::Rc,
 };
-#[path = "source_callbacks/captured_text.rs"]
+#[path = "captured_text.rs"]
 mod captured_text;
-#[path = "source_callbacks/host_runtime.rs"]
+#[path = "host_runtime.rs"]
 mod host_runtime;
-#[path = "source_callbacks/mixed_migration.rs"]
+#[path = "mixed_migration.rs"]
 mod mixed_migration;
-#[path = "source_callbacks/mixed_slots.rs"]
+#[path = "mixed_slots.rs"]
 mod mixed_slots;
-#[path = "source_callbacks/radio_group.rs"]
+#[path = "radio_group.rs"]
 mod radio_group;
-#[path = "source_callbacks/record_predicates.rs"]
+#[path = "predicates/record_predicates.rs"]
 mod record_predicates;
-#[path = "source_callbacks/scalar_predicates.rs"]
+#[path = "predicates/scalar_predicates.rs"]
 mod scalar_predicates;
 
-const REVIEW: &str = include_str!("../../meari/fixtures/host-callback-review.tsx");
-const CONVERT: &str = include_str!("../../meari/fixtures/host-callback-convert.tsx");
+const REVIEW: &str = include_str!("../../../meari/fixtures/host-callback-review.tsx");
+const CONVERT: &str = include_str!("../../../meari/fixtures/host-callback-convert.tsx");
 const ACTIONS: &str =
-    include_str!("../../meari/fixtures/array-callback-graph/components/proposal-actions.tsx");
+    include_str!("../../../meari/fixtures/array-callback-graph/components/proposal-actions.tsx");
 
 #[test]
 fn original_card_and_highlight_graphs_mount_both_refs_and_live_action_callbacks() {
@@ -44,13 +44,13 @@ fn original_card_and_highlight_graphs_mount_both_refs_and_live_action_callbacks(
         (
             "studio/cards/proposal-panel.tsx",
             include_str!(
-                "../../meari/fixtures/array-callback-graph/studio/cards/proposal-panel.tsx"
+                "../../../meari/fixtures/array-callback-graph/studio/cards/proposal-panel.tsx"
             ),
         ),
         (
             "studio/clips/highlight-proposal-panel.tsx",
             include_str!(
-                "../../meari/fixtures/array-callback-graph/studio/clips/highlight-proposal-panel.tsx"
+                "../../../meari/fixtures/array-callback-graph/studio/clips/highlight-proposal-panel.tsx"
             ),
         ),
     ] {
@@ -65,7 +65,7 @@ fn original_card_and_highlight_graphs_mount_both_refs_and_live_action_callbacks(
                         .try_into()
                         .unwrap(),
                     include_str!(
-                        "../../meari/fixtures/array-callback-graph/components/proposal-source.tsx"
+                        "../../../meari/fixtures/array-callback-graph/components/proposal-source.tsx"
                     )
                     .into(),
                 ),

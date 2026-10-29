@@ -3,7 +3,7 @@ use meari::{
     domain::build::{ContentHash, TargetKind},
 };
 use std::collections::{BTreeMap, BTreeSet};
-#[path = "plugins/document_callbacks.rs"]
+#[path = "document_callbacks.rs"]
 mod document_callbacks;
 
 fn hash(value: &str) -> ContentHash {
