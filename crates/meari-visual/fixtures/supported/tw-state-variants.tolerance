@@ -1,0 +1,2 @@
+max_ratio=0.009
+reason=glyph rasterization only (vello_cpu vs Skia anti-aliasing); colors identical at sampled fills and box edges align in the native|web|diff sheet; same evidence as heading-text (Chrome AA flags do not remove it). Measured 0.726% on 2026-10-29.

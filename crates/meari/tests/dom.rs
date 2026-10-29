@@ -72,7 +72,7 @@ fn dom_plan_rejects_unmapped_execution_controlled_state_and_normalized_duplicate
         "<div OnClick=\"bad\"/>",
         "<a href=\"javascript:bad()\">Go</a>",
         "<div className=\"a\" class=\"b\"/>",
-        "<Button variant=\"outline\">Go</Button>",
+        "<Button asChild>Go</Button>",
         "<input>Ignored</input>",
     ] {
         let component = meari::parse(
@@ -90,4 +90,29 @@ fn dom_plan_rejects_unmapped_execution_controlled_state_and_normalized_duplicate
     )
     .unwrap();
     assert!(dom::validate_source(&component).is_err());
+}
+
+#[test]
+fn dom_plan_applies_design_component_recipes_with_variant_and_size() {
+    let component = meari::parse(
+        "type Props={};export function Demo(props:Props){return <Card><Button variant=\"outline\" size=\"sm\">Go</Button></Card>;}",
+        Language::Tsx,
+    )
+    .unwrap();
+    let DomNode::Element { tag, children, .. } = dom::prepare(&component).unwrap() else {
+        panic!()
+    };
+    assert_eq!(tag, "div");
+    let DomNode::Element {
+        tag, attributes, ..
+    } = &children[0]
+    else {
+        panic!()
+    };
+    assert_eq!(tag, "button");
+    assert!(!attributes.contains_key("variant") && !attributes.contains_key("size"));
+    assert_eq!(
+        attributes["class"],
+        meari::domain::design::components::recipe("Button", "outline", "sm").trim()
+    );
 }

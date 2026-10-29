@@ -76,3 +76,63 @@ fn jsx_comment_containers_do_not_create_nodes_or_hide_executable_expressions() {
         .is_err()
     );
 }
+
+// `cond && <El/>` and literal-array `.map` lower to plain nodes both renderers share.
+use meari::domain::Node;
+
+fn children(source: &str) -> Vec<Node> {
+    let component = meari::parse(source, Language::Tsx).expect("parse");
+    let NodeKind::Element { children, .. } = component.root.kind else {
+        panic!("root element")
+    };
+    children
+}
+
+#[test]
+fn literal_array_map_expands_to_keyless_siblings() {
+    let nodes = children(
+        r#"type Props = {};export function L(props: Props){return <ul>{["a", "b"].map(item => <li key={item}>{item}</li>)}</ul>;}"#,
+    );
+    assert_eq!(nodes.len(), 2);
+    for (node, expected) in nodes.iter().zip(["a", "b"]) {
+        let NodeKind::Element {
+            attributes,
+            children,
+            ..
+        } = &node.kind
+        else {
+            panic!("li")
+        };
+        assert!(attributes.iter().all(|a| a.name != "key"));
+        assert_eq!(
+            children[0].kind,
+            NodeKind::Text(Value::String(expected.into()))
+        );
+    }
+}
+
+#[test]
+fn literal_array_map_rejects_duplicate_keys() {
+    assert!(meari::parse(
+        r#"type Props = {};export function L(props: Props){return <ul>{["a", "a"].map(item => <li key={item}>{item}</li>)}</ul>;}"#,
+        Language::Tsx,
+    )
+    .is_err());
+}
+
+#[test]
+fn logical_and_element_lowers_to_hidden_predicate() {
+    let nodes = children(
+        r#""use client";import { useState } from "react";type Props = {};export function C(props: Props){const [open, setOpen] = useState(true);return <div>{open && <p>x</p>}</div>;}"#,
+    );
+    let NodeKind::Element { attributes, .. } = &nodes[0].kind else {
+        panic!("p")
+    };
+    assert!(matches!(
+        attributes
+            .iter()
+            .find(|a| a.name == "hidden")
+            .map(|a| &a.value),
+        Some(Value::Predicate(_))
+    ));
+}

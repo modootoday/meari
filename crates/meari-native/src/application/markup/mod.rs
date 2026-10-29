@@ -811,7 +811,9 @@ fn html_tag(tag: &str) -> Option<&str> {
                 | "strong" | "em" | "h1" | "h2" | "h4" | "h5" | "h6" | "textarea" | "select"
                 | "option" | "table" | "thead" | "tbody" | "tr" | "td" | "th" | "svg" | "path"
                 | "img" | "dl" | "dt" | "dd" | "fieldset" | "legend" | "details" | "summary"
-                | "pre" | "video" => tag,
+                | "pre" | "video" | "form" | "a" | "abbr" | "address" | "b" | "blockquote"
+                | "br" | "caption" | "code" | "del" | "figcaption" | "figure" | "i" | "kbd"
+                | "mark" | "s" | "small" | "sub" | "sup" | "time" | "u" => tag,
                 _ => return None,
             })
         })

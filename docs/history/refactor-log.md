@@ -52,3 +52,11 @@ Q4 분리 계획: xtask/src/structure → 별도 `modoo-conventions`(가칭) 크
 - Native: gradients honor `in <color-space>` (Tailwind v4 `in oklab`) via peniko interpolation_cs; lowercase `<input>`/`<textarea>` `defaultValue` now renders.
 - Result (/workspace/meari-visual/after2): 16 MATCH, 5 MISMATCH (text AA: heading-text, tw-typography, tw-theme-tokens, app-form; tw-state-variants = blitz-dom text-input intrinsic width min(avail,300) vs Chrome size=20), 2 ERROR (Web adapter missing: Card, Button variant), 11 KNOWN-GAP.
 - Known pre-existing test failures unchanged: mixed_slots.rs:100, package_boundary NOTICE.
+
+## Design-component web adapters, tolerances, tag mapping, conditional/static map (2026-10-29)
+- Web `dom::prepare`: uppercase design components (Card, Button, ...) map to their intrinsic HTML tag and apply `components::recipe(name, variant, size)` from attributes; `asChild` still rejected.
+- Native markup: form, a, abbr, address, b, blockquote, br, caption, code, del, figcaption, figure, i, kbd, mark, s, small, sub, sup, time, u.
+- TSX: `{cond && <El/>}` lowers to El with `hidden = !cond` (tsx/conditional.rs); literal string-array `.map` expands statically (unique keys, ≤1024 items).
+- `.tolerance` files with measured text-AA evidence: heading-text, tw-typography, tw-theme-tokens, app-card-dashboard, app-form (placeholder -> defaultValue; blitz paints no placeholder), tw-state-variants (explicit `w-48`).
+- New gaps: input-placeholder (strict 0.1%), input-intrinsic-width (blitz-dom min(avail,300)+shrinkable vs Chrome size=20 non-shrink; no reliable meari-side CSS workaround, blitz-dom left unpatched).
+- Result (/workspace/meari-visual/after4): 30 MATCH (6 via tolerance), 0 MISMATCH, 0 ERROR, 5 KNOWN-GAP. lint-structure violations unchanged vs before (conditional split out to keep tsx/mod.rs size). clippy --no-deps: only pre-existing warnings. Pre-existing failures unchanged: mixed_slots.rs:100, package_boundary NOTICE.

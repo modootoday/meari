@@ -12,11 +12,29 @@ pub enum DomNode {
     },
 }
 
+/// Design-system components (shadcn recipes) map to their intrinsic HTML tag.
+fn design_component(name: &str) -> Option<&'static str> {
+    use crate::domain::design::components::intrinsic;
+    name.starts_with(|c: char| c.is_ascii_uppercase())
+        .then(|| intrinsic(name))
+        .flatten()
+        .map(|tag| match tag {
+            "button" => "button",
+            "span" => "span",
+            "input" => "input",
+            "label" => "label",
+            "hr" => "hr",
+            "h3" => "h3",
+            "p" => "p",
+            _ => "div",
+        })
+}
+
 fn tag(name: &str) -> Result<&str, String> {
+    if let Some(tag) = design_component(name) {
+        return Ok(tag);
+    }
     match name {
-        "Button" => Ok("button"),
-        "Input" => Ok("input"),
-        "Label" => Ok("label"),
         "a" | "abbr" | "address" | "article" | "aside" | "audio" | "b" | "blockquote" | "br"
         | "button" | "caption" | "code" | "col" | "colgroup" | "dd" | "del" | "details" | "div"
         | "dl" | "dt" | "em" | "fieldset" | "figcaption" | "figure" | "footer" | "form" | "h1"
@@ -78,7 +96,8 @@ pub fn prepare(component: &Component) -> Result<DomNode, String> {
                 children,
             } => {
                 let tag = tag(name)?.to_owned();
-                let primitive_component = ["Button", "Input", "Label"].contains(&name.as_str());
+                let primitive_component = design_component(name).is_some();
+                let (mut variant, mut size) = ("default".to_owned(), "default".to_owned());
                 if ["br", "hr", "img", "input", "source", "col"].contains(&tag.as_str())
                     && !children.is_empty()
                 {
@@ -104,12 +123,21 @@ pub fn prepare(component: &Component) -> Result<DomNode, String> {
                     {
                         return Err(format!("unsafe Web DOM attribute: {name}"));
                     }
-                    if primitive_component
-                        && ["variant", "size", "aschild"].contains(&name.as_str())
-                    {
-                        return Err(format!(
-                            "Web component recipe requires an explicit adapter: {name}"
-                        ));
+                    if primitive_component && ["variant", "size"].contains(&name.as_str()) {
+                        let Value::String(value) = &attribute.value else {
+                            return Err(format!("unresolved component recipe prop: {name}"));
+                        };
+                        if name == "variant" {
+                            variant = value.clone();
+                        } else {
+                            size = value.clone();
+                        }
+                        continue;
+                    }
+                    if primitive_component && name == "aschild" {
+                        return Err(
+                            "Web component recipe requires an explicit adapter: aschild".into()
+                        );
                     }
                     let value = match &attribute.value {
                         Value::String(value) => value.clone(),
@@ -128,8 +156,7 @@ pub fn prepare(component: &Component) -> Result<DomNode, String> {
                     }
                 }
                 if primitive_component {
-                    let classes =
-                        crate::domain::design::components::recipe(name, "default", "default");
+                    let classes = crate::domain::design::components::recipe(name, &variant, &size);
                     let custom = out.remove("class").unwrap_or_default();
                     out.insert(
                         "class".into(),

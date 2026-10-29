@@ -1,4 +1,5 @@
 use crate::domain::{self, *};
+mod conditional;
 use oxc_allocator::Allocator;
 use oxc_ast::ast::*;
 use oxc_parser::Parser;
@@ -217,7 +218,9 @@ fn jsx_children(input: &[JSXChild<'_>]) -> Result<Vec<Node>, Diagnostic> {
                 if let Some(expression @ Expression::CallExpression(_)) =
                     c.expression.as_expression()
                 {
-                    children.push(repeat::node(expression)?);
+                    children.extend(repeat::nodes(expression)?);
+                } else if let Some(node) = conditional::node(c.expression.as_expression())? {
+                    children.push(node);
                 } else {
                     children.push(Node {
                         kind: NodeKind::Text(jsx_value(&c.expression)?),

@@ -9,6 +9,16 @@ pub(super) fn parse(expression: &Expression<'_>) -> Result<Repeat, Diagnostic> {
     let Expression::StaticMemberExpression(member) = &call.callee else {
         return Err(err(expression, "repeat requires Array.map"));
     };
+    parse_with_source(expression, value(&member.object)?)
+}
+
+fn parse_with_source(expression: &Expression<'_>, source: Value) -> Result<Repeat, Diagnostic> {
+    let Expression::CallExpression(call) = expression else {
+        return Err(err(expression, "repeat requires Array.map"));
+    };
+    let Expression::StaticMemberExpression(member) = &call.callee else {
+        return Err(err(expression, "repeat requires Array.map"));
+    };
     if call.optional
         || member.optional
         || member.property.name != "map"
@@ -87,7 +97,7 @@ pub(super) fn parse(expression: &Expression<'_>) -> Result<Repeat, Diagnostic> {
         _ => None,
     }).unwrap_or_else(|| location(jsx.as_ref()));
     Ok(Repeat {
-        source: value(&member.object)?,
+        source,
         item,
         key,
         key_path,
@@ -97,9 +107,66 @@ pub(super) fn parse(expression: &Expression<'_>) -> Result<Repeat, Diagnostic> {
     })
 }
 
-pub(super) fn node(expression: &Expression<'_>) -> Result<Node, Diagnostic> {
-    Ok(Node {
+/// `["a", "b"].map(item => <li key={item}>{item}</li>)`: a literal string array is
+/// expanded at compile time, so both renderers receive plain sibling nodes.
+fn static_items(expression: &Expression<'_>) -> Option<Vec<String>> {
+    let Expression::CallExpression(call) = expression else {
+        return None;
+    };
+    let Expression::StaticMemberExpression(member) = &call.callee else {
+        return None;
+    };
+    let Expression::ArrayExpression(array) = &member.object else {
+        return None;
+    };
+    array
+        .elements
+        .iter()
+        .map(|item| match item.as_expression() {
+            Some(Expression::StringLiteral(value)) => Some(value.value.to_string()),
+            _ => None,
+        })
+        .collect()
+}
+
+fn expand(expression: &Expression<'_>, items: Vec<String>) -> Result<Vec<Node>, Diagnostic> {
+    let Expression::CallExpression(call) = expression else {
+        unreachable!()
+    };
+    let Expression::StaticMemberExpression(member) = &call.callee else {
+        unreachable!()
+    };
+    if items.len() > 1024 {
+        return Err(err(expression, "static map exceeds 1024 items"));
+    }
+    // Reuse the keyed-template validation with a placeholder source.
+    let repeat = parse_with_source(expression, Value::String(String::new()))?;
+    let mut seen = std::collections::BTreeSet::new();
+    let mut nodes = Vec::with_capacity(items.len());
+    for item in items {
+        if !repeat.key_path.is_empty() || !seen.insert(item.clone()) {
+            return Err(err(
+                &member.object,
+                "static map requires unique string keys",
+            ));
+        }
+        let mut node = repeat.template.clone();
+        crate::domain::repeat::map_values(&mut node, &mut |value| {
+            if matches!(value, Value::Local(name) if *name == repeat.item) {
+                *value = Value::String(item.clone());
+            }
+        });
+        nodes.push(node);
+    }
+    Ok(nodes)
+}
+
+pub(super) fn nodes(expression: &Expression<'_>) -> Result<Vec<Node>, Diagnostic> {
+    if let Some(items) = static_items(expression) {
+        return expand(expression, items);
+    }
+    Ok(vec![Node {
         kind: NodeKind::Text(Value::Repeat(Box::new(parse(expression)?))),
         span: location(expression),
-    })
+    }])
 }
