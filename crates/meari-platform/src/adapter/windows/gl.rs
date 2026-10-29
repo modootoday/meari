@@ -1,4 +1,5 @@
-//! Hidden host-owned WGL bootstrap. No desktop placement or display configuration changes.
+//! Windows GL adapter: hidden host-owned WGL bootstrap. No desktop placement or display configuration changes.
+use crate::port::GlContextHost;
 use glutin::{
     config::{ConfigTemplateBuilder, GlConfig},
     context::{ContextApi, ContextAttributesBuilder, PossiblyCurrentContext, Version},
@@ -35,14 +36,19 @@ impl Drop for HiddenWindow {
     }
 }
 
-pub struct Platform {
+/// Opens the hidden WGL bootstrap context.
+pub fn bootstrap() -> Result<Box<dyn GlContextHost>, String> {
+    Ok(Box::new(Platform::new()?))
+}
+
+struct Platform {
     surface: Surface<WindowSurface>,
     context: PossiblyCurrentContext,
     display: Display,
     _window: HiddenWindow,
 }
 impl Platform {
-    pub fn new() -> Result<Self, String> {
+    fn new() -> Result<Self, String> {
         unsafe {
             let instance = GetModuleHandleW(None).map_err(|e| e.to_string())?;
             let window = HiddenWindow(
@@ -104,12 +110,15 @@ impl Platform {
             })
         }
     }
-    pub fn make_current(&self) -> Result<(), String> {
+}
+
+impl GlContextHost for Platform {
+    fn make_current(&self) -> Result<(), String> {
         self.context
             .make_current(&self.surface)
             .map_err(|e| e.to_string())
     }
-    pub fn address(&self, name: &str) -> *const std::ffi::c_void {
+    fn address(&self, name: &str) -> *const std::ffi::c_void {
         CString::new(name).map_or(std::ptr::null(), |name| {
             self.display.get_proc_address(&name)
         })

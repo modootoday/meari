@@ -7,7 +7,7 @@ mod disclosure;
 pub mod document;
 pub mod engine;
 pub use self::environment::file_picker;
-#[cfg(all(feature = "gl", windows))]
+#[cfg(feature = "gl")]
 pub mod gl;
 #[cfg(feature = "window")]
 pub mod host;

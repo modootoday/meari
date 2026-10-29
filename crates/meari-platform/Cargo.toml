@@ -11,6 +11,8 @@ include = ["src/**/*.rs", "Cargo.toml"]
 
 [features]
 window = ["dep:winit"]
+# Hidden-window GL context bootstrap for the opt-in GL paint host (WGL on Windows only).
+gl = ["dep:glutin"]
 
 [dependencies]
 raw-window-handle = "=0.6.2"
@@ -18,4 +20,6 @@ serde_json = "1"
 winit = { version = "=0.31.0-beta.3", optional = true, default-features = false }
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "=0.62.2", features = ["Win32_Graphics_Gdi", "Win32_UI_Accessibility", "Win32_UI_WindowsAndMessaging", "Win32_System_Com", "Win32_System_Ole", "Win32_System_Variant"] }
+windows = { version = "=0.62.2", features = ["Win32_Graphics_Gdi", "Win32_UI_Accessibility", "Win32_UI_WindowsAndMessaging", "Win32_System_Com", "Win32_System_Ole", "Win32_System_Variant", "Win32_System_LibraryLoader"] }
+# WGL is the only GL bootstrap adapter; other OSes report no adapter (see `gl_bootstrap`).
+glutin = { version = "=0.32.3", default-features = false, features = ["wgl"], optional = true }

@@ -19,6 +19,8 @@ impl PlatformHost for WindowsHost {
     }
 }
 
+#[cfg(all(windows, feature = "gl"))]
+pub mod gl;
 #[cfg(windows)]
 pub mod sys;
 #[cfg(windows)]
