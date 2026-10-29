@@ -1,4 +1,4 @@
-use super::media::{MediaChange, MediaQueryEvaluator, MediaSubscriptions};
+use super::super::media::{MediaChange, MediaQueryEvaluator, MediaSubscriptions};
 use crate::domain::host::HostEnvironment;
 
 pub trait ResponsiveRenderer: MediaQueryEvaluator {

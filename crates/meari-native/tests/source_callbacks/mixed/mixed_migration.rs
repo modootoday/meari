@@ -1,5 +1,5 @@
-use super::*;
-#[path = "../../../meari/fixtures/mixed-slot-migration/support.rs"]
+use super::super::*;
+#[path = "../../../../meari/fixtures/mixed-slot-migration/support.rs"]
 mod support;
 
 fn labeled(document: &InteractiveDocument, label: &str) -> String {

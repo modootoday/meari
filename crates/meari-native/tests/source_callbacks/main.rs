@@ -21,10 +21,6 @@ use std::{
 mod captured_text;
 #[path = "host_runtime.rs"]
 mod host_runtime;
-#[path = "mixed_migration.rs"]
-mod mixed_migration;
-#[path = "mixed_slots.rs"]
-mod mixed_slots;
 #[path = "radio_group.rs"]
 mod radio_group;
 #[path = "predicates/record_predicates.rs"]
@@ -49,3 +45,4 @@ struct Host {
 mod harness;
 use self::harness::*;
 mod graph_mounts;
+mod mixed;

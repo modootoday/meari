@@ -79,6 +79,6 @@ impl ApplicationDefinition {
         self.bound_component().map(|_| ())
     }
     pub fn bound_component(&self) -> Result<Component, String> {
-        super::binding::bind(&self.component, &self.props)
+        super::super::binding::bind(&self.component, &self.props)
     }
 }

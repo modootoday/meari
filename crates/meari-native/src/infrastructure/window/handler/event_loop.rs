@@ -1,5 +1,5 @@
 //! Split from the parent module to keep files under the 600-line structure limit.
-use super::*;
+use super::super::*;
 use crate::infrastructure::{
     document::InteractiveDocument,
     native_host::{self, access},

@@ -81,7 +81,6 @@ struct Application {
     exit_when_empty: bool,
 }
 
-mod close_flow;
-mod event_loop;
-mod host_refresh;
 pub use self::event_loop::*;
+use self::handler::event_loop;
+mod handler;

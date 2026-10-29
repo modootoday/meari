@@ -1,5 +1,5 @@
 //! Split from the parent module to keep files under the 600-line structure limit.
-use super::*;
+use super::super::*;
 use crate::infrastructure::{
     accessibility,
     native_host::{self, access},
@@ -9,7 +9,7 @@ use std::sync::Arc;
 use winit::{event_loop::ActiveEventLoop, raw_window_handle::HasWindowHandle, window::WindowId};
 
 impl Application {
-    pub(super) fn refresh_host(&mut self, id: WindowId) {
+    pub(in super::super) fn refresh_host(&mut self, id: WindowId) {
         let Some(view) = self.inner.windows.get_mut(&id) else {
             return;
         };
@@ -18,7 +18,7 @@ impl Application {
         }
         let result = access::with_mut(view.doc.as_mut(), |document| {
             let zoom = f64::from(document.renderer.document.get_viewport().zoom);
-            let result = super::super::host::snapshot_with_zoom(view.window.as_ref(), zoom)
+            let result = super::super::super::host::snapshot_with_zoom(view.window.as_ref(), zoom)
                 .and_then(|environment| document.commit_host_environment(environment));
             if let Err(error) = &result {
                 document.last_error = Some(error.clone());
@@ -41,7 +41,7 @@ impl Application {
             Some((
                 handle.id(),
                 zoom.map_err(|error| error.to_string()).and_then(|zoom| {
-                    super::super::host::snapshot_with_zoom(view.window.as_ref(), zoom)
+                    super::super::super::host::snapshot_with_zoom(view.window.as_ref(), zoom)
                 }),
             ))
         });
@@ -57,7 +57,7 @@ impl Application {
         }
     }
 
-    pub(super) fn lifecycle_turn(&mut self, event_loop: &dyn ActiveEventLoop, host: u64) {
+    pub(in super::super) fn lifecycle_turn(&mut self, event_loop: &dyn ActiveEventLoop, host: u64) {
         if let Some(lifecycle) = self.lifecycles.get(&host)
             && let Err(error) = lifecycle.poll()
         {
@@ -69,7 +69,7 @@ impl Application {
         }
     }
 
-    pub(super) fn close_observation_pending(&self, host: u64) -> bool {
+    pub(in super::super) fn close_observation_pending(&self, host: u64) -> bool {
         self.hosts
             .get(&host)
             .is_some_and(|port| port.document().lifecycle() == native_host::HostLifecycle::Closing)
@@ -79,7 +79,7 @@ impl Application {
                 .is_some_and(|schedule| schedule.dirty && !schedule.failed)
     }
 
-    pub(super) fn creation_failed(&self, host: u64, error: String) {
+    pub(in super::super) fn creation_failed(&self, host: u64, error: String) {
         self.report(error);
         if let Some(lifecycle) = self.lifecycles.get(&host)
             && let Err(error) = lifecycle.failed()
@@ -88,7 +88,7 @@ impl Application {
         }
     }
 
-    pub(super) fn resume_window(&mut self, id: WindowId) {
+    pub(in super::super) fn resume_window(&mut self, id: WindowId) {
         let host = self
             .inner
             .windows
@@ -149,7 +149,7 @@ impl Application {
         }
     }
 
-    pub(super) fn update(&mut self, window: WindowId) {
+    pub(in super::super) fn update(&mut self, window: WindowId) {
         let Some(view) = self.inner.windows.get(&window) else {
             return;
         };
@@ -160,7 +160,7 @@ impl Application {
         }
     }
 
-    pub(super) fn accessibility(&mut self, event: &A11yEvent) {
+    pub(in super::super) fn accessibility(&mut self, event: &A11yEvent) {
         let mut dispatched = false;
         if let AccessibilityEvent::ActionRequested(request) = &event.event
             && let Some(view) = self.inner.windows.get_mut(&event.window)
@@ -208,13 +208,15 @@ impl Application {
         self.update(event.window);
     }
 
-    pub(super) fn files(&mut self, id: WindowId) {
+    pub(in super::super) fn files(&mut self, id: WindowId) {
         if let Some(view) = self.inner.windows.get_mut(&id) {
             let result = access::with_mut(view.doc.as_mut(), |document| {
                 if document.file_requests.is_empty() {
                     return Ok(false);
                 }
-                document.process_file_requests(&mut super::super::file_picker::NativeFilePicker)?;
+                document.process_file_requests(
+                    &mut super::super::super::file_picker::NativeFilePicker,
+                )?;
                 Ok::<_, String>(true)
             })
             .map_err(|error| error.to_string())

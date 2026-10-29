@@ -1,5 +1,5 @@
 //! Split from the parent module to keep files under the 600-line structure limit.
-use super::*;
+use super::super::*;
 use crate::infrastructure::native_host::{self, access};
 use accesskit_xplat::{EventHandler, WindowEvent as AccessibilityEvent};
 use anyrender::WindowRenderer;
@@ -18,7 +18,7 @@ impl EventHandler for Handler {
 }
 
 impl Application {
-    pub(super) fn poll_owned_timers(&mut self) -> Option<std::time::Instant> {
+    pub(in super::super) fn poll_owned_timers(&mut self) -> Option<std::time::Instant> {
         let now = std::time::Instant::now();
         let mut next = None;
         let mut due = Vec::new();
@@ -63,18 +63,22 @@ impl Application {
         next
     }
 
-    pub(super) fn report(&self, error: String) {
+    pub(in super::super) fn report(&self, error: String) {
         self.errors
             .lock()
             .expect("native diagnostics lock")
             .push(error);
     }
 
-    pub(super) fn after_dispatch(&mut self, id: WindowId, reason: native_host::HostTurnReason) {
+    pub(in super::super) fn after_dispatch(
+        &mut self,
+        id: WindowId,
+        reason: native_host::HostTurnReason,
+    ) {
         self.observe_dispatch(id, reason, false);
     }
 
-    pub(super) fn observe_dispatch(
+    pub(in super::super) fn observe_dispatch(
         &mut self,
         id: WindowId,
         reason: native_host::HostTurnReason,
@@ -146,7 +150,7 @@ impl Application {
         }
     }
 
-    pub(super) fn close_window(
+    pub(in super::super) fn close_window(
         &mut self,
         event_loop: &dyn ActiveEventLoop,
         id: WindowId,
@@ -163,7 +167,7 @@ impl Application {
         self.close_host(event_loop, handle.id(), cause);
     }
 
-    pub(super) fn window_for_host(&self, host: u64) -> Option<WindowId> {
+    pub(in super::super) fn window_for_host(&self, host: u64) -> Option<WindowId> {
         self.inner.windows.iter().find_map(|(id, view)| {
             access::handle(view.doc.as_ref())
                 .filter(|handle| handle.id() == host)
@@ -171,7 +175,7 @@ impl Application {
         })
     }
 
-    pub(super) fn close_host(
+    pub(in super::super) fn close_host(
         &mut self,
         event_loop: &dyn ActiveEventLoop,
         host: u64,
@@ -180,7 +184,7 @@ impl Application {
         self.observe_close(event_loop, host, cause, true);
     }
 
-    pub(super) fn retire_close_input(&self, host: u64) {
+    pub(in super::super) fn retire_close_input(&self, host: u64) {
         if let Some(id) = self.window_for_host(host)
             && let (Some(binding), Some(view)) =
                 (self.actions.get(&host), self.inner.windows.get(&id))
@@ -195,7 +199,7 @@ impl Application {
         }
     }
 
-    pub(super) fn observe_close(
+    pub(in super::super) fn observe_close(
         &mut self,
         event_loop: &dyn ActiveEventLoop,
         host: u64,
@@ -333,12 +337,12 @@ impl Application {
         }
     }
 
-    pub(super) fn checked_render(&mut self, id: WindowId, resume: bool) {
+    pub(in super::super) fn checked_render(&mut self, id: WindowId, resume: bool) {
         let Some(view) = self.inner.windows.get_mut(&id) else {
             return;
         };
         if let std::collections::hash_map::Entry::Vacant(entry) = self.frames.entry(id) {
-            match super::super::checked_window::WindowFrames::new() {
+            match super::super::super::checked_window::WindowFrames::new() {
                 Ok(frames) => {
                     entry.insert(frames);
                 }
@@ -357,7 +361,7 @@ impl Application {
             .expect("window frame owner inserted");
         let document_stamp = access::handle(view.doc.as_ref()).map(|handle| handle.stamp());
         let previous_ticket = frames.submission().map(|submission| submission.ticket);
-        let rendered = super::super::checked_window::render(view, frames, resume);
+        let rendered = super::super::super::checked_window::render(view, frames, resume);
         let submitted = frames
             .submission()
             .filter(|submission| Some(&submission.ticket) != previous_ticket.as_ref());

@@ -1,5 +1,5 @@
-use super::*;
-#[path = "../../../meari/fixtures/node-slots/mixed_support.rs"]
+use super::super::*;
+#[path = "../../../../meari/fixtures/node-slots/mixed_support.rs"]
 mod support;
 
 fn mount_mixed() -> (InteractiveDocument, Host) {
