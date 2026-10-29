@@ -1,3 +1,11 @@
+---
+id: sot:meari/architecture-and-support-boundaries
+title: Architecture and support boundaries
+status: active
+created: 2026-10-29
+updated: 2026-10-29
+verify: manual
+---
 # Architecture and support boundaries
 
 Meari is a Rust UI framework and Native+Web builder in development. It is maintained in an independent Git repository, intended for consumption through a pinned dependency/submodule. A nested checkout without a registered remote/gitlink is not a completed submodule distribution.

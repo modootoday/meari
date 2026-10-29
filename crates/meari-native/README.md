@@ -17,7 +17,7 @@ The executable hosts belong to `meari-native-tools`; their executable names and 
 
 `InteractiveDocument` preserves DOM/input/focus during supported patches. The shared FilePicker port supports injected tests and a Windows rfd adapter. Source-owned Tabs, Accordion, Dialog, Popover, Select, DropdownMenu, Field/ButtonGroup, Checkbox/Switch and Icon contracts are bounded subsets of upstream behavior.
 
-제어형 Dialog·AlertDialog·Switch·Checkbox의 공개 module factory, 승인·거부와 callback export 수명은 [Native Boolean 위젯 계약](../../docs/native-controlled-widgets.md)을 참고하세요. Web/전체 shadcn 지원과 구분합니다.
+제어형 Dialog·AlertDialog·Switch·Checkbox의 공개 module factory, 승인·거부와 callback export 수명은 [Native Boolean 위젯 계약](../../.spec/sot/native-boolean.sot.md)을 참고하세요. Web/전체 shadcn 지원과 구분합니다.
 
 Primitive source `useState` and typed literal/functional Button setters execute in the persistent document. Mixed text runs and disabled state patch existing nodes. `library-check[-gl]` runs library-owned stories, including the source-state fixture, without requiring a downloaded official corpus; it does not prove upstream or OS accessibility completeness.
 
@@ -25,4 +25,4 @@ CSS-sized screens use `screen_element` in styles requests or `InteractiveDocumen
 
 GL is an opt-in host-owned vector backend on Windows; failures never count CPU fallback as GL success. Context generations, last-good readback and bounded Icon GPU cache have separate contracts. Embedding into an existing consumer GL host, forced device loss, complete provider/CSS parity and OS input/screen-reader acceptance remain unfinished.
 
-See [framework architecture](../../docs/architecture.md) and [custom CSS fixtures](fixtures/custom-css/README.md). External corpus tests require `MEARI_KITCHEN_SINK`; Tailwind tests require `BRIDGE_TAILWIND`. Use explicit ignored-test opt-in with the required data/hardware.
+See [framework architecture](../../.spec/sot/architecture-and-support-boundaries.sot.md) and [custom CSS fixtures](fixtures/custom-css/README.md). External corpus tests require `MEARI_KITCHEN_SINK`; Tailwind tests require `BRIDGE_TAILWIND`. Use explicit ignored-test opt-in with the required data/hardware.

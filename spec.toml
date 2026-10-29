@@ -1,0 +1,8 @@
+[spec]
+schema = 1
+
+[owners]
+root = "meari"
+
+[aliases]
+file = ".spec/_aliases.tsv"

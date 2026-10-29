@@ -1,6 +1,7 @@
 //! Meari development tasks.
-//! Usage: `cargo xtask lint-structure [--strict]` | `cargo xtask visual-test [--out DIR] [...]`.
+//! Usage: `cargo xtask lint-structure [--strict]` | `cargo xtask visual-test [--out DIR] [...]` | `cargo xtask spec-check [...]`.
 
+mod spec_check;
 mod structure;
 
 use std::path::PathBuf;
@@ -32,9 +33,10 @@ fn main() -> ExitCode {
                 _ => ExitCode::FAILURE,
             }
         }
+        Some("spec-check") => spec_check::run(&args[1..]),
         _ => {
             eprintln!(
-                "usage: cargo xtask lint-structure [--strict] | cargo xtask visual-test [--out DIR]"
+                "usage: cargo xtask lint-structure [--strict] | cargo xtask visual-test [--out DIR] | cargo xtask spec-check [ARGS]"
             );
             ExitCode::from(2)
         }
