@@ -17,7 +17,7 @@ rel:
 
 
 Evidence: `cargo xtask visual-test` (Native blitz/vello_cpu offscreen vs headless Chrome, same Tailwind v4.3.3 CSS).
-Fixtures in `crates/meari-visual/fixtures/{supported,gaps}`. Last run 2026-10-29: 30 MATCH (6 via `.tolerance`), 0 MISMATCH, 5 KNOWN-GAP.
+Fixtures in `crates/meari-visual/fixtures/{supported,gaps}`. Last run 2026-10-29: 32 MATCH, 0 MISMATCH, 4 KNOWN-GAP.
 This is automated pixel comparison only; **no human visual check, no Windows, no real wasm-bindgen glue run**.
 
 ### Tailwind
