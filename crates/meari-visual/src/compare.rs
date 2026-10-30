@@ -56,37 +56,51 @@ fn runs(flags: &[bool]) -> Spans {
 /// Inclusive `(start, end)` index runs.
 type Spans = Vec<(usize, usize)>;
 
-/// Ink row spans and column spans of an RGBA image `width` pixels wide.
-fn ink_spans(rgba: &[u8], width: usize) -> (Spans, Spans) {
+/// Ink bounding box per horizontal ink band: `(top, bottom, left, right)`, inclusive.
+type Bands = Vec<(usize, usize, usize, usize)>;
+
+/// One ink band (row run) per text line or block, each with its own column extent, so
+/// inter-glyph gaps that AA fills or opens do not count as a layout change.
+fn ink_bands(rgba: &[u8], width: usize) -> Bands {
     let pixels = rgba.as_chunks::<4>().0;
-    let height = pixels.len() / width.max(1);
+    let width = width.max(1);
+    let height = pixels.len() / width;
     let background = pixels.first().copied().unwrap_or([255; 4]);
-    let (mut rows, mut cols) = (vec![false; height], vec![false; width]);
-    for (i, px) in pixels.iter().enumerate() {
-        let ink = px
-            .iter()
-            .zip(background)
-            .any(|(x, y)| x.abs_diff(y) > INK_THRESHOLD);
-        if ink {
-            rows[i / width] = true;
-            cols[i % width] = true;
-        }
-    }
-    (runs(&rows), runs(&cols))
-}
-
-fn spans_close(a: &[(usize, usize)], b: &[(usize, usize)]) -> bool {
-    a.len() == b.len()
-        && a.iter().zip(b).all(|(x, y)| {
-            x.0.abs_diff(y.0) <= LAYOUT_SLACK_PX && x.1.abs_diff(y.1) <= LAYOUT_SLACK_PX
+    let ink: Vec<bool> = pixels
+        .iter()
+        .map(|px| {
+            px.iter()
+                .zip(background)
+                .any(|(x, y)| x.abs_diff(y) > INK_THRESHOLD)
         })
+        .collect();
+    let rows: Vec<bool> = (0..height)
+        .map(|y| ink[y * width..][..width].iter().any(|&on| on))
+        .collect();
+    let row_runs: Spans = runs(&rows);
+    row_runs
+        .into_iter()
+        .map(|(top, bottom)| {
+            let cols: Vec<bool> = (0..width)
+                .map(|x| (top..=bottom).any(|y| ink[y * width + x]))
+                .collect();
+            let left = cols.iter().position(|&on| on).unwrap_or(0);
+            let right = cols.iter().rposition(|&on| on).unwrap_or(0);
+            (top, bottom, left, right)
+        })
+        .collect()
 }
 
-/// Whether two same-size RGBA images place their ink identically up to AA edge slack.
+/// Whether two same-size RGBA images place their ink identically up to AA edge slack:
+/// same number of ink bands, every band edge within [`LAYOUT_SLACK_PX`].
 pub fn layout_matches(a: &[u8], b: &[u8], width: usize) -> bool {
-    let (ra, ca) = ink_spans(a, width);
-    let (rb, cb) = ink_spans(b, width);
-    spans_close(&ra, &rb) && spans_close(&ca, &cb)
+    let (ba, bb) = (ink_bands(a, width), ink_bands(b, width));
+    ba.len() == bb.len()
+        && ba.iter().zip(&bb).all(|(x, y)| {
+            [(x.0, y.0), (x.1, y.1), (x.2, y.2), (x.3, y.3)]
+                .iter()
+                .all(|(p, q)| p.abs_diff(*q) <= LAYOUT_SLACK_PX)
+        })
 }
 
 impl Diff {
@@ -179,6 +193,21 @@ mod layout_tests {
         let a = image(8, 8, &[(2, 2), (3, 2), (2, 3)]);
         let b = image(8, 8, &[(2, 2), (3, 2), (4, 2), (2, 3), (2, 4)]);
         assert!(layout_matches(&a, &b, 8));
+    }
+
+    #[test]
+    fn aa_filling_an_inter_glyph_gap_is_layout_equal() {
+        // Two glyphs separated by a 1 px gap that the other rasterizer's AA fills.
+        let a = image(8, 4, &[(1, 1), (3, 1)]);
+        let b = image(8, 4, &[(1, 1), (2, 1), (3, 1)]);
+        assert!(layout_matches(&a, &b, 8));
+    }
+
+    #[test]
+    fn wider_line_from_another_font_is_a_layout_difference() {
+        let a = image(12, 4, &[(1, 1), (5, 1)]);
+        let b = image(12, 4, &[(1, 1), (8, 1)]);
+        assert!(!layout_matches(&a, &b, 12));
     }
 
     #[test]
