@@ -44,7 +44,9 @@ pub fn default_tailwind(repo_root: &Path) -> PathBuf {
 /// `file://` URL for a local path on any OS (`/a/b` -> `file:///a/b`, `C:\a b` -> `file:///C:/a%20b`).
 pub fn file_url(path: &Path) -> String {
     let absolute;
-    let path = if path.is_relative() && !path.to_string_lossy().contains(':') {
+    let raw = path.to_string_lossy();
+    let rooted = raw.starts_with(['/', '\\']) || raw.contains(':');
+    let path = if path.is_relative() && !rooted {
         absolute = std::env::current_dir()
             .map(|dir| dir.join(path))
             .unwrap_or(path.into());
