@@ -43,7 +43,7 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | `group-*` / `peer-*` variants | 부분: `group-hover:*` (idle frame), `group-[.cls]:*`, `peer-[.cls]:*` MATCH (1.271%, glyph AA tolerance 1.3% with bbox evidence). `peer-checked:*` with host `<input defaultChecked>` MATCH 0.350% at default 0.5% (defaultChecked → `checked` attribute seeds `:checked`) | supported/tw-group-peer, supported/tw-peer-checked |
 | transition / animation | 방침: 정적 비교만. Static render has no running timeline, so the comparison is the start state (= end state for hover-triggered transitions with no hover); `transition-*`/`duration-*` parse and are inert. `animate-spin/ping/pulse/bounce`: native does not run keyframes; not pixel-compared (frame 0 vs Chrome frame depends on capture time) — 미구현으로 기록 | (no fixture by design) |
 | indeterminate `<progress>` (no `value`) | 방침: 미지원 비교. Chrome animates the indeterminate bar, so no deterministic frame exists; native paints the empty track. Only determinate `value`/`max` is MATCH | supported/html-progress |
-| generic `sans-serif`/`serif`/`monospace` family | 구현됨: 정본은 고정 핀 Noto (Sans/Serif + KR/JP/스크립트별, 다운로드 캐시, sot:meari/fonts); Chrome 비교 경로는 하네스가 generic 키워드를 Noto로 매핑 (0.704%); canonical-font 2.951% > 1.7% 실패 (미완화, 소유자 결정 대기) | supported/generic-font-family, supported/canonical-font, supported/script-* |
+| generic `sans-serif`/`serif`/`monospace` family | 구현됨: 정본은 고정 핀 Noto (Sans/Serif + KR/JP/스크립트별, 다운로드 캐시, sot:meari/fonts); Chrome 비교 경로는 하네스가 generic 키워드를 Noto로 매핑 (0.704%); canonical-font 2.951% ≤ 3.1% (AA 차이, 사용자 승인 2026-10-30 11:11 KST로 상향) | supported/generic-font-family, supported/canonical-font, supported/script-* |
 
 ### React / TSX
 
@@ -81,7 +81,7 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | flex-row | supported | MATCH | 0.000% | 0.500% | visual-test pixel diff |
 | form-tag | supported | MATCH | 0.311% | 0.500% | visual-test pixel diff |
 | generic-font-family | supported | MATCH | 0.866% | 1.000% | visual-test pixel diff |
-| canonical-font | supported | MATCH | 1.597% | 1.700% | visual-test pixel diff + per-line ink bbox |
+| canonical-font | supported | MATCH | 2.951% | 3.100% | visual-test pixel diff + per-line ink bbox |
 | grid-cards | supported | MATCH | 0.000% | 0.500% | visual-test pixel diff |
 | heading-text | supported | MATCH | 0.764% | 0.900% | visual-test pixel diff |
 | html-a | supported | MATCH | 0.157% | 0.500% | visual-test pixel diff |

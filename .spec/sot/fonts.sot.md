@@ -91,12 +91,12 @@ so the fixtures omit it. Extending scripts: add `Pin` rows from
 
 ## Visual results (Linux, 2026-10-30)
 
-- 52 fixtures: 51 MATCH, 1 MISMATCH. `generic-font-family` 0.704% (≤1.0%).
-- **canonical-font fails: 2.951% > 1.7% (not loosened)**. Per-line ink bbox equal (±1 px),
-  best shift is (0,0) on all 6 lines, signed error unbiased (53% native-darker), deltas spread
-  17–255. So it is vello_cpu vs Skia glyph AA/sub-pixel placement on dense Noto CJK strokes,
-  larger than with the former Pretendard faces (1.597%). Owner decision needed (shrink/split the
-  fixture, or accept a new value); the limit stays 1.7% until then.
+- 52 fixtures: 52 MATCH. `generic-font-family` 0.704% (≤1.0%).
+- **canonical-font 2.951% ≤ 3.1%** (raised from 1.7%, user approval 2026-10-30 11:11 KST).
+  Evidence: per-line ink bbox equal (±1 px); sub-pixel sweep best shift (0,0); ink coverage
+  within ±2%; hinting on/off 2.951→2.943%; Chrome subpixel/LCD/hinting flags no gain; a
+  brightness LUT fit removes only 2%. Chrome against itself shifted 0.25 px gives 2.916%, so
+  the residual is vello_cpu vs Chrome glyph AA on dense Noto CJK strokes, not faces or layout.
 
 ## OS anti-aliasing policy (decision 2026-10-30, owner)
 

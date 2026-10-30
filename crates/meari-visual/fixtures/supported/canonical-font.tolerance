@@ -1,2 +1,2 @@
-max_ratio=0.017
-reason=glyph rasterization only (vello_cpu vs Skia anti-aliasing); same faces (pinned Noto Sans / Sans KR / Sans JP / Serif / Serif KR from the download cache: Chrome via the generated WOFF2 slices, native via the cached TTF). Limit kept from the Pretendard baseline (1.597%); with Noto the measured value is 2.951% on Linux 2026-10-30 (per-line ink bbox equal, best shift (0,0), unbiased signed error) and the fixture FAILS until the owner decides; not loosened.
+max_ratio=0.031
+reason=glyph rasterization only (vello_cpu vs Chrome/Skia-FreeType anti-aliasing) on dense Noto Sans/Serif KR+JP strokes; same faces and positions (sub-pixel sweep best shift (0,0), ink coverage within +/-2%, hinting/subpixel/gamma experiments <=2% effect). Measured 2.951% on Linux 2026-10-30; Chrome vs itself shifted 0.25px = 2.916%. Raised from 0.017 (Pretendard baseline) with explicit user approval 2026-10-30 11:11 KST.
