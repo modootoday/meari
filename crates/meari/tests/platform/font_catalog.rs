@@ -185,7 +185,7 @@ fn every_bundled_font_is_ofl_and_catalogued() {
                 .unwrap()
                 .to_str()
                 .unwrap()
-                .to_owned();
+                .replace('\\', "/");
             let lower = relative.to_ascii_lowercase();
             for banned in ["arimo", "tinos", "liberation"] {
                 assert!(!lower.contains(banned), "{relative} must not be bundled");

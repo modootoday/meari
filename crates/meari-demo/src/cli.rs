@@ -19,11 +19,11 @@ impl Options {
             list_only: false,
             seconds: None,
             out: PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../runtime/demo")),
-            chrome: "/usr/bin/google-chrome".into(),
-            tailwind: PathBuf::from(concat!(
+            chrome: meari_visual::host::default_chrome(),
+            tailwind: meari_visual::host::default_tailwind(&PathBuf::from(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../runtime/tools/tailwind/tailwindcss-linux-x64"
-            )),
+                "/../.."
+            ))),
         };
         let mut iter = args.iter();
         while let Some(arg) = iter.next() {

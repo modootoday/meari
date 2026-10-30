@@ -27,9 +27,9 @@ pub fn canonical_faces() -> String {
                 .map(|range| format!(";unicode-range:{range}"))
                 .unwrap_or_default();
             format!(
-                "@font-face{{font-family:\"{}\";src:url(\"file://{root}/{}\") format(\"woff2\");font-style:normal;font-weight:{};font-display:block{range}}}",
+                "@font-face{{font-family:\"{}\";src:url(\"{}\") format(\"woff2\");font-style:normal;font-weight:{};font-display:block{range}}}",
                 face.web_family(),
-                web.file.path,
+                crate::host::file_url(&std::path::Path::new(root).join(web.file.path)),
                 face.weight()
             )
         })

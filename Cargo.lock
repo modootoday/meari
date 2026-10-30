@@ -2119,6 +2119,7 @@ dependencies = [
  "blitz-dom",
  "meari",
  "meari-native",
+ "meari-platform",
  "png",
  "serde_json",
 ]
