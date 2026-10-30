@@ -31,6 +31,39 @@ pub fn default_chrome() -> String {
         .into_owned()
 }
 
+/// How pixel mismatches gate the run on this host.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PixelGate {
+    /// Reference host (Linux): any supported-fixture mismatch fails the run.
+    Strict,
+    /// Windows/macOS: glyph anti-aliasing follows the OS font renderer and user settings
+    /// (ClearType, gamma), so an AA-only mismatch is reported, not failed. Layout
+    /// differences and render errors still fail.
+    Advisory,
+}
+
+impl PixelGate {
+    pub fn for_os(os: OsFamily) -> Self {
+        match os {
+            OsFamily::Unix => PixelGate::Strict,
+            OsFamily::Windows | OsFamily::MacOs => PixelGate::Advisory,
+        }
+    }
+
+    /// Gate for the OS this binary runs on (selected by `meari-platform`).
+    pub fn current() -> Self {
+        Self::for_os(meari_platform::current().os_family())
+    }
+
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "strict" => Some(PixelGate::Strict),
+            "advisory" => Some(PixelGate::Advisory),
+            _ => None,
+        }
+    }
+}
+
 /// Default pinned Tailwind standalone binary under `runtime/tools/tailwind/` for this OS family.
 pub fn default_tailwind(repo_root: &Path) -> PathBuf {
     let asset = match meari_platform::current().os_family() {
@@ -74,7 +107,16 @@ pub fn file_url(path: &Path) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::file_url;
+    use super::{OsFamily, PixelGate, file_url};
+
+    #[test]
+    fn linux_is_the_strict_reference_gate() {
+        assert_eq!(PixelGate::for_os(OsFamily::Unix), PixelGate::Strict);
+        assert_eq!(PixelGate::for_os(OsFamily::Windows), PixelGate::Advisory);
+        assert_eq!(PixelGate::for_os(OsFamily::MacOs), PixelGate::Advisory);
+        assert_eq!(PixelGate::parse("strict"), Some(PixelGate::Strict));
+        assert_eq!(PixelGate::parse("loose"), None);
+    }
     use std::path::Path;
 
     #[test]

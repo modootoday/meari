@@ -10,6 +10,7 @@ fn main() {
     let mut chrome = meari_visual::host::default_chrome();
     let mut tolerance = compare::Tolerance::default();
     let mut only: Option<String> = None;
+    let mut gate = meari_visual::host::PixelGate::current();
     let mut tailwind = meari_visual::host::default_tailwind(&PathBuf::from(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../.."
@@ -18,6 +19,12 @@ fn main() {
         match arg.as_str() {
             "--out" => out = args.next().expect("--out DIR").into(),
             "--only" => only = args.next(),
+            "--gate" => {
+                gate = args
+                    .next()
+                    .and_then(|v| meari_visual::host::PixelGate::parse(&v))
+                    .expect("--gate strict|advisory")
+            }
             "--tailwind" => tailwind = args.next().expect("--tailwind PATH").into(),
             "--chrome" => chrome = args.next().expect("--chrome PATH"),
             "--channel-tolerance" => {
@@ -44,6 +51,6 @@ fn main() {
         tolerance,
     };
     let rows: Vec<_> = fixtures.iter().map(|f| report::run_one(f, &cx)).collect();
-    let failed = report::write(&out, &rows, tolerance).expect("write report");
+    let failed = report::write(&out, &rows, tolerance, gate).expect("write report");
     std::process::exit(if failed == 0 { 0 } else { 1 });
 }
