@@ -12,8 +12,8 @@
 //! unmodified Chrome picks the same host faces.
 use meari_platform::{OsFamily, PlatformHost};
 use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, GenericFamily, SourceCache};
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 
 /// Chromium Linux defaults followed by fontconfig's metric-compatible substitutes.
 const CHROMIUM: &[(GenericFamily, &[&str])] = &[
@@ -28,6 +28,16 @@ const CHROMIUM: &[(GenericFamily, &[&str])] = &[
 ];
 
 static CHROME_COMPARISON: AtomicBool = AtomicBool::new(false);
+static COMPARISON_FONTS: Mutex<Vec<&'static [u8]>> = Mutex::new(Vec::new());
+
+/// Registers a font blob in every later document of this process (comparison harness only:
+/// `meari-visual` embeds its environment-pin face so no run depends on a host install).
+pub fn register_comparison_font(bytes: &'static [u8]) {
+    let mut fonts = COMPARISON_FONTS.lock().unwrap_or_else(|e| e.into_inner());
+    if !fonts.iter().any(|f| std::ptr::eq(*f, bytes)) {
+        fonts.push(bytes);
+    }
+}
 
 /// Switches every later document of this process to the Chrome comparison profile.
 pub fn use_chrome_comparison_profile() {
@@ -46,6 +56,13 @@ fn build(canonical: bool) -> parley::FontContext {
     });
     collection.register_fonts(Blob::new(Arc::new(blitz_dom::BULLET_FONT) as _), None);
     register_bundled(&mut collection);
+    for bytes in COMPARISON_FONTS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+    {
+        collection.register_fonts(Blob::new(Arc::new(*bytes) as _), None);
+    }
     let host = meari_platform::current();
     for (generic, chromium) in CHROMIUM {
         let mut names: Vec<&str> = Vec::new();

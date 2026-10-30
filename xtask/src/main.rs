@@ -32,6 +32,11 @@ fn main() -> ExitCode {
             // Native (offscreen CPU) vs Web (headless Chrome) pixel comparison; see crates/meari-visual.
             run_package("meari-visual", &args[1..])
         }
+        Some("fonts-fetch") => {
+            // Pinned Noto downloads (sha256-verified, cached in runtime/fonts); see meari-visual/src/fonts.rs.
+            let scripts = args.get(1).cloned().unwrap_or_else(|| "all".into());
+            run_package("meari-visual", &["--fetch-fonts".to_string(), scripts])
+        }
         Some("spec-check") => spec_check::run(&args[1..]),
         Some("clean-cache") => match workspace::root() {
             Ok(root) => clean_cache::run(&args[1..], &root),
@@ -53,7 +58,7 @@ fn main() -> ExitCode {
         Some("demo") => run_package("meari-demo", &args[1..]),
         _ => {
             eprintln!(
-                "usage: cargo xtask lint-structure [--strict] | cargo xtask visual-test [--out DIR] | cargo xtask spec-check [ARGS] | cargo xtask clean-cache [--max-gb N] [--older-days D] [--dry-run] | cargo xtask demo [FIXTURE] [--list] [--seconds N]"
+                "usage: cargo xtask lint-structure [--strict] | cargo xtask visual-test [--out DIR] | cargo xtask fonts-fetch [all|latin,hangul,...] | cargo xtask spec-check [ARGS] | cargo xtask clean-cache [--max-gb N] [--older-days D] [--dry-run] | cargo xtask demo [FIXTURE] [--list] [--seconds N]"
             );
             ExitCode::from(2)
         }
