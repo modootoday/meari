@@ -23,3 +23,20 @@ incremental = false
 
 [profile.dev.package."*"]
 debug = false
+
+# Web font slicing and cache verification run in tests and the visual test; unoptimized they
+# take minutes on the CJK faces.
+[profile.dev.package.fontcull-skrifa]
+opt-level = 3
+[profile.dev.package.fontcull-klippa]
+opt-level = 3
+[profile.dev.package.fontcull-read-fonts]
+opt-level = 3
+[profile.dev.package.fontcull-write-fonts]
+opt-level = 3
+[profile.dev.package.ttf2woff2]
+opt-level = 3
+[profile.dev.package.brotli]
+opt-level = 3
+[profile.dev.package.sha2]
+opt-level = 3

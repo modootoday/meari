@@ -56,8 +56,12 @@ fn main() {
             }
         }
     }
+    let cache_root = repo_root.join("runtime/fonts");
+    // SAFETY: single-threaded start-up, before any font context reads the cache location.
+    unsafe { std::env::set_var(meari_native::infrastructure::fonts::CACHE_ENV, &cache_root) };
     let pinned = meari_visual::fonts::ensure(meari_visual::fonts::VISUAL_TEST_SCRIPTS, &repo_root)
-        .and_then(|files| meari_visual::render::style::use_pinned_fonts(&files));
+        .and_then(|files| meari_visual::render::style::use_pinned_fonts(&files))
+        .and_then(|()| meari_visual::render::style::use_canonical_faces(&repo_root));
     if let Err(e) = pinned {
         eprintln!("pinned fonts: {e}");
         std::process::exit(1);

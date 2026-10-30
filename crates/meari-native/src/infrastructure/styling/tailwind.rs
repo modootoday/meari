@@ -168,9 +168,10 @@ fn theme_css(theme: &meari::domain::design::theme::Theme) -> String {
     // Canonical font stacks (non-inline, so `font-sans` stays `var(--font-sans)`).
     write!(
         css,
-        "@theme{{--font-sans:{};--font-serif:{};}}",
+        "@theme{{--font-sans:{};--font-serif:{};--font-mono:{};}}",
         meari::domain::design::fonts::SANS_FONT_FAMILY,
-        meari::domain::design::fonts::SERIF_FONT_FAMILY
+        meari::domain::design::fonts::SERIF_FONT_FAMILY,
+        meari::domain::design::fonts::MONO_FONT_FAMILY
     )
     .unwrap();
     css.push_str("@layer base{html,body{background:var(--background);color:var(--foreground)}body{min-height:100vh}}");

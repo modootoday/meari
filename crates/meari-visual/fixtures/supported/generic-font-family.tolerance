@@ -1,2 +1,2 @@
 max_ratio=0.010
-reason=glyph rasterization only (vello_cpu vs Skia anti-aliasing); same face (Arimo via Chromium Linux default Arial) and ink bbox equal (x 25..357, y 27/28..45). Measured 0.866% on 2026-10-30.
+reason=glyph rasterization only (vello_cpu vs Skia anti-aliasing); same face: the harness maps the CSS generic sans-serif to the pinned Noto Sans on the Chrome side (style::chrome_generics) and the native comparison profile resolves sans-serif to the same cached Noto Sans first, so no host font (Windows Arial / Linux Arimo) is involved; ink bbox equal (x 25..358, y 27..46). Measured 0.704% on Linux 2026-10-30.

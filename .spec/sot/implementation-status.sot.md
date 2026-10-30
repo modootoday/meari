@@ -43,7 +43,7 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | `group-*` / `peer-*` variants | 부분: `group-hover:*` (idle frame), `group-[.cls]:*`, `peer-[.cls]:*` MATCH (1.271%, glyph AA tolerance 1.3% with bbox evidence). `peer-checked:*` with host `<input defaultChecked>` MATCH 0.350% at default 0.5% (defaultChecked → `checked` attribute seeds `:checked`) | supported/tw-group-peer, supported/tw-peer-checked |
 | transition / animation | 방침: 정적 비교만. Static render has no running timeline, so the comparison is the start state (= end state for hover-triggered transitions with no hover); `transition-*`/`duration-*` parse and are inert. `animate-spin/ping/pulse/bounce`: native does not run keyframes; not pixel-compared (frame 0 vs Chrome frame depends on capture time) — 미구현으로 기록 | (no fixture by design) |
 | indeterminate `<progress>` (no `value`) | 방침: 미지원 비교. Chrome animates the indeterminate bar, so no deterministic frame exists; native paints the empty track. Only determinate `value`/`max` is MATCH | supported/html-progress |
-| generic `sans-serif`/`serif` family | 구현됨: 정본은 Pretendard Variable (+JP Regular/Bold) / Source Serif 4 + Source Han Serif KR (Web: Meari Serif KR slices) (sot:meari/fonts); Chrome 비교 경로만 Chromium Linux defaults (Arimo/Tinos 호스트 폴백, 0.866% glyph AA) | supported/generic-font-family, supported/canonical-font |
+| generic `sans-serif`/`serif`/`monospace` family | 구현됨: 정본은 고정 핀 Noto (Sans/Serif + KR/JP/스크립트별, 다운로드 캐시, sot:meari/fonts); Chrome 비교 경로는 하네스가 generic 키워드를 Noto로 매핑 (0.704%); canonical-font 2.951% > 1.7% 실패 (미완화, 소유자 결정 대기) | supported/generic-font-family, supported/canonical-font, supported/script-* |
 
 ### React / TSX
 

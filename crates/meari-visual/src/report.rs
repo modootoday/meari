@@ -33,8 +33,8 @@ pub fn run_one(fixture: &Fixture, cx: &Context) -> Row {
         std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
         let css = style::resolve(fixture, cx.tailwind)?;
         std::fs::write(dir.join("style.css"), &css).map_err(|e| e.to_string())?;
-        let html =
-            web::html(&fixture.source, &css, fixture.dark).map_err(|e| format!("web plan: {e}"))?;
+        let html = web::html(&fixture.source, &style::chrome_generics(&css), fixture.dark)
+            .map_err(|e| format!("web plan: {e}"))?;
         let html_path = std::fs::canonicalize(&dir)
             .map_err(|e| e.to_string())?
             .join("web.html");

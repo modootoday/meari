@@ -1,273 +1,297 @@
-//! Canonical bundled font identity (all SIL OFL-1.1); coverage and raster quality are separate
-//! host contracts. Native consumes unchanged upstream TTF/OTF. The Web consumes the
-//! upstream-built WOFF2 of the same face, except Source Han Serif KR, which is served as
-//! unicode-range WOFF2 slices: a subset is an OFL "Modified Version" and the upstream reserves
-//! the name 'Source', so the slices carry the non-reserved family [`MEARI_SERIF_KR`].
-pub const UPSTREAM_RELEASE: &str = "v1.3.9";
-pub const UPSTREAM_RELEASE_URL: &str =
-    "https://github.com/orioncactus/pretendard/releases/tag/v1.3.9";
+//! Canonical font identity: pinned Noto downloads (SIL OFL-1.1). No font bytes are compiled
+//! into any binary; `meari_native::infrastructure::fonts` fetches the files below from the
+//! official Google Fonts repository, verifies length and sha256, and caches them under
+//! `runtime/fonts/noto/<revision>/`. The Web gets WOFF2 unicode-range slices generated from the
+//! same cached files (Noto families carry no Reserved Font Name, so subsets keep the name).
 
-/// Renamed family of the Web slices of Source Han Serif KR (see `scripts/fonts`).
-pub const MEARI_SERIF_KR: &str = "Meari Serif KR";
+/// Official Google Fonts repository revision the pins were taken from (2026-10-30).
+pub const REVISION: &str = "6157dfaa640ca5738b4d1a7070fe389c3036d7fc";
 
-/// Canonical sans-serif stack: bundled Pretendard Variable, an installed static Pretendard,
-/// bundled Pretendard JP for kana/kanji, then host fallbacks for macOS, Windows and Linux
-/// (code/CSS level only; only Linux is executed in CI).
-pub const UI_FONT_FAMILY: &str = "\"Pretendard Variable\", Pretendard, \"Pretendard JP\", -apple-system, BlinkMacSystemFont, \"Apple SD Gothic Neo\", \"Hiragino Sans\", \"Segoe UI\", \"Malgun Gothic\", \"Yu Gothic UI\", \"Noto Sans KR\", \"Noto Sans CJK KR\", Arial, sans-serif";
+/// One pinned upstream file plus its directory's OFL notice.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Pin {
+    pub script: &'static str,
+    pub family: &'static str,
+    pub dir: &'static str,
+    pub file: &'static str,
+    pub style: &'static str,
+    pub length: u64,
+    pub sha256: &'static str,
+    pub ofl_length: u64,
+    pub ofl_sha256: &'static str,
+}
+
+/// Script -> Noto family manifest (sans first, then serif). `latin` covers Latin, Greek and
+/// Cyrillic; `hangul` also covers KS X 1001 hanja; `kana` covers kana and JIS kanji.
+pub const MANIFEST: &[Pin] = &[
+    Pin {
+        script: "latin",
+        family: "Noto Sans",
+        dir: "notosans",
+        file: "NotoSans[wdth,wght].ttf",
+        style: "normal",
+        length: 2049096,
+        sha256: "bfb7bb691513f12e734dc346c03a03f784912432d7e3fa8e56efcf906fe86b3d",
+        ofl_length: 4396,
+        ofl_sha256: "cee9892f9f0cc8fe882c9e9537ee6a89621d86ee7ceaf70b02e2b2b1c25c061a",
+    },
+    Pin {
+        script: "latin",
+        family: "Noto Sans",
+        dir: "notosans",
+        file: "NotoSans-Italic[wdth,wght].ttf",
+        style: "italic",
+        length: 2322640,
+        sha256: "58e6e0ebd1931b29a365aa2d3e2ee9a9e831a3af7cf3ad1462d4e72154f0b291",
+        ofl_length: 4396,
+        ofl_sha256: "cee9892f9f0cc8fe882c9e9537ee6a89621d86ee7ceaf70b02e2b2b1c25c061a",
+    },
+    Pin {
+        script: "latin",
+        family: "Noto Serif",
+        dir: "notoserif",
+        file: "NotoSerif[wdth,wght].ttf",
+        style: "normal",
+        length: 1887192,
+        sha256: "4d8e6761424656867019081a1a01336f3cb086982682698714054fc33f782713",
+        ofl_length: 4396,
+        ofl_sha256: "cee9892f9f0cc8fe882c9e9537ee6a89621d86ee7ceaf70b02e2b2b1c25c061a",
+    },
+    Pin {
+        script: "latin",
+        family: "Noto Serif",
+        dir: "notoserif",
+        file: "NotoSerif-Italic[wdth,wght].ttf",
+        style: "italic",
+        length: 2448496,
+        sha256: "e87acbc6c0efd0d9a20d6a8cbbda2b266c14be3a3a6f5af8ec9d7b2460570ad1",
+        ofl_length: 4396,
+        ofl_sha256: "cee9892f9f0cc8fe882c9e9537ee6a89621d86ee7ceaf70b02e2b2b1c25c061a",
+    },
+    Pin {
+        script: "latin",
+        family: "Noto Sans Mono",
+        dir: "notosansmono",
+        file: "NotoSansMono[wdth,wght].ttf",
+        style: "normal",
+        length: 1708408,
+        sha256: "2cb2adb378a8f574213e23df697050b83c54c27df465a2015552740b2769a081",
+        ofl_length: 4396,
+        ofl_sha256: "cee9892f9f0cc8fe882c9e9537ee6a89621d86ee7ceaf70b02e2b2b1c25c061a",
+    },
+    Pin {
+        script: "hangul",
+        family: "Noto Sans KR",
+        dir: "notosanskr",
+        file: "NotoSansKR[wght].ttf",
+        style: "normal",
+        length: 10414588,
+        sha256: "194018e6b2b293a7964f037b25c0249ce1418bc9ab3c971060a03aa57861e252",
+        ofl_length: 4388,
+        ofl_sha256: "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9",
+    },
+    Pin {
+        script: "hangul",
+        family: "Noto Serif KR",
+        dir: "notoserifkr",
+        file: "NotoSerifKR[wght].ttf",
+        style: "normal",
+        length: 23795420,
+        sha256: "11f8d5de6f1b79195efba3828aaa2ec95c1178f5ae976fb23c8d53250a9938f3",
+        ofl_length: 4350,
+        ofl_sha256: "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6",
+    },
+    Pin {
+        script: "kana",
+        family: "Noto Sans JP",
+        dir: "notosansjp",
+        file: "NotoSansJP[wght].ttf",
+        style: "normal",
+        length: 9589900,
+        sha256: "c2f3b4d463500a2ddcd3849cded1fceeb9fd6d1c32e6cbecd568453ba50fc68f",
+        ofl_length: 4388,
+        ofl_sha256: "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9",
+    },
+    Pin {
+        script: "kana",
+        family: "Noto Serif JP",
+        dir: "notoserifjp",
+        file: "NotoSerifJP[wght].ttf",
+        style: "normal",
+        length: 13574352,
+        sha256: "2fd527ba12b6a44ec30d796d633360da0aeba6c5d4af1304ce12bb4dc15a7dfc",
+        ofl_length: 4350,
+        ofl_sha256: "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6",
+    },
+    Pin {
+        script: "arabic",
+        family: "Noto Sans Arabic",
+        dir: "notosansarabic",
+        file: "NotoSansArabic[wdth,wght].ttf",
+        style: "normal",
+        length: 844676,
+        sha256: "63111b5b2e074dd48cc67692e0a2726d86ee94c1c37fe8598257b7b4e87e869e",
+        ofl_length: 4382,
+        ofl_sha256: "07fc70bfeb985cc1a87a8587d0a0c80bab11c86c9dc3fd95b6f0cb332f983e96",
+    },
+    Pin {
+        script: "arabic",
+        family: "Noto Naskh Arabic",
+        dir: "notonaskharabic",
+        file: "NotoNaskhArabic[wght].ttf",
+        style: "normal",
+        length: 307592,
+        sha256: "67b5a525a661b607971fbd3f96a81b89d3a768e74534fca84f18ac97e6fab72f",
+        ofl_length: 4382,
+        ofl_sha256: "a7a5a25eb188bf1cd96982030d53e23c33485c69b1044a562254226857ee13af",
+    },
+    Pin {
+        script: "hebrew",
+        family: "Noto Sans Hebrew",
+        dir: "notosanshebrew",
+        file: "NotoSansHebrew[wdth,wght].ttf",
+        style: "normal",
+        length: 112640,
+        sha256: "7ef36a2c3593758cdb622e1bdef4f84523e92fbc3ccc667438dd80ff54c2de88",
+        ofl_length: 4382,
+        ofl_sha256: "9b9fe028b5ba74d231659a1bbaf0ed09b11e759d1ca6a070999e16d151616b47",
+    },
+    Pin {
+        script: "hebrew",
+        family: "Noto Serif Hebrew",
+        dir: "notoserifhebrew",
+        file: "NotoSerifHebrew[wdth,wght].ttf",
+        style: "normal",
+        length: 183600,
+        sha256: "93caef921360788dc3b0e32136bb26f16bc57717ec482d48fc7fd43820617165",
+        ofl_length: 4382,
+        ofl_sha256: "9b9fe028b5ba74d231659a1bbaf0ed09b11e759d1ca6a070999e16d151616b47",
+    },
+    Pin {
+        script: "devanagari",
+        family: "Noto Sans Devanagari",
+        dir: "notosansdevanagari",
+        file: "NotoSansDevanagari[wdth,wght].ttf",
+        style: "normal",
+        length: 641944,
+        sha256: "14ec4af41f27482216d1c2229f417ff9b1425e1babb014e57d1d40d03229853e",
+        ofl_length: 4386,
+        ofl_sha256: "a216f6f8d85c7228093e0ee5e258d9d377e6671f68acb4db1930b29583d0f331",
+    },
+    Pin {
+        script: "devanagari",
+        family: "Noto Serif Devanagari",
+        dir: "notoserifdevanagari",
+        file: "NotoSerifDevanagari[wdth,wght].ttf",
+        style: "normal",
+        length: 757692,
+        sha256: "1191e07bfeb062d80e252eb85b0eafdfbda1e350707a2a60628668e8f677dbbb",
+        ofl_length: 4386,
+        ofl_sha256: "a216f6f8d85c7228093e0ee5e258d9d377e6671f68acb4db1930b29583d0f331",
+    },
+    Pin {
+        script: "thai",
+        family: "Noto Sans Thai",
+        dir: "notosansthai",
+        file: "NotoSansThai[wdth,wght].ttf",
+        style: "normal",
+        length: 218652,
+        sha256: "5a1c559bb539583c8a1fd99d1c5b9491e5e14478c9cd2bd0970d5c3096cc9ef8",
+        ofl_length: 4380,
+        ofl_sha256: "2e98fd23a52d253db8612cd5942c8f2ff4111b21d2367050fdca91d8ccc374a0",
+    },
+    Pin {
+        script: "thai",
+        family: "Noto Serif Thai",
+        dir: "notoserifthai",
+        file: "NotoSerifThai[wdth,wght].ttf",
+        style: "normal",
+        length: 292188,
+        sha256: "34a7ad11647c845303aabdde639059806c56b84719e5d2ceb28eb038711bdf53",
+        ofl_length: 4380,
+        ofl_sha256: "2e98fd23a52d253db8612cd5942c8f2ff4111b21d2367050fdca91d8ccc374a0",
+    },
+];
+
+impl Pin {
+    pub fn url(&self) -> String {
+        raw_url(self.dir, self.file)
+    }
+    pub fn ofl_url(&self) -> String {
+        raw_url(self.dir, "OFL.txt")
+    }
+    /// Variable `wght` range of every pinned face.
+    pub fn weight(&self) -> &'static str {
+        "100 900"
+    }
+}
+
+fn raw_url(dir: &str, file: &str) -> String {
+    let file = file
+        .replace('[', "%5B")
+        .replace(']', "%5D")
+        .replace(',', "%2C");
+    format!("https://raw.githubusercontent.com/google/fonts/{REVISION}/ofl/{dir}/{file}")
+}
+
+/// Pins for the requested scripts (`all` selects every script); unknown names are an error.
+pub fn select(scripts: &[&str]) -> Result<Vec<Pin>, String> {
+    for script in scripts {
+        if *script != "all" && !MANIFEST.iter().any(|p| p.script == *script) {
+            return Err(format!(
+                "unknown font script `{script}`; known: all, {}",
+                known_scripts().join(", ")
+            ));
+        }
+    }
+    Ok(MANIFEST
+        .iter()
+        .filter(|p| scripts.iter().any(|s| *s == "all" || *s == p.script))
+        .copied()
+        .collect())
+}
+
+pub fn known_scripts() -> Vec<&'static str> {
+    let mut out: Vec<&str> = Vec::new();
+    for pin in MANIFEST {
+        if !out.contains(&pin.script) {
+            out.push(pin.script);
+        }
+    }
+    out
+}
+
+/// Scripts of the canonical UI faces (Latin + Hangul + Japanese, sans and serif).
+pub const UI_SCRIPTS: &[&str] = &["latin", "hangul", "kana"];
+
+/// Canonical sans-serif stack: Noto per script, then the generic (no host face is named).
+pub const UI_FONT_FAMILY: &str = "\"Noto Sans\", \"Noto Sans KR\", \"Noto Sans JP\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", \"Noto Sans Devanagari\", \"Noto Sans Thai\", sans-serif";
 pub const SANS_FONT_FAMILY: &str = UI_FONT_FAMILY;
-/// Canonical serif stack: bundled Source Serif 4 (Latin), bundled Source Han Serif KR
-/// (native) / Meari Serif KR (Web slices) for Hangul, hanja and kana, then host fallbacks.
-pub const SERIF_FONT_FAMILY: &str = "\"Source Serif 4 Variable\", \"Source Serif 4\", \"Source Han Serif KR\", \"Meari Serif KR\", \"Noto Serif KR\", \"Noto Serif CJK KR\", AppleMyungjo, \"Hiragino Mincho ProN\", Batang, \"Yu Mincho\", \"Times New Roman\", serif";
+/// Canonical serif stack: Noto Serif per script (Arabic: Noto Naskh Arabic), then the generic.
+pub const SERIF_FONT_FAMILY: &str = "\"Noto Serif\", \"Noto Serif KR\", \"Noto Serif JP\", \"Noto Naskh Arabic\", \"Noto Serif Hebrew\", \"Noto Serif Devanagari\", \"Noto Serif Thai\", serif";
+pub const MONO_FONT_FAMILY: &str =
+    "\"Noto Sans Mono\", \"Noto Sans KR\", \"Noto Sans JP\", monospace";
 
-/// Families the native canonical profile puts first for `sans-serif` / `serif`.
-pub const SANS_FAMILIES: [&str; 2] = ["Pretendard Variable", "Pretendard JP"];
-pub const SERIF_FAMILIES: [&str; 3] = [
-    "Source Serif 4 Variable",
-    "Source Han Serif KR",
+/// Families the native profiles put first for `sans-serif` / `serif` / `monospace`.
+pub const SANS_FAMILIES: [&str; 7] = [
+    "Noto Sans",
+    "Noto Sans KR",
+    "Noto Sans JP",
+    "Noto Sans Arabic",
+    "Noto Sans Hebrew",
+    "Noto Sans Devanagari",
+    "Noto Sans Thai",
+];
+pub const SERIF_FAMILIES: [&str; 7] = [
+    "Noto Serif",
     "Noto Serif KR",
+    "Noto Serif JP",
+    "Noto Naskh Arabic",
+    "Noto Serif Hebrew",
+    "Noto Serif Devanagari",
+    "Noto Serif Thai",
 ];
-
-// Per-OS host fallbacks are selected by the `meari-platform` adapters (`PlatformHost::font_fallbacks`).
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FontFace {
-    PretendardVariable,
-    PretendardJpRegular,
-    PretendardJpBold,
-    SourceSerif4Variable,
-    SourceHanSerifKrRegular,
-}
-
-pub const UI_FACES: [FontFace; 5] = [
-    FontFace::PretendardVariable,
-    FontFace::PretendardJpRegular,
-    FontFace::PretendardJpBold,
-    FontFace::SourceSerif4Variable,
-    FontFace::SourceHanSerifKrRegular,
-];
-
-/// Container of one face file: native reads `Truetype`/`Opentype`, the Web is served `Woff2`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FontFormat {
-    Truetype,
-    Opentype,
-    Woff2,
-}
-
-impl FontFormat {
-    pub fn media_type(self) -> &'static str {
-        match self {
-            Self::Truetype => "font/ttf",
-            Self::Opentype => "font/otf",
-            Self::Woff2 => "font/woff2",
-        }
-    }
-    pub fn css(self) -> &'static str {
-        match self {
-            Self::Truetype => "truetype",
-            Self::Opentype => "opentype",
-            Self::Woff2 => "woff2",
-        }
-    }
-}
-
-/// (path, sha256, length, container) of one bundled file.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct FontFile {
-    pub path: &'static str,
-    pub sha256: &'static str,
-    pub length: u64,
-    pub format: FontFormat,
-}
-
-/// One renamed unicode-range WOFF2 slice of a modified (subset) face.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct WebSlice {
-    pub name: &'static str,
-    pub path: &'static str,
-    pub sha256: &'static str,
-    pub length: u64,
-    pub codepoints: usize,
-    pub unicode_range: &'static str,
-}
-
-impl FontFace {
-    /// Unchanged upstream file read by native.
-    pub fn native_file(self) -> FontFile {
-        use FontFormat::*;
-        let (path, sha256, length, format) = match self {
-            Self::PretendardVariable => (
-                "assets/fonts/pretendard/PretendardVariable.ttf",
-                "3090ccde0442bb347aa7685d9ba8b17436a60682df6e8f92a9a670de14056e22",
-                6_739_336,
-                Truetype,
-            ),
-            Self::PretendardJpRegular => (
-                "assets/fonts/pretendard/PretendardJP-Regular.ttf",
-                "b14698ed6d82737f45e918d079bca6fc498a107bcb094b56c5229dbddf3246d3",
-                5_462_268,
-                Truetype,
-            ),
-            Self::PretendardJpBold => (
-                "assets/fonts/pretendard/PretendardJP-Bold.ttf",
-                "b6f14d5848f95bc50f28c323234574a8357fdd992582cd98acbfc3b33da44255",
-                5_412_352,
-                Truetype,
-            ),
-            Self::SourceSerif4Variable => (
-                "assets/fonts/source-serif-4/SourceSerif4Variable-Roman.ttf",
-                "14d360ee1b76655da9276628b229e11671bc1f5d1083636144db6677d452cf55",
-                1_204_208,
-                Truetype,
-            ),
-            Self::SourceHanSerifKrRegular => (
-                "assets/fonts/source-han-serif-kr/SourceHanSerifKR-Regular.otf",
-                "b2b310255186ce92de2909f96522b9183a9f6c323dbe5663f205f02d6ece08b7",
-                7_669_328,
-                Opentype,
-            ),
-        };
-        FontFile {
-            path,
-            sha256,
-            length,
-            format,
-        }
-    }
-    /// Unchanged upstream WOFF2, or `None` when the Web gets renamed slices instead.
-    pub fn web_woff2(self) -> Option<FontFile> {
-        let (path, sha256, length) = match self {
-            Self::PretendardVariable => (
-                "assets/fonts/pretendard/PretendardVariable.woff2",
-                "9599f12fd42fc0bce1cd50b47a0c022e108d7aa64dd0d1bb0ed44f3282d900b4",
-                2_057_688,
-            ),
-            Self::PretendardJpRegular => (
-                "assets/fonts/pretendard/PretendardJP-Regular.woff2",
-                "ca8abbe573f57f235faa68525e427646532c7aa5ab65d0c267c179e9a0ff76b8",
-                2_019_340,
-            ),
-            Self::PretendardJpBold => (
-                "assets/fonts/pretendard/PretendardJP-Bold.woff2",
-                "3c926898801c5ef97af081151566f7038ac529de88c77d212ea5f2037309dad2",
-                2_107_244,
-            ),
-            Self::SourceSerif4Variable => (
-                "assets/fonts/source-serif-4/SourceSerif4Variable-Roman.woff2",
-                "940a76eda1388de39d38c8e7a79bf6ea058a387faee0a9f33c8d25c6ba05e1be",
-                429_100,
-            ),
-            Self::SourceHanSerifKrRegular => return None,
-        };
-        Some(FontFile {
-            path,
-            sha256,
-            length,
-            format: FontFormat::Woff2,
-        })
-    }
-    pub fn source_path(self) -> &'static str {
-        self.native_file().path
-    }
-    pub fn sha256(self) -> &'static str {
-        self.native_file().sha256
-    }
-    pub fn length(self) -> u64 {
-        self.native_file().length
-    }
-    /// Family name inside the native file.
-    pub fn family(self) -> &'static str {
-        match self {
-            Self::PretendardVariable => "Pretendard Variable",
-            Self::PretendardJpRegular | Self::PretendardJpBold => "Pretendard JP",
-            Self::SourceSerif4Variable => "Source Serif 4 Variable",
-            Self::SourceHanSerifKrRegular => "Source Han Serif KR",
-        }
-    }
-    /// Family name of the Web delivery (renamed for modified slices).
-    pub fn web_family(self) -> &'static str {
-        match self {
-            Self::SourceHanSerifKrRegular => MEARI_SERIF_KR,
-            other => other.family(),
-        }
-    }
-    /// CSS `font-weight` descriptor: the variable `wght` axis range, or the static weight.
-    pub fn weight(self) -> &'static str {
-        match self {
-            Self::PretendardVariable => "45 930",
-            Self::PretendardJpRegular | Self::SourceHanSerifKrRegular => "400",
-            Self::PretendardJpBold => "700",
-            Self::SourceSerif4Variable => "200 900",
-        }
-    }
-    /// OS/2 usWeightClass of the default instance.
-    pub fn default_weight(self) -> u16 {
-        match self {
-            Self::PretendardJpBold => 700,
-            _ => 400,
-        }
-    }
-    pub fn license(self) -> FontLicense {
-        match self {
-            Self::PretendardVariable => FontLicense::Pretendard,
-            Self::PretendardJpRegular | Self::PretendardJpBold => FontLicense::PretendardJp,
-            Self::SourceSerif4Variable => FontLicense::SourceSerif4,
-            Self::SourceHanSerifKrRegular => FontLicense::SourceHanSerifKr,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FontLicense {
-    Pretendard,
-    PretendardJp,
-    SourceSerif4,
-    SourceHanSerifKr,
-    /// The same Adobe OFL notice, shipped beside the renamed Web slices.
-    MeariSerifKr,
-}
-
-pub const LICENSES: [FontLicense; 5] = [
-    FontLicense::Pretendard,
-    FontLicense::PretendardJp,
-    FontLicense::SourceSerif4,
-    FontLicense::SourceHanSerifKr,
-    FontLicense::MeariSerifKr,
-];
-
-impl FontLicense {
-    pub fn path(self) -> &'static str {
-        match self {
-            Self::Pretendard => "assets/fonts/pretendard/LICENSE.txt",
-            Self::PretendardJp => "assets/fonts/pretendard/LICENSE-JP.txt",
-            Self::SourceSerif4 => "assets/fonts/source-serif-4/LICENSE.md",
-            Self::SourceHanSerifKr => "assets/fonts/source-han-serif-kr/LICENSE.txt",
-            Self::MeariSerifKr => "assets/fonts/meari-serif-kr/LICENSE.txt",
-        }
-    }
-    pub fn sha256(self) -> &'static str {
-        match self {
-            Self::Pretendard => "b04538c9abec39a3db75108cf0af0fd9c77032fe8aa2cf38345b4d250e98e38e",
-            Self::PretendardJp => {
-                "6cb2adce04090e5e321168d5b47e12d1cb703da64929a4f34dba9162eb55eb98"
-            }
-            Self::SourceSerif4 => {
-                "75784a295293a8992f5a8d99210566e0064a012e6dab6731305e3787f15896c7"
-            }
-            Self::SourceHanSerifKr | Self::MeariSerifKr => {
-                "9ff5bb567e1b92c801fc1069e5fbf992ff8efccacb9db94e5959a5b3ba9bb903"
-            }
-        }
-    }
-    /// Reserved Font Names declared by the upstream copyright line.
-    pub fn reserved_names(self) -> &'static [&'static str] {
-        match self {
-            Self::Pretendard => &["Pretendard"],
-            Self::PretendardJp => &["Pretendard JP"],
-            Self::SourceSerif4 | Self::SourceHanSerifKr | Self::MeariSerifKr => &["Source"],
-        }
-    }
-}
+pub const MONO_FAMILIES: [&str; 3] = ["Noto Sans Mono", "Noto Sans KR", "Noto Sans JP"];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FontRequirement {
@@ -281,4 +305,55 @@ pub enum FontRequirement {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FontSupport {
     PinnedAssetsOnly,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn manifest_covers_the_core_scripts_with_sans_and_serif() {
+        for script in [
+            "latin",
+            "hangul",
+            "kana",
+            "arabic",
+            "hebrew",
+            "devanagari",
+            "thai",
+        ] {
+            let pins = select(&[script]).unwrap();
+            assert!(pins.iter().any(|p| SANS_FAMILIES.contains(&p.family)));
+            assert!(pins.iter().any(|p| SERIF_FAMILIES.contains(&p.family)));
+        }
+        assert!(
+            MANIFEST
+                .iter()
+                .all(|p| p.sha256.len() == 64 && p.ofl_sha256.len() == 64)
+        );
+        assert!(select(&["klingon"]).is_err());
+        assert_eq!(select(&["all"]).unwrap().len(), MANIFEST.len());
+    }
+
+    #[test]
+    fn urls_point_at_the_pinned_official_revision() {
+        let pin = select(&["latin"]).unwrap()[0];
+        assert_eq!(
+            pin.url(),
+            format!(
+                "https://raw.githubusercontent.com/google/fonts/{REVISION}/ofl/notosans/NotoSans%5Bwdth%2Cwght%5D.ttf"
+            )
+        );
+    }
+
+    #[test]
+    fn every_stack_family_is_pinned() {
+        for family in SANS_FAMILIES
+            .iter()
+            .chain(&SERIF_FAMILIES)
+            .chain(&MONO_FAMILIES)
+        {
+            assert!(MANIFEST.iter().any(|p| p.family == *family), "{family}");
+        }
+    }
 }

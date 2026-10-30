@@ -1,275 +1,106 @@
 ---
 id: sot:meari/fonts
-title: Canonical fonts, licensing and delivery (Native TTF / Web WOFF2)
+title: Canonical fonts, licensing and delivery (pinned Noto downloads, Native TTF / Web WOFF2)
 status: active
-verify: cargo test -p meari --features bundled-fonts --test font_catalog; cargo test -p meari-native --test bundled_font_catalog; cargo xtask visual-test
+verify: cargo test -p meari --lib fonts; cargo test -p meari-native --test font_catalog; cargo test -p meari-native --lib fonts; cargo xtask visual-test
 created: 2026-10-30
 updated: 2026-10-30
 rel:
-  governs: [crates/meari/assets/fonts, crates/meari-native, crates/meari-visual]
+  governs: [crates/meari/src/domain/design/fonts.rs, crates/meari-native/src/infrastructure/fonts, crates/meari-native, crates/meari-visual]
 ---
 
 # Canonical fonts, licensing and delivery
 
-## Rule
+## Rule (decision 2026-10-30, owner)
 
-- **sans-serif canonical**: Pretendard Variable (wght 45–930), then an installed static
-  Pretendard, then bundled Pretendard JP (kana/kanji), then the prior Arial-family fallback.
-  Pretendard JP has real Regular (400) and Bold (700) static faces (weights ≥ 600 pick Bold).
-  Stack: `"Pretendard Variable", Pretendard, "Pretendard JP", -apple-system, BlinkMacSystemFont,
-  "Apple SD Gothic Neo", "Hiragino Sans", "Segoe UI", "Malgun Gothic", "Yu Gothic UI",
-  "Noto Sans KR", "Noto Sans CJK KR", Arial, sans-serif`.
-- **serif canonical**: Source Serif 4 Variable (wght 200–900, opsz 8–60) for Latin, then
-  bundled Source Han Serif KR Regular (native, unchanged OTF) / "Meari Serif KR" (Web,
-  renamed unicode-range slices) for Hangul / hanja / kana, then host fallbacks (Noto Serif KR,
-  AppleMyungjo, Hiragino Mincho ProN, Batang, Yu Mincho), Times New Roman, serif.
-- **Per-OS host fallbacks**: `meari-platform` adapters `adapter::{macos,windows,unix}::FONT_FALLBACKS`
-  (via `PlatformHost::font_fallbacks`) are all named in the CSS stacks (test
-  `host_fallbacks_are_named_in_the_css_stacks`). `meari_platform::CurrentOs` is the single
-  `cfg` selection point; native `generic_fonts` appends the live adapter's list after the
-  canonical and Chromium names (canonical profile only). **Unverified**: no
-  Windows/macOS run; only the Linux box executes.
-- **One licence**: every bundled font is SIL OFL-1.1, from Google/Adobe-family upstreams
-  (Pretendard is built on Inter / Source Han Sans / M PLUS 1p, all OFL). Holders and Reserved Font
-  Names live in `THIRD_PARTY_NOTICES.md`; full notices stay beside the fonts.
-  `font_catalog::every_bundled_font_is_ofl_and_catalogued` fails on any non-OFL licence,
-  any uncatalogued file, or any Arimo/Tinos/Liberation file under `assets/fonts`.
-- **Native default**: with `bundled-fonts` (now a default feature of meari-native) the font
-  context registers the bundled TTFs and puts Pretendard Variable, Pretendard JP first for
-  `sans-serif`, Source Serif 4 / Source Han Serif KR / Noto Serif KR first for `serif`, then the
-  Chromium Linux names (Arial/Arimo/Liberation Sans, Times New Roman/Tinos/Liberation Serif)
-  as host fallback. No family given ⇒ `sans-serif` ⇒ Pretendard.
-- **Tailwind**: generated themes declare non-inline `@theme{--font-sans:…;--font-serif:…}`
-  with the canonical stacks, so `font-sans`, `font-serif` and Tailwind's
-  `--default-font-family` (html) resolve to Pretendard / Source Serif 4.
-- **Web delivery**: `PreparedFontCatalog.css` + `web_assets` serve only WOFF2
-  (`format("woff2")`, `font-display:swap`); `native_css` + `assets` serve the TTF of the
-  same faces to native (blitz build has no WOFF2 decoder; WOFF2 in native preflight is
-  rejected: "Native compressed fonts require a bounded WOFF decoder adapter").
+- **Noto everywhere, downloaded, never committed**: every canonical face is a Noto family
+  (SIL OFL-1.1) from `github.com/google/fonts` at revision
+  `6157dfaa640ca5738b4d1a7070fe389c3036d7fc`. No font file is committed and no font byte is
+  `include_bytes!`'d into any binary (the former Pretendard / Pretendard JP / Source Serif 4 /
+  Source Han Serif KR / Meari Serif KR files, the `bundled-fonts` feature and
+  `scripts/fonts` were deleted).
+- **Manifest**: `crates/meari/src/domain/design/fonts.rs` (pure data, single source): `REVISION`,
+  `MANIFEST` (17 pins: URL path, length, sha256, family, style, weight range, script, and the
+  directory's `OFL.txt` length/sha256), `select(scripts)`, `UI_SCRIPTS = [latin, hangul, kana]`.
+- **Stacks**: sans `"Noto Sans", "Noto Sans KR", "Noto Sans JP", "Noto Sans Arabic",
+  "Noto Sans Hebrew", "Noto Sans Devanagari", "Noto Sans Thai", sans-serif`; serif `"Noto Serif",
+  "Noto Serif KR", "Noto Serif JP", "Noto Naskh Arabic", "Noto Serif Hebrew",
+  "Noto Serif Devanagari", "Noto Serif Thai", serif`; mono `"Noto Sans Mono", "Noto Sans KR",
+  "Noto Sans JP", monospace`. Tailwind `@theme` declares `--font-sans/--font-serif/--font-mono`
+  with these stacks. Test `every_stack_family_is_pinned`.
+- **Generics**: native `generic_fonts` puts the cached Noto faces first for `sans-serif`,
+  `serif`, `monospace` in both profiles; the canonical profile then appends the per-OS host
+  fallbacks (`meari-platform` `FONT_FALLBACKS`), the comparison profile appends none.
+- **Tolerance**: a fixture's tolerance is never raised to make a font change pass.
 
-- **Chrome pixel tolerance**: a fixture's tolerance is never raised to make a font change pass;
-  any increase needs owner approval plus per-line ink-bbox evidence that the diff is AA only.
+## Runtime cache and missing-font behaviour
 
-## Chrome comparison path (separate)
+- Location: `$MEARI_FONT_CACHE`, else the nearest ancestor `runtime/fonts`, else
+  `./runtime/fonts` (`FontCache::default_location`). Layout: `noto/<rev12>/<file>` plus
+  `noto/<rev12>/<dir>-OFL.txt`; Web slices in `web/<rev12>-s4/`.
+- **Explicit download only**: `meari fonts fetch [all|latin,hangul,kana,arabic,hebrew,devanagari,thai]`
+  (or `cargo xtask fonts-fetch …`) downloads missing files with `curl -fsSL`, verifies length and
+  sha256 and writes atomically. A valid cached file is used offline.
+- **The app never downloads.** On first run without a cache, native prints one stderr line
+  `meari: canonical Noto fonts unavailable in <dir> (…); using host fonts until `meari fonts fetch` is run`
+  and renders with the host fallbacks (degraded, not a crash). A corrupted file (length/sha256
+  mismatch) is an error naming expected/actual values and the fetch command, never skipped
+  (tests `missing_file_names_the_fetch_command`, `checksum_mismatch_is_a_clear_error`,
+  `corrupted_cache_file_is_an_error_not_a_skip`). Auto-download on first run was rejected: no
+  hidden network access from a UI binary.
+- Tests and `cargo xtask visual-test` call `ensure` (download if missing) for what they need.
 
-`meari-visual` calls `generic_fonts::use_chrome_comparison_profile()`: an unmodified headless
-Chrome resolves `sans-serif`/`serif` to host Arial/Times substitutes (Arimo/Tinos/Liberation via
-fontconfig), so native generics use the same host faces there. Arimo/Tinos/Liberation are never
-bundled and never named in a canonical stack. Existing Tailwind fixtures keep the
-`FONT_PIN` (Noto Sans) environment pin; fixtures carrying `// meari-visual: canonical-fonts`
-get the bundled faces instead: Chrome via `@font-face` on the repo's upstream WOFF2
-(`font-display:block` for capture determinism), native via the same faces' upstream TTF.
+## Web delivery (WOFF2 subsets generated from the cache)
 
-**Priority against host Pretendard** (`/usr/share/fonts/truetype/sand-box/custom/Pretendard`,
-static OTF, family `Pretendard`): the bundled face is family `Pretendard Variable`, a distinct
-name, listed first; an author `@font-face` always wins over a same-named local face in Chrome,
-and native registers bundled blobs ahead of the generic list. The host static Pretendard is
-reached only as the second stack entry (e.g. when bundled-fonts is disabled).
+- `meari_native::infrastructure::fonts::web_slices(cache, pin)` subsets each cached TTF with
+  fontcull-klippa 0.1.2 (default layout features of every script), encodes WOFF2 with
+  ttf2woff2 0.14.1 (pure Rust) and writes atomically to `web/<rev12>-s4/<Name>.<n>.woff2` plus
+  `<Name>.index` (`name\tsha256\tunicode-range`). Slicing: code points < U+1100 in slice 0, the
+  rest in chunks of 2,000. Union of the slices = the TTF cmap (test
+  `web_slices_cover_exactly_the_native_cmap`). Full cache: 66 files, 27.9 MB.
+- Subsetter workarounds (generator `s4`):
+  - klippa panics (hvar.rs:102) on an HVAR with an implicit advance map (Noto Sans KR).
+    `explicit_hvar` rewrites that map as an equivalent explicit format-0 map first. HVAR cannot
+    be dropped: Noto's gvar has no phantom-point advance deltas, so every weight would get the
+    default-instance advances (measured: 'A' 574 vs 607.5 units at wght 400).
+  - vhea/vmtx/VVAR/VORG are dropped: klippa leaves `vhea.numberOfVMetrics` above the subset
+    glyph count, Chrome's OTS rejects the slice and silently falls back to a host font
+    (observed: tiny kana in canonical-font). Horizontal text only.
+- `prepare_font_catalog(cache, req)`: `css` (WOFF2 slices, `font-display:swap`) for Web,
+  `native_css` + TTF assets for native (blitz has no WOFF2 decoder), licences per family.
+- Comparison harness: `font-display:block`; `style::chrome_generics` rewrites the CSS keywords
+  `sans-serif`/`serif`/`monospace` to the Noto families on the Chrome side only (Chrome resolves
+  generics through OS settings CSS cannot change), so `generic-font-family` no longer depends on
+  Windows Arial / Linux Arimo.
 
-## Downloaded Noto fonts (decision 2026-10-30, owner)
+## OFL / Reserved Font Name
 
-- Owner: no font bytes in any binary; fonts come from the official upstream as pinned
-  downloads, like the pinned Tailwind binary. `crates/meari-visual/src/fonts.rs` holds the
-  manifest: Google Fonts official repository `github.com/google/fonts` at revision
-  `6157dfaa640ca5738b4d1a7070fe389c3036d7fc`, per file URL, length and sha256, plus the
-  directory's `OFL.txt` (also pinned by length and sha256). All files are SIL OFL-1.1 with no
-  Reserved Font Name for the Noto families (the Noto Sans KR/JP notice also carries Adobe's
-  'Source' RFN line from Source Han Sans; the family name "Noto Sans KR/JP" is used unchanged).
-- `cargo xtask fonts-fetch [all|latin,hangul,kana,arabic,hebrew,devanagari,thai]` downloads
-  only the missing files with `curl -fsSL` into `runtime/fonts/noto/6157dfaa640c/` (git-ignored),
-  writes `<dir>-OFL.txt` beside them, and verifies every file. A cached, valid file is used
-  offline; a download failure with no cache, or any length/sha256 mismatch, is an error naming
-  expected and actual values (never skipped). `cargo xtask visual-test` runs the same step for
-  `latin` first and fails if it cannot.
-- visual-test: native registers the verified bytes (`generic_fonts::register_comparison_font`,
-  read at run time, not `include_bytes!`); Chrome gets `@font-face` (`format("truetype")`,
-  `font-display:block`, Roman + Italic, `font-weight:100 900`) on the same cached files for every
-  non-canonical fixture, so the `FONT_PIN` family "Noto Sans" never comes from the host.
-- Linux re-measure 2026-10-30: 48 MATCH / 0 MISMATCH / 0 ERROR, every row identical to the prior
-  run (canonical-font 1.597%, heading-text 0.764%, app-form 0.867%, tw-truncate-aspect 0.348%,
-  tw-typography 1.430%). The Italic file is required (Roman only: tw-typography 1.972%, fails).
-- **Remaining host dependence**: `generic-font-family` tests the bare `sans-serif` generic, which
-  Chrome resolves from the host (Linux Arimo, OFL-1.1; Windows Arial, Microsoft, not OFL).
+Noto families have no Reserved Font Name, except the Noto Sans/Serif KR and JP notices, which
+carry Adobe's 'Source' RFN from Source Han. Web slices are subsets + WOFF2 conversion, i.e. an
+OFL *Modified Version*; their family names ("Noto Sans KR", …) contain no reserved name, keep
+the copyright lines, and the unchanged `OFL.txt` sits in the cache next to them.
 
-### Script → Noto family manifest (pinned, core scripts)
+## Script coverage (native shaping, measured 2026-10-30 Linux)
 
-| Script key | Covers | Sans file (bytes) | Serif file (bytes) |
-|---|---|---|---|
-| latin | Latin, Greek, Cyrillic | NotoSans[wdth,wght].ttf (2,049,096), NotoSans-Italic[wdth,wght].ttf (2,322,640) | NotoSerif[wdth,wght].ttf (1,887,192), NotoSerif-Italic[wdth,wght].ttf (2,448,496) |
-| hangul | Hangul, KS X 1001 hanja | NotoSansKR[wght].ttf (10,414,588) | NotoSerifKR[wght].ttf (23,795,420) |
-| kana | kana, JIS kanji | NotoSansJP[wght].ttf (9,589,900) | NotoSerifJP[wght].ttf (13,574,352) |
-| arabic | Arabic | NotoSansArabic[wdth,wght].ttf (844,676) | NotoNaskhArabic[wght].ttf (307,592) |
-| hebrew | Hebrew | NotoSansHebrew[wdth,wght].ttf (112,640) | NotoSerifHebrew[wdth,wght].ttf (183,600) |
-| devanagari | Devanagari | NotoSansDevanagari[wdth,wght].ttf (641,944) | NotoSerifDevanagari[wdth,wght].ttf (757,692) |
-| thai | Thai | NotoSansThai[wdth,wght].ttf (218,652) | NotoSerifThai[wdth,wght].ttf (292,188) |
+parley 0.12 / harfrust 0.12 shape, unicode-bidi orders. Fixtures `supported/script-{arabic,
+hebrew,devanagari,thai}` (24px, `dir="rtl"` for Arabic/Hebrew): all MATCH, glyph AA only, ink
+bbox equal — arabic 0.505%, hebrew 0.557%, devanagari 0.518%, thai 0.625% (tolerance 0.8%).
+Found: the native DOM rejects the `lang` attribute ("native DOM prop not implemented: p.lang"),
+so the fixtures omit it. Extending scripts: add `Pin` rows from
+`github.com/google/fonts/tree/<revision>/ofl/<dir>` plus a test case.
 
-sha256 values live only in `fonts.rs` (single source). `all` = 69,440,668 bytes (67 MiB cache).
+## Visual results (Linux, 2026-10-30)
 
-### Extending to other scripts (not pinned yet)
-
-Add a `Pin` row per file from `github.com/google/fonts/tree/<revision>/ofl/<dir>` (length,
-sha256 of the file and of that directory's `OFL.txt`), then a test case. Candidates:
-Bengali `notosansbengali`/`notoserifbengali`, Tamil `notosanstamil`/`notoseriftamil`, Telugu,
-Kannada, Malayalam, Gujarati, Gurmukhi (`notosans<script>`/`notoserif<script>`), Armenian
-`notosansarmenian`/`notoserifarmenian`, Georgian `notosansgeorgian`/`notoserifgeorgian`,
-Ethiopic `notosansethiopic`/`notoserifethiopic`, Khmer `notosanskhmer`/`notoserifkhmer`,
-Lao `notosanslao`/`notoseriflao`, Myanmar `notosansmyanmar`/`notoserifmyanmar`, Sinhala
-`notosanssinhala`/`notoserifsinhala`, Simplified/Traditional Chinese `notosanssc`/`notoserifsc`,
-`notosanstc`/`notoseriftc`, symbols `notosanssymbols`/`notosanssymbols2`, math `notosansmath`,
-emoji `notocoloremoji` (OFL). Upstream sources: `github.com/notofonts/<script>` releases.
-
-### Shaping status of the native path (code-level, 2026-10-30)
-
-parley 0.12.0 shapes with harfrust 0.12.0 (HarfBuzz port: Arabic joining, Indic/Thai
-reordering) and runs Unicode bidi (unicode-bidi 0.3.18 / icu_properties), so RTL and complex
-scripts are shaped by the native text stack. **Unverified**: no meari fixture renders Arabic,
-Hebrew, Devanagari or Thai yet; blitz handling of CSS `direction` / `dir` is not checked.
-
-### Plan for the existing bundled faces (proposal, not executed)
-
-Pretendard / Pretendard JP / Source Serif 4 / Source Han Serif KR (and the Meari Serif KR
-slices) are still committed under `crates/meari/assets/fonts` and `include_bytes!`'d by
-`bundled-fonts`. Proposed: replace them with manifest pins (Noto Sans/Serif + KR/JP per the
-table), move `bundled-fonts` to a runtime font directory loaded from the cache, keep WOFF2 Web
-delivery by converting/subsetting the cached TTF at build time, then delete the committed files
-(38,643,519 bytes in git, of which 26,509,751 non-WOFF2) and regenerate the Linux baseline for canonical-font without
-changing its 1.7% limit. Needs owner go-ahead because it changes the shipped canonical stack.
-
-## Files, versions, checksums
-
-| File (assets/fonts/…) | Upstream | Bytes | sha256 | Glyphs | Licence |
-|---|---|---:|---|---:|---|
-| pretendard/PretendardVariable.ttf | orioncactus/pretendard v1.3.9, Pretendard-1.3.9.zip `public/variable/` | 6,739,336 | 3090ccde… | 14,757 | OFL-1.1, RFN Pretendard |
-| pretendard/PretendardVariable.woff2 | same zip `web/variable/woff2/` | 2,057,688 | 9599f12f… | 14,757 | OFL-1.1, RFN Pretendard |
-| pretendard/PretendardJP-Regular.ttf | PretendardJP v1.3.9 (retained) | 5,462,268 | b14698ed… | 22,936 | OFL-1.1, RFN Pretendard JP |
-| pretendard/PretendardJP-Regular.woff2 | PretendardJP-1.3.9.zip `web/static/woff2/` | 2,019,340 | ca8abbe5… | 22,936 | OFL-1.1, RFN Pretendard JP |
-| source-serif-4/SourceSerif4Variable-Roman.ttf | adobe-fonts/source-serif 4.005R, source-serif-4.005_Desktop.zip `VAR/` | 1,204,208 | 14d360ee… | 1,464 | OFL-1.1, RFN ‘Source’ |
-| source-serif-4/SourceSerif4Variable-Roman.woff2 | source-serif-4.005_WOFF2.zip `VAR/…Roman.ttf.woff2` (renamed only) | 429,100 | 940a76ed… | 1,464 | OFL-1.1, RFN ‘Source’ |
-| pretendard/PretendardJP-Bold.ttf | PretendardJP-1.3.9.zip `public/static/alternative/` | 5,412,352 | b6f14d58… | 22,936 | OFL-1.1, RFN Pretendard JP |
-| pretendard/PretendardJP-Bold.woff2 | PretendardJP-1.3.9.zip `web/static/woff2/` | 2,107,244 | 3c926898… | 22,936 | OFL-1.1, RFN Pretendard JP |
-| source-han-serif-kr/SourceHanSerifKR-Regular.otf | adobe-fonts/source-han-serif 2.003R, 13_SourceHanSerifKR.zip | 7,669,328 | b2b31025… | 24,910 (cmap 23,126) | OFL-1.1, RFN ‘Source’ |
-| meari-serif-kr/MeariSerifKR-Regular.{latin,hangul-jamo,hangul-ksx1001,hangul-ext-1..4,kana,hanja-ksx1001,hanja-ext,symbols}.woff2 | derived (subset + rename) from the OTF above | 5,520,396 total (92 KB–1.32 MB each) | per slice in `han_serif_slices.rs` | partition of the 23,126 cmap code points | OFL-1.1 (Modified Version, family "Meari Serif KR") |
-
-Full hashes are pinned in `crates/meari/src/domain/design/fonts.rs`. Zip sha256:
-Pretendard-1.3.9.zip 04be351a74d6bf7d60c480a3087e51d185485d35a52023142af1df19eb8c428a,
-PretendardJP-1.3.9.zip 8dab678c371a1530106ca643b76b2b80d47653d5ba670b01265b48e4c6615d63,
-source-serif-4.005_Desktop.zip 549fdb8f9a682bd06944298621404969f6de77c2e422ff3b8244a1dcd6a0c425,
-source-serif-4.005_WOFF2.zip af10e80dcd2296748b04cb9917db9f7ba0ae65101165fd2f0c16b9812d9abd28,
-13_SourceHanSerifKR.zip 56a58a46812a73e2eca541ac57bca08e0c9047710bfb63ba150bedd48b2fadea.
-
-**Source Han Serif KR batch**: bundled bytes native 13,405,812 → 26,487,492, web
-4,506,128 → 12,133,768. A Hangul-only page loads only the needed slices (KS X 1001 syllables
-457 KB + latin 93 KB) instead of the 7.7 MB OTF.
-
-**Size before → after** (bundled font bytes): 10,859,564 (Pretendard Regular + SemiBold
-static TTF + Pretendard JP Regular TTF) → 17,911,940 (native TTF 13,405,812 + web WOFF2
-4,506,128). Measured `.git` loose objects: 12,460 KiB → 20,588 KiB (+8,128 KiB ≈ +7.9 MiB, zlib; fonts barely compress). The deleted static TTFs stay in history.
-Web payload for the canonical sans: 2.06 MB WOFF2 vs 6.74 MB TTF (−69%).
-
-## Reproduction
-
-```
-curl -LO https://github.com/orioncactus/pretendard/releases/download/v1.3.9/Pretendard-1.3.9.zip
-curl -LO https://github.com/orioncactus/pretendard/releases/download/v1.3.9/PretendardJP-1.3.9.zip
-curl -LO https://github.com/adobe-fonts/source-serif/releases/download/4.005R/source-serif-4.005_Desktop.zip
-curl -LO https://github.com/adobe-fonts/source-serif/releases/download/4.005R/source-serif-4.005_WOFF2.zip
-sha256sum *.zip   # compare with the values above
-unzip -j Pretendard-1.3.9.zip public/variable/PretendardVariable.ttf web/variable/woff2/PretendardVariable.woff2
-unzip -j PretendardJP-1.3.9.zip web/static/woff2/PretendardJP-Regular.woff2
-unzip -j source-serif-4.005_Desktop.zip source-serif-4.005_Desktop/VAR/SourceSerif4Variable-Roman.ttf source-serif-4.005_Desktop/LICENSE.md
-unzip -j source-serif-4.005_WOFF2.zip source-serif-4.005_WOFF2/VAR/SourceSerif4Variable-Roman.ttf.woff2
-```
-
-Conversion tool: **none** for Pretendard / Source Serif 4 (upstream-built WOFF2). Source Han
-Serif KR web slices: `curl -LO https://github.com/adobe-fonts/source-han-serif/releases/download/2.003R/13_SourceHanSerifKR.zip`,
-then `python scripts/fonts/slice-source-han-serif-kr.py SourceHanSerifKR-Regular.otf .`
-(fontTools 4.68.0 + brotli 1.2.1; pyftsubset woff2, all layout features, notdef outline, drop
-DSIG; renames name IDs 1/3/4/6/16/17/18/21/22 and CFF names; regenerates
-`application/fonts/han_serif_slices.rs`). Inspection only: fontTools 4.x + brotli (glyph counts, cmap, fvar).
-
-## OFL "Modified Version" / Reserved Font Name analysis
-
-OFL-1.1 §1 defines a Modified Version as any derivative made by "adding to, deleting, or
-substituting … any of the components of the Original Version"; §3 forbids a Modified Version
-from using a Reserved Font Name without the holder's written permission. The OFL FAQ treats
-subsetting as producing a Modified Version, and format conversion (e.g. to WOFF2) as a
-modification unless done by the holder; it notes a web-font service may need RFN permission.
-Consequence here: because every file is an unchanged upstream release (holder-produced WOFF2
-included), no Modified Version exists and the Reserved Font Names (Pretendard, Pretendard JP,
-‘Source’) are used as shipped. The Source Han Serif KR web slices **are** a Modified Version
-(subset + WOFF2 conversion by us), so they are renamed to "Meari Serif KR" (no ‘Source’ in any
-name record or CFF name; test: no `font-family:"Source Han` in web CSS), keep Adobe's
-copyright line and ship the unchanged OFL text (`meari-serif-kr/LICENSE.txt`). Native ships the
-unmodified OTF under its original name.
-
-## Decisions
-
-- **unicode-range subsets**: shipped only for Source Han Serif KR (11 slices, Google Fonts
-  style: KS X 1001 common syllables first, rest in 4 chunks, kana, hanja split by KS X 1001).
-  Pretendard keeps the single upstream WOFF2 (its upstream dynamic-subset CSS is a future option).
-- **font-display**: product CSS `swap` (text visible immediately, FOUT acceptable);
-  comparison harness `block` (capture after the face is ready).
-- **WOFF (v1) fallback**: not needed. Every browser engine in scope (Chromium, Firefox, Safari
-  ≥ 12, WebView2) supports WOFF2; WOFF adds bytes without reach. Not bundled.
-- **Japanese weights**: Pretendard JP Regular + Bold static faces (upstream, OFL). Fixes the
-  synthetic-bold problem for weights ≥ 600 (`font-bold` / `font-semibold`). Alternatives
-  rejected: JP variable (≈ 13 MB TTF), Noto Sans JP (another family ⇒ mixed metrics).
-  Intermediate JP weights (500/600) map to the nearest real face (Bold for ≥ 600), not exact.
-- **CJK serif**: Source Han Serif KR **Regular only** (7.7 MB OTF; the 7 upstream weights
-  ≈ 54 MB were rejected on size). Serif Hangul **bold is still synthesized** (limit).
-
-## Tests
-
-- `meari/tests/platform/font_catalog.rs`: catalog exact bytes / sha256 / media types; WOFF2-only web
-  CSS and TTF-only native CSS; canonical stack order (no Arimo/Tinos/Liberation); WOFF2 header
-  (`wOF2`, flavor = TTF sfnt version, length, numTables ≤ TTF — upstream drops DSIG); OFL-only
-  directory scan + RFN presence + THIRD_PARTY_NOTICES content.
-- `meari-native/tests/pages/bundled_font_catalog.rs`: native preflight, CSS delivery of all TTF faces,
-  glyph counts and Hangul (all 11,172 syllables in Pretendard Variable) / Latin / kana / kanji
-  coverage (kanji only via Pretendard JP).
-- `generic_fonts` unit tests: canonical generics resolve to bundled faces first, Arial-family
-  after; Chrome comparison profile keeps Chromium's choice.
-- `font_catalog::han_serif_slices_partition_the_upstream_cmap` and
-  `bundled_font_catalog::han_serif_slices_cover_exactly_the_native_cmap`: slices are disjoint and
-  their unicode-range union equals the native OTF cmap (23,126; all 11,172 syllables).
-- visual: `supported/canonical-font` (6 lines: + JP bold, + serif Hangul) MATCH 1.597%
-  (tolerance 1.7%, was 1.2% for 4 lines; per-line ink bbox equal on all 6 lines; AA only).
-  **Pending owner approval** (the 1.2 → 1.7% raise predates the no-raise rule). Root-cause
-  check 2026-10-30 on the 320×480 capture: differing pixels (channel >16) 2,453 = 1.597%, spread
-  over every line at 22–50% of that line's ink (sans 616, sans600 312, jp 305, jpbold 340,
-  serif 464, serifKR 416); no ±1 px shift helps (best is 0,0; others 7,548–10,132); signed error
-  is unbiased (mean −2.3/255, 47% native-lighter) and total ink matches (1,203,471 vs
-  1,196,625); a coverage-gamma remap only worsens it (γ 0.8–1.45 ⇒ 2,617–4,289). So the residual
-  is vello_cpu vs Skia glyph AA/sub-pixel placement, not a face, weight, metric or gamma mismatch,
-  and cannot reach ≤1.2% without changing the rasterizer. Splitting the fixture would only dilute
-  the area ratio and was not done. Options for the owner: approve 1.7%, or split/shrink the fixture.
-
-## Limits
-
-- WOFF2 glyph count is checked by fontTools at import time and recorded here; the Rust test
-  checks the WOFF2 header against the TTF, not a decoded glyph table.
-- Native never decodes the WOFF2 itself; "same font" = same upstream face, TTF container.
-- No human visual check. macOS font stack not executed (code/CSS level only).
+- 52 fixtures: 51 MATCH, 1 MISMATCH. `generic-font-family` 0.704% (≤1.0%).
+- **canonical-font fails: 2.951% > 1.7% (not loosened)**. Per-line ink bbox equal (±1 px),
+  best shift is (0,0) on all 6 lines, signed error unbiased (53% native-darker), deltas spread
+  17–255. So it is vello_cpu vs Skia glyph AA/sub-pixel placement on dense Noto CJK strokes,
+  larger than with the former Pretendard faces (1.597%). Owner decision needed (shrink/split the
+  fixture, or accept a new value); the limit stays 1.7% until then.
 
 ## OS anti-aliasing policy (decision 2026-10-30, owner)
 
-- **Decision: OS-specific AA differences are accepted; Linux is the gate.** Linux baseline and
-  tolerances (canonical-font 1.7%, per-fixture values) are unchanged and never raised for other OSes.
-- `meari-visual` `PixelGate::current()` (via `meari_platform::current().os_family()`, no new OS cfg):
-  Unix ⇒ Strict (any MISMATCH fails); Windows/macOS ⇒ Advisory: a pixel MISMATCH whose ink layout
-  (row/column ink spans, ±1 px) matches is reported `ADVISORY (OS rendering difference)` and does
-  not fail; LAYOUT-MISMATCH and ERROR still fail. `--gate strict|advisory` overrides.
-- Windows desktop measurement 2026-10-30 (Chrome headless, default gate before this policy):
-  29 MATCH / 19 MISMATCH / 0 ERROR of 48; all 19 are text-heavy; canonical-font 4.839% (Linux
-  1.597%). Chrome uses ClearType subpixel (LCD) AA (web chroma up to 174 vs native 3); with
-  `--disable-lcd-text` canonical-font is 3.194%, so LCD AA accounts for ≈1.6 pp. The remaining
-  ≈1.6 pp over Linux is **estimated (unverified)** to be DirectWrite gamma/contrast differences.
-- Layout check = per ink band (row run) bbox, each edge ±1 px (whole-image column runs split on
-  AA-filled glyph gaps and were replaced). Windows advisory run 2026-10-30: 29 MATCH,
-  1 ADVISORY (canonical-font 4.839%), 18 LAYOUT-MISMATCH, 0 ERROR ⇒ exit 1. The 18 are the
-  `Noto Sans`-pinned (FONT_PIN) fixtures: the desktop has only NotoSansKR/NotoSerifKR, no Latin
-  Noto Sans, so native and Chrome fall back to different faces (line widths differ by 5–18 px).
-  This is a font-environment difference, not AA; not loosened. Addressed by the downloaded Noto fonts (section above). **Unverified**: macOS run.
-- Serif Hangul bold synthesized (only Regular bundled); JP 500 has no exact face.
-- The web slice glyph data is checked by fontTools at build time; Rust checks headers, sizes,
-  sha256 and unicode-range coverage, not decoded outlines.
+- OS-specific AA differences are accepted; Linux is the gate. `PixelGate::current()`: Unix ⇒
+  Strict; Windows/macOS ⇒ Advisory (pixel MISMATCH with matching ink layout ⇒
+  `ADVISORY (OS rendering difference)`; LAYOUT-MISMATCH and ERROR still fail).
+  `--gate strict|advisory` overrides. **Unverified**: macOS.

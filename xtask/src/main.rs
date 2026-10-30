@@ -33,7 +33,7 @@ fn main() -> ExitCode {
             run_package("meari-visual", &args[1..])
         }
         Some("fonts-fetch") => {
-            // Pinned Noto downloads (sha256-verified, cached in runtime/fonts); see meari-visual/src/fonts.rs.
+            // Pinned Noto downloads (sha256-verified, cached in runtime/fonts); see meari-native/src/infrastructure/fonts.
             let scripts = args.get(1).cloned().unwrap_or_else(|| "all".into());
             run_package("meari-visual", &["--fetch-fonts".to_string(), scripts])
         }
