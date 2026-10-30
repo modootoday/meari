@@ -25,4 +25,12 @@ they are used only when installed on the host. Arimo, Tinos
 and Liberation are never bundled; they are host fonts used only by the Chrome
 pixel-comparison path (see `.spec/sot/fonts.sot.md`).
 
+Downloaded, not bundled (visual-test only): Noto Sans / Noto Serif (+ Italic), Noto Sans/Serif
+KR, JP, Arabic (Noto Naskh Arabic), Hebrew, Devanagari, Thai — SIL OFL-1.1, Copyright The Noto
+Project Authors (github.com/notofonts); Noto Sans/Serif KR and JP also carry Adobe's copyright
+and 'Source' RFN notice. Fetched by `cargo xtask fonts-fetch` from github.com/google/fonts at
+revision 6157dfaa640ca5738b4d1a7070fe389c3036d7fc into runtime/fonts/noto/ (git-ignored); each
+file's URL, length and sha256 and its directory's OFL.txt (saved as `<dir>-OFL.txt`) are pinned
+in crates/meari-visual/src/fonts.rs. No font bytes are compiled into any binary for this path.
+
 SIL OPEN FONT LICENSE Version 1.1 — full text in each notice file above.

@@ -2122,6 +2122,7 @@ dependencies = [
  "meari-platform",
  "png",
  "serde_json",
+ "sha2",
 ]
 
 [[package]]
