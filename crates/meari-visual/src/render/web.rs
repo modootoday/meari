@@ -81,7 +81,7 @@ pub fn screenshot(
         .env("TMPDIR", "/tmp") // .cargo/config.toml points TMPDIR outside the repo
         .arg(script)
         .arg(chrome)
-        .arg(format!("file://{}", html_path.display()))
+        .arg(crate::host::file_url(html_path))
         .arg(png_path)
         .arg(crate::WIDTH.to_string())
         .arg(crate::HEIGHT.to_string())

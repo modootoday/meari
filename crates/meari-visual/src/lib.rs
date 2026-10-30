@@ -6,6 +6,7 @@
 //! `StateProgram::project` -> `dom::prepare`), serialized to HTML and screenshotted by headless Chrome.
 pub mod compare;
 pub mod fixtures;
+pub mod host;
 pub mod render;
 pub mod report;
 pub mod scroll;

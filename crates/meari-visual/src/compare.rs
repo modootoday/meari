@@ -23,6 +23,70 @@ pub struct Diff {
     pub total: usize,
     pub max_channel: u8,
     pub image: Vec<u8>,
+    /// Ink row/column spans agree within [`LAYOUT_SLACK_PX`]: any difference is edge
+    /// (anti-aliasing) only, not placement or size.
+    pub layout_equal: bool,
+}
+
+/// Per-edge slack for [`Diff::layout_equal`] (glyph AA can grow an ink span by one pixel).
+pub const LAYOUT_SLACK_PX: usize = 1;
+/// Channel distance from the top-left background pixel that counts as ink.
+const INK_THRESHOLD: u8 = 48;
+
+/// Contiguous runs of `true` as inclusive `(start, end)` index pairs.
+fn runs(flags: &[bool]) -> Spans {
+    let mut out = Vec::new();
+    let mut start = None;
+    for (i, &on) in flags.iter().enumerate() {
+        match (on, start) {
+            (true, None) => start = Some(i),
+            (false, Some(s)) => {
+                out.push((s, i - 1));
+                start = None;
+            }
+            _ => {}
+        }
+    }
+    if let Some(s) = start {
+        out.push((s, flags.len() - 1));
+    }
+    out
+}
+
+/// Inclusive `(start, end)` index runs.
+type Spans = Vec<(usize, usize)>;
+
+/// Ink row spans and column spans of an RGBA image `width` pixels wide.
+fn ink_spans(rgba: &[u8], width: usize) -> (Spans, Spans) {
+    let pixels = rgba.as_chunks::<4>().0;
+    let height = pixels.len() / width.max(1);
+    let background = pixels.first().copied().unwrap_or([255; 4]);
+    let (mut rows, mut cols) = (vec![false; height], vec![false; width]);
+    for (i, px) in pixels.iter().enumerate() {
+        let ink = px
+            .iter()
+            .zip(background)
+            .any(|(x, y)| x.abs_diff(y) > INK_THRESHOLD);
+        if ink {
+            rows[i / width] = true;
+            cols[i % width] = true;
+        }
+    }
+    (runs(&rows), runs(&cols))
+}
+
+fn spans_close(a: &[(usize, usize)], b: &[(usize, usize)]) -> bool {
+    a.len() == b.len()
+        && a.iter().zip(b).all(|(x, y)| {
+            x.0.abs_diff(y.0) <= LAYOUT_SLACK_PX && x.1.abs_diff(y.1) <= LAYOUT_SLACK_PX
+        })
+}
+
+/// Whether two same-size RGBA images place their ink identically up to AA edge slack.
+pub fn layout_matches(a: &[u8], b: &[u8], width: usize) -> bool {
+    let (ra, ca) = ink_spans(a, width);
+    let (rb, cb) = ink_spans(b, width);
+    spans_close(&ra, &rb) && spans_close(&ca, &cb)
 }
 
 impl Diff {
@@ -58,6 +122,7 @@ pub fn diff(a: &[u8], b: &[u8], tolerance: Tolerance) -> Result<Diff, String> {
         total: a.len() / 4,
         max_channel,
         image,
+        layout_equal: layout_matches(a, b, crate::WIDTH as usize),
     })
 }
 
@@ -95,4 +160,32 @@ pub fn read_png(path: &Path) -> Result<Vec<u8>, String> {
             .collect(),
         other => return Err(format!("unsupported png color {other:?}")),
     })
+}
+
+#[cfg(test)]
+mod layout_tests {
+    use super::layout_matches;
+
+    fn image(width: usize, height: usize, ink: &[(usize, usize)]) -> Vec<u8> {
+        let mut rgba = vec![255u8; width * height * 4];
+        for &(x, y) in ink {
+            rgba[(y * width + x) * 4..][..3].copy_from_slice(&[0, 0, 0]);
+        }
+        rgba
+    }
+
+    #[test]
+    fn one_pixel_aa_growth_is_layout_equal() {
+        let a = image(8, 8, &[(2, 2), (3, 2), (2, 3)]);
+        let b = image(8, 8, &[(2, 2), (3, 2), (4, 2), (2, 3), (2, 4)]);
+        assert!(layout_matches(&a, &b, 8));
+    }
+
+    #[test]
+    fn moved_or_missing_ink_is_a_layout_difference() {
+        let a = image(8, 8, &[(1, 1)]);
+        assert!(!layout_matches(&a, &image(8, 8, &[(4, 4)]), 8));
+        assert!(!layout_matches(&a, &image(8, 8, &[(1, 1), (5, 5)]), 8));
+        assert!(!layout_matches(&a, &image(8, 8, &[]), 8));
+    }
 }

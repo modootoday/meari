@@ -180,7 +180,23 @@ unmodified OTF under its original name.
 - WOFF2 glyph count is checked by fontTools at import time and recorded here; the Rust test
   checks the WOFF2 header against the TTF, not a decoded glyph table.
 - Native never decodes the WOFF2 itself; "same font" = same upstream face, TTF container.
-- No human visual check, no Windows/macOS font stack execution (code/CSS level only).
+- No human visual check. macOS font stack not executed (code/CSS level only).
+
+## OS anti-aliasing policy (decision 2026-10-30, owner)
+
+- **Decision: OS-specific AA differences are accepted; Linux is the gate.** Linux baseline and
+  tolerances (canonical-font 1.7%, per-fixture values) are unchanged and never raised for other OSes.
+- `meari-visual` `PixelGate::current()` (via `meari_platform::current().os_family()`, no new OS cfg):
+  Unix ⇒ Strict (any MISMATCH fails); Windows/macOS ⇒ Advisory: a pixel MISMATCH whose ink layout
+  (row/column ink spans, ±1 px) matches is reported `ADVISORY (OS rendering difference)` and does
+  not fail; LAYOUT-MISMATCH and ERROR still fail. `--gate strict|advisory` overrides.
+- Windows desktop measurement 2026-10-30 (Chrome headless, default gate before this policy):
+  29 MATCH / 19 MISMATCH / 0 ERROR of 48; all 19 are text-heavy; canonical-font 4.839% (Linux
+  1.597%). Chrome uses ClearType subpixel (LCD) AA (web chroma up to 174 vs native 3); with
+  `--disable-lcd-text` canonical-font is 3.194%, so LCD AA accounts for ≈1.6 pp. The remaining
+  ≈1.6 pp over Linux is **estimated (unverified)** to be DirectWrite gamma/contrast differences.
+- **Unverified**: macOS run; whether every Windows text fixture stays layout-equal is checked by
+  the Windows advisory run only.
 - Serif Hangul bold synthesized (only Regular bundled); JP 500 has no exact face.
 - The web slice glyph data is checked by fontTools at build time; Rust checks headers, sizes,
   sha256 and unicode-range coverage, not decoded outlines.
