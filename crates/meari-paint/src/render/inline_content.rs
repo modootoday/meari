@@ -387,7 +387,10 @@ impl ElementCx<'_, '_> {
         let mut editor = input_data.editor.clone();
         editor.set_text(text);
         PLACEHOLDER_CONTEXT.with_borrow_mut(|(font_cx, layout_cx)| {
-            editor.refresh_layout(font_cx, layout_cx);
+            let mut shared = super::PLACEHOLDER_FONTS
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            editor.refresh_layout(shared.as_mut().unwrap_or(font_cx), layout_cx);
         });
         let Some(layout) = editor.try_layout() else {
             return;

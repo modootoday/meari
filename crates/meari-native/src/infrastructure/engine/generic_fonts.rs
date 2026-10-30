@@ -32,7 +32,9 @@ pub fn use_chrome_comparison_profile() {
 
 /// Font context for a document: system fonts, bundled faces, blitz's bullet font, generics.
 pub fn context() -> parley::FontContext {
-    build(!CHROME_COMPARISON.load(Ordering::SeqCst))
+    let fonts = build(!CHROME_COMPARISON.load(Ordering::SeqCst));
+    blitz_paint::set_placeholder_fonts(fonts.clone());
+    fonts
 }
 
 fn build(canonical: bool) -> parley::FontContext {
