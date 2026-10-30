@@ -3,6 +3,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use super::vendored::Vendored;
+
 pub const MAX_DIRECT_RS: usize = 8;
 pub const MAX_FILE_LINES: usize = 600;
 pub const FORBIDDEN: [&str; 5] = ["utils", "common", "misc", "helpers", "shared"];
@@ -15,6 +17,10 @@ pub struct Report {
     pub file_and_dir: Vec<PathBuf>,
     /// OS `cfg` outside `meari-platform` and outside test code (R-cfg).
     pub os_cfg: Vec<(PathBuf, usize)>,
+    /// Vendored crates whose source no longer matches `VENDORED.sha256` (R-vendored).
+    pub vendored_drift: Vec<String>,
+    /// Verified unmodified vendored `src/` roots (exempt from length and OS-cfg rules).
+    pub vendored_exempt: Vec<PathBuf>,
 }
 
 impl Report {
@@ -24,6 +30,7 @@ impl Report {
             && self.forbidden_names.is_empty()
             && self.file_and_dir.is_empty()
             && self.os_cfg.is_empty()
+            && self.vendored_drift.is_empty()
     }
 }
 
@@ -66,21 +73,30 @@ pub fn os_cfg_lines(file: &Path, text: &str) -> Vec<usize> {
         .collect()
 }
 
-pub fn check_dir(dir: &Path, files: &[PathBuf], subdirs: &[PathBuf], report: &mut Report) {
+pub fn check_dir(
+    dir: &Path,
+    files: &[PathBuf],
+    subdirs: &[PathBuf],
+    vendored: &Vendored,
+    report: &mut Report,
+) {
     if files.len() > MAX_DIRECT_RS {
         report.crowded_dirs.push((dir.to_path_buf(), files.len()));
     }
     for file in files {
+        let upstream = vendored.exempt(file);
         let lines = fs::read_to_string(file)
             .map(|s| s.lines().count())
             .unwrap_or(0);
-        if lines > MAX_FILE_LINES {
+        if lines > MAX_FILE_LINES && !upstream {
             report.long_files.push((file.clone(), lines));
         }
         if is_forbidden(&stem(file)) {
             report.forbidden_names.push(file.clone());
         }
-        if let Ok(text) = fs::read_to_string(file) {
+        if let Ok(text) = fs::read_to_string(file)
+            && !upstream
+        {
             for line in os_cfg_lines(file, &text) {
                 report.os_cfg.push((file.clone(), line));
             }
@@ -119,6 +135,16 @@ pub fn print(report: &Report) {
     println!("OS cfg outside meari-platform: {}", report.os_cfg.len());
     for (file, line) in &report.os_cfg {
         println!("  {}:{line}", file.display());
+    }
+    println!("vendored drift: {}", report.vendored_drift.len());
+    for msg in &report.vendored_drift {
+        println!("  {msg}");
+    }
+    for root in &report.vendored_exempt {
+        println!(
+            "  exempt (unmodified upstream, length/OS cfg): {}",
+            root.display()
+        );
     }
     println!("x.rs + x/ coexist: {}", report.file_and_dir.len());
     for path in &report.file_and_dir {

@@ -3,7 +3,8 @@
 This is a source-pinned fork of the published Rust `blitz-dom` 0.3.0-beta.4
 package, from DioxusLabs/blitz revision
 `92b11f1bd8ab7975411328b0406a95a09445b4e7`, directory `packages/blitz-dom`.
-The original package identity and MIT OR Apache-2.0 licenses are retained.
+It is published as `meari-dom` (library name `blitz_dom`); the MIT OR Apache-2.0
+licenses and upstream attribution are retained.
 See [upstream](https://github.com/DioxusLabs/blitz/tree/92b11f1bd8ab7975411328b0406a95a09445b4e7/packages/blitz-dom).
 
 Meari changes (decision record: `adr:meari/20261030035135`):

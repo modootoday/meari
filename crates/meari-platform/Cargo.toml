@@ -1,13 +1,13 @@
 [package]
 workspace = "../.."
 name = "meari-platform"
-version = "0.1.0"
-edition = "2024"
-publish = false
-license = "MIT OR Apache-2.0"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 description = "Meari OS port and per-OS adapters, selected once by CurrentOs"
-repository = "https://github.com/modootoday/meari"
-include = ["src/**/*.rs", "Cargo.toml"]
+repository.workspace = true
+readme = "README.md"
+include = ["src/**/*.rs", "Cargo.toml", "README.md"]
 
 [features]
 window = ["dep:winit"]

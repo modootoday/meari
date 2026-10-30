@@ -1,12 +1,12 @@
 [package]
 workspace = "../.."
 name = "meari-native"
-version = "0.1.0"
-edition = "2024"
-publish = false
-license = "MIT OR Apache-2.0"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 description = "Native CSS, rendering and OS adapters for Meari"
-repository = "https://github.com/modootoday/meari"
+repository.workspace = true
+readme = "README.md"
 include = [
     "src/**/*.rs", "tests/**/*.rs", "fixtures/**/*.tsx", "fixtures/**/*.json",
     "fixtures/**/*.md", "assets/**/*.svg",
@@ -29,12 +29,12 @@ path = "tests/pages/font_catalog.rs"
 [dependencies]
 meari = { workspace = true }
 meari-platform = { workspace = true }
-blitz-dom = { version = "=0.3.0-beta.4", default-features = false, features = ["accessibility", "system-fonts", "svg", "complex-scripts"] }
-blitz-html = "=0.3.0-beta.4"
-blitz-paint = { version = "=0.3.0-beta.4", path = "../meari-paint", features = ["scrollbars"] }
+blitz-dom = { package = "meari-dom", path = "../meari-dom", version = "0.1.0", default-features = false, features = ["accessibility", "system-fonts", "svg", "complex-scripts"] }
+blitz-html = { package = "meari-html", path = "../meari-html", version = "0.1.0" }
+blitz-paint = { package = "meari-paint", path = "../meari-paint", version = "0.1.0", features = ["scrollbars"] }
 blitz-traits = "=0.3.0-beta.4"
 parley = { version = "=0.12.0", default-features = false, features = ["std", "system"] }
-blitz-shell = { version = "=0.3.0-beta.4", optional = true, default-features = false, features = ["clipboard"] }
+blitz-shell = { package = "meari-shell", path = "../meari-shell", version = "0.1.0", optional = true, default-features = false, features = ["clipboard"] }
 winit = { version = "=0.31.0-beta.3", optional = true }
 accesskit_xplat = { version = "=0.2.0", optional = true, default-features = false }
 accesskit = { version = "=0.25.1", features = ["serde"] }

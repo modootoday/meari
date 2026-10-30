@@ -1,0 +1,8 @@
+# Unmodified vendored source: lint-structure exempts src/ from the file-length and OS-cfg
+# rules only while every file below matches and src/ has no other file (xtask structure::vendored).
+# upstream: blitz-html 0.3.0-beta.4, crates.io sha256 eddd638e05f3f3efb9f2d37f0406e7834ea023727e1678524488aa70eb639615
+# revision: DioxusLabs/blitz 92b11f1bd8ab7975411328b0406a95a09445b4e7 packages/blitz-html
+# re-check against crates.io: scripts/vendored-upstream-diff.sh crates/meari-html
+976414505e91d743b77225b0066d468e8f94aa16c488591b52da604e50a70502  src/html_document.rs
+6d4a6217fbddc290feb0ce6fbbca22940b84d138c76e841ddf2d65e1290db01d  src/html_sink.rs
+74823498a173c834df2a9e414f3ad912616a735bdb047dc1828933ee3b8a570e  src/lib.rs

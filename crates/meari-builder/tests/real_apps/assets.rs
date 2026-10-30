@@ -100,12 +100,12 @@ fn real_asset_apps_ship_original_bytes_and_native_reports_delivery() {
         );
         if artifact.target.kind == TargetKind::Native {
             let generated = std::fs::read_to_string(files.join("Cargo.toml")).unwrap();
-            assert!(generated.contains("[patch.crates-io]"));
-            assert!(generated.contains("crates/meari-paint"));
+            // meari-native reaches the vendored painter by path; no [patch] is needed.
+            assert!(!generated.contains("[patch"));
             let lock = std::fs::read_to_string(files.join("build/Cargo.lock")).unwrap();
             let paint = lock
                 .split("[[package]]")
-                .filter(|block| block.lines().any(|line| line == "name = \"blitz-paint\""))
+                .filter(|block| block.lines().any(|line| line == "name = \"meari-paint\""))
                 .collect::<Vec<_>>();
             assert_eq!(
                 paint.len(),

@@ -1,0 +1,12 @@
+# Unmodified vendored source: lint-structure exempts src/ from the file-length and OS-cfg
+# rules only while every file below matches and src/ has no other file (xtask structure::vendored).
+# upstream: blitz-shell 0.3.0-beta.4, crates.io sha256 d80b952b007a4bd82012583da8540d95cfd276b3c790ded39299fce728864fdb
+# revision: DioxusLabs/blitz 92b11f1bd8ab7975411328b0406a95a09445b4e7 packages/blitz-shell
+# re-check against crates.io: scripts/vendored-upstream-diff.sh crates/meari-shell
+27f343fe224d191e778e3c2ad4d299edf0f19fe63b51636027a43c3286472d7b  src/accessibility.rs
+7d45266958af1521e925287524e4cf41d0cb7d9e22c701244f8ec3a3cd053771  src/application.rs
+65234c7447c0a7efd6156d3bca0605c433252150c4b1f46b6253f22d405474ae  src/convert_events.rs
+36786656135006d6c6cf4df78a2361177d22b808ff6c49dc4980ed104ca0eb88  src/event.rs
+2c3010021bfb707fd0a0021f0a4a26d5cf82082e74b8325fe562a1e01094a463  src/lib.rs
+adebd0353035f685b0d85ddd8fc0dfe8a3386f3c8ed651b303387f42eb33ce4e  src/net.rs
+1b174baa1019468c093e21500eb785cbf8f5e388910feacb9735f449dbb8f16d  src/window.rs

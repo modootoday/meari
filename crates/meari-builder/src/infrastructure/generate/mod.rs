@@ -34,7 +34,6 @@ pub(super) fn project(
     let name = format!("meari_app_{}", definition.stamp.graph_hash.as_str());
     let core = dependency_path(&framework.join("crates/meari"))?;
     let native = dependency_path(&framework.join("crates/meari-native"))?;
-    let paint = dependency_path(&framework.join("crates/meari-paint"))?;
     let dependencies = match definition.stamp.target.kind {
         TargetKind::Native => format!(
             "meari = {{ path = {core} }}\nmeari-native = {{ path = {native}, features = [\"window\"] }}\nserde_json = \"1\"\n"
@@ -43,13 +42,8 @@ pub(super) fn project(
             format!("meari = {{ path = {core}, features = [\"wasm\"] }}\nserde_json = \"1\"\n")
         }
     };
-    let patches = if definition.stamp.target.kind == TargetKind::Native {
-        format!("\n[patch.crates-io]\nblitz-paint = {{ path = {paint} }}\n")
-    } else {
-        String::new()
-    };
     let cargo = format!(
-        "[workspace]\n[package]\nname = {name:?}\nversion = \"0.0.0\"\nedition = \"2024\"\n[dependencies]\n{dependencies}{patches}"
+        "[workspace]\n[package]\nname = {name:?}\nversion = \"0.0.0\"\nedition = \"2024\"\n[dependencies]\n{dependencies}"
     );
     let mut files = BTreeMap::from([
         (path("Cargo.toml"), cargo.into_bytes()),

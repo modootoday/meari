@@ -12,9 +12,8 @@
 [package]
 edition = "2024"
 rust-version = "1.91.0"
-name = "blitz-paint"
-publish = false
-version = "0.3.0-beta.4"
+name = "meari-paint"
+version = "0.1.0"
 build = false
 autolib = false
 autobins = false
@@ -23,11 +22,12 @@ autotests = false
 autobenches = false
 description = "Paint a Blitz Document using anyrender"
 homepage = "https://github.com/dioxuslabs/blitz"
-documentation = "https://docs.rs/blitz-paint"
-readme = false
+documentation = "https://docs.rs/meari-paint"
+readme = "README.md"
 categories = ["gui"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/dioxuslabs/blitz"
+repository = "https://github.com/modootoday/meari"
+# Vendored fork of dioxuslabs/blitz (blitz-paint 0.3.0-beta.4); see NOTICE.
 
 [features]
 apple-font-embolden = []
@@ -54,7 +54,9 @@ version = "0.15.0"
 optional = true
 
 [dependencies.blitz-dom]
-version = "=0.3.0-beta.4"
+package = "meari-dom"
+path = "../meari-dom"
+version = "0.1.0"
 default-features = false
 
 [dependencies.blitz-traits]
