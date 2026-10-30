@@ -16,11 +16,26 @@ pub struct HostFallbacks {
     pub serif: &'static [&'static str],
 }
 
+/// Where Chromium's text-control `avgCharWidth` comes from on this OS.
+///
+/// Skia's FreeType/Fontations backends report OS/2 `xAvgCharWidth`; Skia's DirectWrite
+/// backend (Windows) leaves `fAvgCharWidth` at 0, so Blink falls back to the advance of `x`
+/// (`SimpleFontData::PlatformInit`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AvgCharWidthSource {
+    Os2XAvgCharWidth,
+    XGlyphAdvance,
+}
+
 /// Implemented by one adapter per OS.
 pub trait PlatformHost {
     fn os_family(&self) -> OsFamily;
     /// Host fallbacks for the CSS generic families on this OS.
     fn font_fallbacks(&self) -> HostFallbacks;
+    /// Source of the average char width that sizes `size=20` text inputs.
+    fn avg_char_width_source(&self) -> AvgCharWidthSource {
+        AvgCharWidthSource::Os2XAvgCharWidth
+    }
 }
 
 pub use raw_window_handle::RawWindowHandle;

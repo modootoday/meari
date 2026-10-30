@@ -5,8 +5,8 @@ pub mod adapter;
 pub mod port;
 
 pub use port::{
-    ClientArea, ClientAreaError, GlContextHost, HostFallbacks, OsFamily, OsPolicy, PlatformHost,
-    WindowState,
+    AvgCharWidthSource, ClientArea, ClientAreaError, GlContextHost, HostFallbacks, OsFamily,
+    OsPolicy, PlatformHost, WindowState,
 };
 
 #[cfg(windows)]
@@ -62,6 +62,9 @@ impl PlatformHost for CurrentOs {
     }
     fn font_fallbacks(&self) -> HostFallbacks {
         Live::default().font_fallbacks()
+    }
+    fn avg_char_width_source(&self) -> port::AvgCharWidthSource {
+        Live::default().avg_char_width_source()
     }
 }
 

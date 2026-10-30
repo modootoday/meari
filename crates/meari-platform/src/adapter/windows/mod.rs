@@ -1,6 +1,6 @@
 //! Windows adapter. Pure data, so it compiles on every host and its tables are checked on all
 //! of them; only [`crate::CurrentOs`] decides which adapter is live.
-use crate::port::{HostFallbacks, OsFamily, PlatformHost};
+use crate::port::{AvgCharWidthSource, HostFallbacks, OsFamily, PlatformHost};
 
 pub const FONT_FALLBACKS: HostFallbacks = HostFallbacks {
     sans: &["Segoe UI", "Malgun Gothic", "Yu Gothic UI", "Arial"],
@@ -16,6 +16,10 @@ impl PlatformHost for WindowsHost {
     }
     fn font_fallbacks(&self) -> HostFallbacks {
         FONT_FALLBACKS
+    }
+    /// Chrome on Windows measures fonts through Skia DirectWrite, which has no avg char width.
+    fn avg_char_width_source(&self) -> AvgCharWidthSource {
+        AvgCharWidthSource::XGlyphAdvance
     }
 }
 
