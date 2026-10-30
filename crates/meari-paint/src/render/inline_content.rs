@@ -276,6 +276,7 @@ impl ElementCx<'_, '_> {
 
             // Render text
             let mut draw_text_context = self.context.draw_text_context.borrow_mut();
+            draw_text_context.ellipsis_limit = crate::text::ellipsis_limit(self.node, self.scale);
             crate::text::stroke_text(
                 scene,
                 text_layout.layout.lines(),
@@ -285,6 +286,7 @@ impl ElementCx<'_, '_> {
                 self.node.id,
                 &mut draw_text_context,
             );
+            draw_text_context.ellipsis_limit = None;
         }
     }
 
