@@ -22,11 +22,21 @@ use kurbo::{self, Affine};
 use peniko::{self};
 
 thread_local! {
-    /// Text contexts for placeholder layout; system fonts only.
+    /// Text contexts for placeholder layout; system fonts until the host registers its own.
     static PLACEHOLDER_CONTEXT: RefCell<(
         parley::FontContext,
         parley::LayoutContext<blitz_dom::node::TextBrush>,
     )> = RefCell::new((parley::FontContext::new(), parley::LayoutContext::new()));
+}
+
+/// Fonts the host registered for placeholder layout (the document's own collection).
+static PLACEHOLDER_FONTS: std::sync::Mutex<Option<parley::FontContext>> =
+    std::sync::Mutex::new(None);
+
+/// Lay out `::placeholder` text with `fonts` (the document's font context) instead of system
+/// fonts only, so bundled faces such as Noto Sans resolve on hosts that lack them.
+pub fn set_placeholder_fonts(fonts: parley::FontContext) {
+    *PLACEHOLDER_FONTS.lock().unwrap_or_else(|e| e.into_inner()) = Some(fonts);
 }
 
 /// A view of the track positions reported by taffy in physical (left-to-right /
