@@ -1,6 +1,6 @@
 name: CI
 
-# Linux is the baseline gate (PixelGate Strict) on every pull request and main push.
+# Linux is the baseline gate (PixelGate Strict).
 # Windows and macOS run the same build/test gates with the PixelGate Advisory policy:
 # anti-aliasing-only pixel differences are reported, but render errors and layout
 # mismatches fail on every OS. Tolerances come from the fixtures and are never
@@ -10,11 +10,24 @@ name: CI
 # so no protected environment (reviewer approval) is needed. If a job ever needs
 # a secret or publishes, give it its own approved environment as specfold's
 # release workflow does.
+# Manual only (owner decision): no push/PR triggers. Pick the OSes per run, e.g.
+#   gh workflow run ci.yml -f linux=false -f windows=true
+# Every selected job runs its full gate set unchanged.
 on:
-  pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      linux:
+        description: Run the Linux baseline (Strict)
+        type: boolean
+        default: true
+      windows:
+        description: Run Windows (Advisory)
+        type: boolean
+        default: false
+      macos:
+        description: Run macOS (Advisory)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -33,6 +46,7 @@ env:
 jobs:
   linux:
     name: Linux baseline (Strict)
+    if: inputs.linux
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -48,13 +62,22 @@ jobs:
       - name: Tailwind standalone (sha256-pinned)
         shell: bash
         run: bash .github/ci/fetch-tailwind.sh tailwindcss-linux-x64
+      # .cargo/config.toml forces TMP/TEMP to runtime/build-cache/tmp (git-ignored, so a
+      # fresh checkout lacks it). MSVC link.exe then fails with LNK1104 writing lnk*.tmp,
+      # so create the directory before any cargo step on every OS.
+      - name: Build temp dir (runtime/build-cache/tmp)
+        shell: bash
+        run: mkdir -p runtime/build-cache/tmp
       - run: cargo fmt --all --check
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      # Font-dependent unit tests read the pinned Noto cache (runtime/fonts) and, when cold,
+      # several tests download the same file in parallel and race on it. Fetch first so tests
+      # run against a verified warm cache, as on dev hosts.
+      - run: cargo xtask fonts-fetch
       - run: cargo test --locked --workspace --no-fail-fast
       # --strict: any structure violation fails CI (the last one, meari-visual/src, was fixed).
       - run: cargo xtask lint-structure --strict
       - run: cargo xtask spec-check
-      - run: cargo xtask fonts-fetch
       - name: Visual test (PixelGate Strict)
         run: cargo xtask visual-test --gate strict --out target/vt-ci
       - if: always()
@@ -66,6 +89,7 @@ jobs:
 
   windows:
     name: Windows (Advisory)
+    if: inputs.windows
     runs-on: windows-2022
     timeout-minutes: 120
     steps:
@@ -77,9 +101,18 @@ jobs:
       - name: Tailwind standalone (sha256-pinned)
         shell: bash
         run: bash .github/ci/fetch-tailwind.sh tailwindcss-windows-x64.exe
+      # .cargo/config.toml forces TMP/TEMP to runtime/build-cache/tmp (git-ignored, so a
+      # fresh checkout lacks it). MSVC link.exe then fails with LNK1104 writing lnk*.tmp,
+      # so create the directory before any cargo step on every OS.
+      - name: Build temp dir (runtime/build-cache/tmp)
+        shell: bash
+        run: mkdir -p runtime/build-cache/tmp
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
-      - run: cargo test --locked --workspace --no-fail-fast
+      # Font-dependent unit tests read the pinned Noto cache (runtime/fonts) and, when cold,
+      # several tests download the same file in parallel and race on it. Fetch first so tests
+      # run against a verified warm cache, as on dev hosts.
       - run: cargo xtask fonts-fetch
+      - run: cargo test --locked --workspace --no-fail-fast
       - name: Visual test (PixelGate Advisory)
         run: cargo xtask visual-test --gate advisory --out target/vt-ci
       - if: always()
@@ -91,10 +124,9 @@ jobs:
 
   macos:
     name: macOS (Advisory)
-    # macOS runner minutes cost about ten times Linux minutes, and there is no
-    # physical Mac to reproduce on, so this job runs only on main merges and by hand
-    # (workflow_dispatch), not on every pull request.
-    if: github.event_name != 'pull_request'
+    # macOS runner minutes cost about ten times Linux minutes and there is no physical
+    # Mac to reproduce on, so it defaults to off.
+    if: inputs.macos
     runs-on: macos-15
     timeout-minutes: 120
     steps:
@@ -106,9 +138,18 @@ jobs:
       - name: Tailwind standalone (sha256-pinned)
         shell: bash
         run: bash .github/ci/fetch-tailwind.sh tailwindcss-macos-arm64
+      # .cargo/config.toml forces TMP/TEMP to runtime/build-cache/tmp (git-ignored, so a
+      # fresh checkout lacks it). MSVC link.exe then fails with LNK1104 writing lnk*.tmp,
+      # so create the directory before any cargo step on every OS.
+      - name: Build temp dir (runtime/build-cache/tmp)
+        shell: bash
+        run: mkdir -p runtime/build-cache/tmp
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
-      - run: cargo test --locked --workspace --no-fail-fast
+      # Font-dependent unit tests read the pinned Noto cache (runtime/fonts) and, when cold,
+      # several tests download the same file in parallel and race on it. Fetch first so tests
+      # run against a verified warm cache, as on dev hosts.
       - run: cargo xtask fonts-fetch
+      - run: cargo test --locked --workspace --no-fail-fast
       # Virtualized runner: offscreen CPU rendering and headless Chrome only. Real
       # windows, GL and display scaling are not exercised (see implementation-status).
       - name: Visual test (PixelGate Advisory)
