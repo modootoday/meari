@@ -1,0 +1,120 @@
+name: CI
+
+# Linux is the baseline gate (PixelGate Strict) on every pull request and main push.
+# Windows and macOS run the same build/test gates with the PixelGate Advisory policy:
+# anti-aliasing-only pixel differences are reported, but render errors and layout
+# mismatches fail on every OS. Tolerances come from the fixtures and are never
+# overridden here (no --max-ratio / --channel-tolerance flags).
+#
+# No secrets, no publishing and no deployments: every job only reads the repository,
+# so no protected environment (reviewer approval) is needed. If a job ever needs
+# a secret or publishes, give it its own approved environment as specfold's
+# release workflow does.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  # The repo's .cargo/config.toml targets ../.cargo-target (shared dir on dev hosts).
+  CARGO_TARGET_DIR: ${{ github.workspace }}/../.cargo-target
+  SPECFOLD_VERSION: "0.3.0"
+  TAILWIND_VERSION: "4.3.3"
+
+jobs:
+  linux:
+    name: Linux baseline (Strict)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: System libraries
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libfontconfig1-dev libfreetype-dev
+      - name: Toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - name: specfold
+        run: cargo install specfold --version "$SPECFOLD_VERSION" --locked
+      - name: Tailwind standalone (sha256-pinned)
+        shell: bash
+        run: bash .github/ci/fetch-tailwind.sh tailwindcss-linux-x64
+      - run: cargo fmt --all --check
+      - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - run: cargo test --locked --workspace --no-fail-fast
+      - run: cargo xtask lint-structure
+      - run: cargo xtask spec-check
+      - run: cargo xtask fonts-fetch
+      - name: Visual test (PixelGate Strict)
+        run: cargo xtask visual-test --gate strict --out target/vt-ci
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: visual-linux
+          path: target/vt-ci
+          if-no-files-found: ignore
+
+  windows:
+    name: Windows (Advisory)
+    runs-on: windows-2022
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - name: Tailwind standalone (sha256-pinned)
+        shell: bash
+        run: bash .github/ci/fetch-tailwind.sh tailwindcss-windows-x64.exe
+      - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - run: cargo test --locked --workspace --no-fail-fast
+      - run: cargo xtask fonts-fetch
+      - name: Visual test (PixelGate Advisory)
+        run: cargo xtask visual-test --gate advisory --out target/vt-ci
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: visual-windows
+          path: target/vt-ci
+          if-no-files-found: ignore
+
+  macos:
+    name: macOS (Advisory)
+    # macOS runner minutes cost about ten times Linux minutes, and there is no
+    # physical Mac to reproduce on, so this job runs only on main merges and by hand
+    # (workflow_dispatch), not on every pull request.
+    if: github.event_name != 'pull_request'
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Toolchain (rust-toolchain.toml)
+        run: rustup show active-toolchain || rustup toolchain install
+      - name: Tailwind standalone (sha256-pinned)
+        shell: bash
+        run: bash .github/ci/fetch-tailwind.sh tailwindcss-macos-arm64
+      - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - run: cargo test --locked --workspace --no-fail-fast
+      - run: cargo xtask fonts-fetch
+      # Virtualized runner: offscreen CPU rendering and headless Chrome only. Real
+      # windows, GL and display scaling are not exercised (see implementation-status).
+      - name: Visual test (PixelGate Advisory)
+        run: cargo xtask visual-test --gate advisory --out target/vt-ci
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: visual-macos
+          path: target/vt-ci
+          if-no-files-found: ignore

@@ -15,6 +15,11 @@ pub const WINDOWS_X64_SHA256: &str =
 pub const LINUX_X64_SHA256: &str =
     "dc61b3ac6b8c9ca874c0cc4c57b2409791a64c5540404ca5f5367360babc313a";
 
+/// Official v4.3.3 `tailwindcss-macos-arm64` release asset (matches upstream sha256sums.txt);
+/// used by the macOS CI runner.
+pub const MACOS_ARM64_SHA256: &str =
+    "cdf646702987a743464dff4d9c60fd4480d1c1e73dd819a9a67f1078815dce9d";
+
 pub struct TailwindCompiler {
     executable: PathBuf,
     artifact: String,
@@ -80,13 +85,14 @@ impl TailwindCompiler {
         Self::verified(executable, &[("linux-x64", LINUX_X64_SHA256)])
     }
 
-    /// Accepts any pinned v4.3.3 standalone artifact (Windows x64 or Linux x64).
+    /// Accepts any pinned v4.3.3 standalone artifact (Windows x64, Linux x64 or macOS arm64).
     pub fn pinned(executable: &Path) -> Result<Self, String> {
         Self::verified(
             executable,
             &[
                 ("windows-x64", WINDOWS_X64_SHA256),
                 ("linux-x64", LINUX_X64_SHA256),
+                ("macos-arm64", MACOS_ARM64_SHA256),
             ],
         )
     }
