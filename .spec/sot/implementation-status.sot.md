@@ -22,13 +22,18 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 
 ### CI (GitHub Actions, `.github/workflows/ci.yml`)
 
-2026-10-30에 추가했고 **아직 한 번도 실행되지 않았다**(저장소 remote 없음, push 안 함). 첫 실행 전까지 아래는 구성일 뿐 검증 결과가 아니다.
+2026-10-30에 추가. 첫 실행(run 41005132053, push 트리거)은 세 OS 모두 실패했다:
+- Windows: `cargo clippy`에서 LNK1104. `.cargo/config.toml`의 `[env]`가 TMP/TEMP를 `runtime/build-cache/tmp`로 강제하는데 이 폴더는 git 제외라 새 체크아웃에 없다. → 각 잡 초반에 `mkdir -p runtime/build-cache/tmp`.
+- Linux·macOS: `cargo test`의 폰트 테스트(`both_profiles_resolve_generics_to_noto_first`, macOS는 `latin_slice_keeps_variable_gpos`도) 실패. Noto 캐시가 비어 있으면 병렬 테스트가 같은 파일을 동시에 받고, 프로세스 전역 `OnceLock`(generic_fonts `cached_faces`)이 다운로드 완료 전에 빈 목록으로 굳는다. → `cargo xtask fonts-fetch`를 `cargo test` 앞으로 옮겼다(개발 호스트와 같은 웜 캐시). 콜드 캐시 경합 자체는 코드상 잠재 결함으로 남는다.
+수정 후 재실행 결과는 아직 없다.
+
+**트리거: 수동 전용(workflow_dispatch).** push/PR 자동 실행은 없다. 입력 `linux`(기본 true), `windows`(기본 false), `macos`(기본 false)로 OS를 고른다. 예: `gh workflow run ci.yml -R modootoday/meari -f linux=false -f windows=true`. 선택된 잡은 모든 게이트를 그대로 돈다.
 
 | 잡 | 트리거 | 게이트 | PixelGate |
 |---|---|---|---|
-| Linux `ubuntu-24.04` | PR, main push, 수동 | fmt, clippy -D warnings, test, lint-structure --strict(위반 0, OS cfg는 meari-platform·테스트 코드에만), spec-check, visual-test | Strict |
-| Windows `windows-2022` | PR, main push, 수동 | clippy, test, visual-test | Advisory |
-| macOS `macos-15` (arm64) | main push, 수동만(비용) | clippy, test, visual-test | Advisory |
+| Linux `ubuntu-24.04` | 수동(기본 on) | fmt, clippy -D warnings, test, lint-structure --strict(위반 0, OS cfg는 meari-platform·테스트 코드에만), spec-check, visual-test | Strict |
+| Windows `windows-2022` | 수동(기본 off) | clippy, test, visual-test | Advisory |
+| macOS `macos-15` (arm64) | 수동(기본 off, 비용) | clippy, test, visual-test | Advisory |
 
 모든 OS에서 렌더 실패(ERROR)와 레이아웃 불일치(LAYOUT-MISMATCH)는 실패다. 허용치는 픽스처의 `.tolerance`만 쓰고 CI에서 바꾸지 않는다.
 
