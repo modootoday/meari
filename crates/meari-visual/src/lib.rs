@@ -11,7 +11,8 @@ pub mod host;
 pub mod render;
 pub mod report;
 pub mod scroll;
-pub mod sheet;
+// Contact-sheet writer lives with the report it illustrates; path kept for callers.
+pub use report::sheet;
 
 pub const WIDTH: u32 = 480;
 pub const HEIGHT: u32 = 320;
