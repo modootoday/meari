@@ -94,8 +94,12 @@ pub(crate) struct DrawTextContext {
     win_ascent_ratios: WinAscentCache,
     /// Glyph colour forced for every run (used for `::placeholder` text).
     pub(crate) color_override: Option<Color>,
+    /// `text-overflow: ellipsis` limit (layout units) for the inline root being painted.
+    pub(crate) ellipsis_limit: Option<f64>,
 }
 
+mod ellipsis;
+pub(crate) use self::ellipsis::*;
 mod decorations;
 pub(crate) use self::decorations::*;
 mod glyph_runs;

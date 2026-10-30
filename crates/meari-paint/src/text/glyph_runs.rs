@@ -197,6 +197,7 @@ pub(crate) fn stroke_text<'a>(
         deco_boxes,
         win_ascent_ratios,
         color_override,
+        ellipsis_limit,
     } = context;
     stack.clear();
     path_scratch.clear();
@@ -215,8 +216,15 @@ pub(crate) fn stroke_text<'a>(
         // draws one decoration per box rather than one stepped segment per differently-sized
         // run. Clearing preserves the allocation for the next line and inline context.
         deco_boxes.clear();
+        // Chrome only truncates a line whose content overflows the clipping box.
+        let truncate_at =
+            ellipsis_limit.filter(|limit| line.metrics().advance as f64 > *limit + 0.01);
+        let mut truncated = false;
 
         for item in line.items() {
+            if truncated {
+                break;
+            }
             if let PositionedLayoutItem::GlyphRun(glyph_run) = item {
                 let run = glyph_run.run();
                 let font = run.font();
@@ -268,6 +276,41 @@ pub(crate) fn stroke_text<'a>(
                 };
 
                 let normalized_coords: &[i16] = bytemuck::cast_slice(run.normalized_coords());
+                // `text-overflow: ellipsis`: keep whole glyphs that end before the room
+                // left for U+2026, then draw the ellipsis right after the last kept glyph.
+                let mut glyphs: Vec<anyrender::Glyph> = glyph_run
+                    .positioned_glyphs()
+                    .map(|glyph| anyrender::Glyph {
+                        id: glyph.id as _,
+                        x: glyph.x,
+                        y: glyph.y,
+                    })
+                    .collect();
+                if let Some(limit) = truncate_at {
+                    if let Some((ell_id, ell_adv)) =
+                        ellipsis_glyph(font, font_size, normalized_coords)
+                    {
+                        let cutoff = limit as f32 - ell_adv;
+                        let mut pen = glyph_run.offset();
+                        let mut keep = 0;
+                        for glyph in glyph_run.positioned_glyphs() {
+                            if glyph.x + glyph.advance > cutoff + 0.01 {
+                                truncated = true;
+                                break;
+                            }
+                            pen = glyph.x + glyph.advance;
+                            keep += 1;
+                        }
+                        if truncated {
+                            glyphs.truncate(keep);
+                            glyphs.push(anyrender::Glyph {
+                                id: ell_id,
+                                x: pen,
+                                y: glyph_run.baseline(),
+                            });
+                        }
+                    }
+                }
                 scene.draw_glyphs(
                     font,
                     font_size,
@@ -279,11 +322,7 @@ pub(crate) fn stroke_text<'a>(
                     1.0, // alpha
                     transform,
                     glyph_xform,
-                    glyph_run.positioned_glyphs().map(|glyph| anyrender::Glyph {
-                        id: glyph.id as _,
-                        x: glyph.x,
-                        y: glyph.y,
-                    }),
+                    glyphs.into_iter(),
                 );
 
                 // Accumulate this run's contribution to each decorating box on its ancestor
