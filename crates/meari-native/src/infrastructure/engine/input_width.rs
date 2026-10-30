@@ -7,6 +7,7 @@
 //! (any origin above user agent) still wins exactly as on the Web.
 use blitz_dom::NodeId;
 use blitz_html::HtmlDocument;
+use meari_platform::{AvgCharWidthSource, PlatformHost as _};
 use parley::style::{FontFamily, FontFamilyName, GenericFamily};
 use parley::{FontContext, LayoutContext, PositionedLayoutItem, StyleProperty};
 use std::borrow::Cow;
@@ -23,14 +24,31 @@ const MIN_PROPERTY: &str = "--meari-input-intrinsic-min-width";
 const SIZE: f32 = 20.0;
 
 /// Chromium's average and maximum char width for a font face at `size` px.
-pub(super) fn char_widths(data: &[u8], index: u32, size: f32, zero: f32) -> Option<(f32, f32)> {
+///
+/// `source` is the host's avgCharWidth origin: OS/2 `xAvgCharWidth`, or (Skia DirectWrite on
+/// Windows, which reports none) the advance of `x`.
+pub(super) fn char_widths(
+    data: &[u8],
+    index: u32,
+    size: f32,
+    zero: f32,
+    source: AvgCharWidthSource,
+) -> Option<(f32, f32)> {
     let face = ttf_parser::Face::parse(data, index).ok()?;
     let scale = size / f32::from(face.units_per_em());
-    let os2 = face
-        .raw_face()
-        .table(ttf_parser::Tag::from_bytes(b"OS/2"))?;
-    let avg = i16::from_be_bytes([*os2.get(2)?, *os2.get(3)?]); // xAvgCharWidth
-    let avg = f32::from(avg) * scale;
+    let avg = match source {
+        AvgCharWidthSource::Os2XAvgCharWidth => {
+            let os2 = face
+                .raw_face()
+                .table(ttf_parser::Tag::from_bytes(b"OS/2"))?;
+            f32::from(i16::from_be_bytes([*os2.get(2)?, *os2.get(3)?])) // xAvgCharWidth
+        }
+        AvgCharWidthSource::XGlyphAdvance => {
+            let x = face.glyph_index('x')?;
+            f32::from(face.glyph_hor_advance(x)?)
+        }
+    };
+    let avg = avg * scale;
     // Fonts whose avgCharWidth matches CJK full-width glyphs fall back to the '0' advance.
     if avg <= 0.0 || (zero > 0.0 && avg > zero * 1.7) {
         return Some((zero, 0.0));
@@ -88,7 +106,13 @@ fn primary(fonts: &mut FontContext, style: &style::properties::ComputedValues) -
     })?;
     let zero = run.advance();
     let face = run.run().font();
-    let (avg, max) = char_widths(face.data.data(), face.index, run.run().font_size(), zero)?;
+    let (avg, max) = char_widths(
+        face.data.data(),
+        face.index,
+        run.run().font_size(),
+        zero,
+        meari_platform::current().avg_char_width_source(),
+    )?;
     Some(intrinsic(avg, max))
 }
 
@@ -188,5 +212,13 @@ mod tests {
         assert_eq!(intrinsic(9.12, 55.0), 229.0);
         // Arimo 17.5px: avg 10.177, max 58 → 251.37 → Chrome 252.
         assert_eq!(intrinsic(10.177, 58.0), 252.0);
+    }
+
+    #[test]
+    fn directwrite_hosts_take_the_x_advance_as_avg_char_width() {
+        // Chrome on Windows (Skia DirectWrite, no fAvgCharWidth) takes the advance of `x` as
+        // avg: Noto Sans 16px x = 529/1000 em = 8.464, max = round(3421/1000 em) = 55 → 216.
+        let avg = 529.0 * 16.0 / 1000.0_f32;
+        assert_eq!(intrinsic(avg.max(avg.round()), 55.0), 216.0);
     }
 }
