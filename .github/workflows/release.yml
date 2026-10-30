@@ -1,7 +1,7 @@
-# Release meari to crates.io (workspace) and npm (@modootoday/meari-cli + platform binary
-# packages) with Trusted Publishing (OIDC). No registry token is stored. Structure follows
-# modootoday/specfold. DRAFT: the first publish of every crate/package is a manual bootstrap
-# (OIDC cannot create a new name) and the `crates`/`npm` environments must exist
+# Release meari to crates.io (workspace) with Trusted Publishing (OIDC). No registry token is
+# stored. meari is distributed through cargo only (`cargo install meari-cli`); npm distribution
+# was dropped on 2026-10-31 (adr:meari/20261031023000). The first publish of every crate is a
+# manual bootstrap (OIDC cannot create a new name) and the `crates` environment must exist
 # (.github/RELEASING.md).
 name: release
 on:
@@ -70,82 +70,3 @@ jobs:
           else
             cargo publish --workspace --locked --dry-run
           fi
-
-  binaries:
-    needs: check
-    strategy:
-      fail-fast: true
-      matrix:
-        # Linux builds on ubuntu-22.04 so the binaries need only glibc 2.35.
-        include:
-          - { os: ubuntu-22.04, target: x86_64-unknown-linux-gnu }
-          - { os: ubuntu-22.04-arm, target: aarch64-unknown-linux-gnu }
-          - { os: macos-15-intel, target: x86_64-apple-darwin }
-          - { os: macos-15, target: aarch64-apple-darwin }
-          - { os: windows-2022, target: x86_64-pc-windows-msvc }
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
-        with:
-          persist-credentials: false
-      - if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libfontconfig1-dev libfreetype-dev
-      - shell: bash
-        run: mkdir -p runtime/build-cache/tmp && rustup target add ${{ matrix.target }}
-      - run: cargo build --locked --release -p meari-cli --target ${{ matrix.target }}
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: meari-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/meari${{ runner.os == 'Windows' && '.exe' || '' }}
-          if-no-files-found: error
-          retention-days: 7
-
-  npm:
-    # After crates: npm never carries a version that crates.io rejected.
-    needs: [check, crates, binaries]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    # A reviewer approves this environment (v* tags only) before anything reaches npm.
-    environment: ${{ github.event_name == 'push' && 'npm' || '' }}
-    permissions:
-      contents: read
-      id-token: write
-    env:
-      VERSION: ${{ needs.check.outputs.version }}
-    steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
-        with:
-          node-version: "22.23.3"
-          registry-url: "https://registry.npmjs.org"
-      # Trusted Publishing needs npm 11.5.1 or later.
-      - run: npm install --global npm@11.5.1
-      - run: node --test npm/release/*.test.mjs
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-        with:
-          pattern: meari-*
-          path: bins
-      - name: Platform packages
-        run: |
-          for dir in bins/meari-*; do
-            target="${dir#bins/meari-}"
-            bin="$dir/meari"; [ -f "$bin" ] || bin="$dir/meari.exe"
-            node npm/release/platform-packages.mjs --target "$target" --bin "$bin" --version "$VERSION" --out platform
-          done
-      # optionalDependencies are written only into the published manifest.
-      - name: Main package
-        run: |
-          node npm/release/platform-packages.mjs --optional-dependencies --version "$VERSION" > optional.json
-          node -e 'const fs=require("fs");const p=JSON.parse(fs.readFileSync("npm/package.json"));p.version=process.env.VERSION;p.optionalDependencies=JSON.parse(fs.readFileSync("optional.json"));fs.writeFileSync("npm/package.json",JSON.stringify(p,null,2)+"\n")'
-          cp LICENSE-MIT LICENSE-APACHE npm/
-      # Platform packages first, so the main package never names a missing version.
-      - name: Publish (dry-run unless a v* tag)
-        run: |
-          flag=--dry-run
-          [ "${GITHUB_EVENT_NAME}" = push ] && flag=--provenance
-          for dir in platform/*/ npm/; do npm publish "$dir" --access public $flag; done

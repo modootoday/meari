@@ -10,7 +10,7 @@ updated: 2026-10-30T06:50:59Z
 
 ## Context
 
-루트 `[patch.crates-io]`가 업스트림 `blitz-dom`·`blitz-paint`를 `crates/meari-dom`·`crates/meari-paint`로 바꿔 끼웠다([[adr:meari/20261030035135]]). 게시된 크레이트에서는 `[patch]`가 무시되므로 crates.io의 `meari-native`는 수정 전 업스트림을 받는다. 또 업스트림 `blitz-html`·`blitz-shell`도 `blitz-dom`에 의존하므로 patch를 빼면 같은 타입이 두 벌 생긴다. specfold처럼 각 크레이트가 자기 이름과 path+version 의존만 쓰는 일반 워크스페이스로 만든다([[guide:meari/crates-io-npm-trusted-publishing]]).
+루트 `[patch.crates-io]`가 업스트림 `blitz-dom`·`blitz-paint`를 `crates/meari-dom`·`crates/meari-paint`로 바꿔 끼웠다([[adr:meari/20261030035135]]). 게시된 크레이트에서는 `[patch]`가 무시되므로 crates.io의 `meari-native`는 수정 전 업스트림을 받는다. 또 업스트림 `blitz-html`·`blitz-shell`도 `blitz-dom`에 의존하므로 patch를 빼면 같은 타입이 두 벌 생긴다. specfold처럼 각 크레이트가 자기 이름과 path+version 의존만 쓰는 일반 워크스페이스로 만든다([[guide:meari/crates-io-trusted-publishing]]).
 
 ## Decision
 
