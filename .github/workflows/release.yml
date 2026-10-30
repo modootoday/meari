@@ -1,0 +1,71 @@
+# Release meari to crates.io (and, once the npm package exists, npm) with Trusted
+# Publishing (OIDC). No registry token is stored. Structure follows modootoday/specfold.
+# DRAFT: publishing is blocked until the prerequisites in .github/RELEASING.md are met
+# (publish = false on every crate, vendored blitz-dom/blitz-paint under upstream names).
+name: release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: dry-run (no registry writes)
+        type: choice
+        options: [dry-run]
+        default: dry-run
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Tag matches the workspace version
+        id: version
+        run: |
+          version="$(cargo metadata --no-deps --format-version 1 | jq -r '[.packages[] | select(.name == "meari")][0].version')"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_EVENT_NAME}" = push ] && [ "${GITHUB_REF_NAME}" != "v$version" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match meari $version"; exit 1
+          fi
+      - name: No crate in the publish set is publish = false or relies on [patch]
+        run: scripts/release-preflight.sh
+
+  crates:
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    # A reviewer approves this environment (v* tags only) before anything reaches crates.io.
+    environment: ${{ github.event_name == 'push' && 'crates' || '' }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9
+        if: github.event_name == 'push'
+        id: auth
+      - name: Publish the workspace (dependency order is resolved by cargo)
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = push ]; then
+            cargo publish --workspace --locked
+          else
+            cargo publish --workspace --locked --dry-run
+          fi
