@@ -195,8 +195,13 @@ unmodified OTF under its original name.
   1.597%). Chrome uses ClearType subpixel (LCD) AA (web chroma up to 174 vs native 3); with
   `--disable-lcd-text` canonical-font is 3.194%, so LCD AA accounts for ≈1.6 pp. The remaining
   ≈1.6 pp over Linux is **estimated (unverified)** to be DirectWrite gamma/contrast differences.
-- **Unverified**: macOS run; whether every Windows text fixture stays layout-equal is checked by
-  the Windows advisory run only.
+- Layout check = per ink band (row run) bbox, each edge ±1 px (whole-image column runs split on
+  AA-filled glyph gaps and were replaced). Windows advisory run 2026-10-30: 29 MATCH,
+  1 ADVISORY (canonical-font 4.839%), 18 LAYOUT-MISMATCH, 0 ERROR ⇒ exit 1. The 18 are the
+  `Noto Sans`-pinned (FONT_PIN) fixtures: the desktop has only NotoSansKR/NotoSerifKR, no Latin
+  Noto Sans, so native and Chrome fall back to different faces (line widths differ by 5–18 px).
+  This is a font-environment difference, not AA; not loosened. Fix options (owner): install Noto
+  Sans on Windows test hosts, or pin those fixtures to bundled faces. **Unverified**: macOS run.
 - Serif Hangul bold synthesized (only Regular bundled); JP 500 has no exact face.
 - The web slice glyph data is checked by fontTools at build time; Rust checks headers, sizes,
   sha256 and unicode-range coverage, not decoded outlines.
