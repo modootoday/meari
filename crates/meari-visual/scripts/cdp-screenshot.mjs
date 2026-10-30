@@ -50,6 +50,25 @@ try {
     if (r.exceptionDetails) throw new Error("script: " + JSON.stringify(r.exceptionDetails));
     await send("Runtime.evaluate", { expression: "new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))", awaitPromise: true }, sessionId);
   }
+  // Diagnostics (no effect on the image): per text input, the laid-out width, the font Chrome
+  // resolved, and the intrinsic width measured on an unconstrained clone. Written next to
+  // OUT.png so CI artifacts show cross-OS input sizing differences.
+  const metrics = await send("Runtime.evaluate", { returnByValue: true, awaitPromise: true, expression: `(async () => {
+    await document.fonts.ready;
+    return [...document.querySelectorAll("input")].map((el) => {
+      const cs = getComputedStyle(el);
+      const host = document.createElement("div");
+      host.style.cssText = "position:absolute;left:0;top:0;width:max-content;visibility:hidden";
+      const clone = el.cloneNode(true);
+      host.appendChild(clone); document.body.appendChild(host);
+      const intrinsic = clone.getBoundingClientRect().width;
+      host.remove();
+      return { width: el.getBoundingClientRect().width, intrinsic, minWidth: cs.minWidth,
+        flexShrink: cs.flexShrink, fontFamily: cs.fontFamily, fontSize: cs.fontSize,
+        notoLoaded: document.fonts.check(cs.fontSize + " " + cs.fontFamily) };
+    });
+  })()` }, sessionId);
+  if (metrics.result?.value?.length) writeFileSync(out.replace(/\.png$/, "-metrics.json"), JSON.stringify({ chrome: (await send("Browser.getVersion")).product, inputs: metrics.result.value }, null, 1));
   const { data } = await send("Page.captureScreenshot", { format: "png", clip: { x: 0, y: 0, width, height, scale: 1 } }, sessionId);
   writeFileSync(out, Buffer.from(data, "base64"));
   finish(0);

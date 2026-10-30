@@ -105,6 +105,28 @@ pub fn file_url(path: &Path) -> String {
     }
 }
 
+/// Linux Chrome takes text anti-aliasing from the host fontconfig `rgba`: GitHub's
+/// ubuntu-24.04 runner reports `rgb` (subpixel LCD colour fringes), the box baseline `none`
+/// (grayscale). Pin grayscale by layering a config over the host's (`$FONTCONFIG_FILE` or
+/// `/etc/fonts/fonts.conf`), so every Linux host renders the reference the same way.
+/// (`--disable-lcd-text` is not equivalent: it also changes text under opacity layers.)
+/// Returns the config path to pass as `FONTCONFIG_FILE`, or `None` off Linux/BSD.
+pub fn chrome_fontconfig(dir: &Path) -> Result<Option<PathBuf>, String> {
+    if meari_platform::current().os_family() != OsFamily::Unix {
+        return Ok(None);
+    }
+    let base = std::env::var("FONTCONFIG_FILE").unwrap_or_else(|_| "/etc/fonts/fonts.conf".into());
+    let path = dir.join("chrome-grayscale-fonts.conf");
+    let body = format!(
+        "<?xml version=\"1.0\"?>\n<!DOCTYPE fontconfig SYSTEM \"urn:fontconfig:fonts.dtd\">\n\
+<fontconfig>\n<include ignore_missing=\"no\">{base}</include>\n\
+<match target=\"font\"><edit name=\"rgba\" mode=\"assign\"><const>none</const></edit>\
+<edit name=\"antialias\" mode=\"assign\"><bool>true</bool></edit></match>\n</fontconfig>\n"
+    );
+    std::fs::write(&path, body).map_err(|e| format!("{}: {e}", path.display()))?;
+    Ok(Some(path))
+}
+
 #[cfg(test)]
 mod tests {
     use super::{OsFamily, PixelGate, file_url};

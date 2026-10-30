@@ -77,8 +77,13 @@ pub fn screenshot(
     scroll: &[crate::scroll::Offset],
 ) -> Result<Vec<u8>, String> {
     let script = Path::new(env!("CARGO_MANIFEST_DIR")).join("scripts/cdp-screenshot.mjs");
-    let output = Command::new("node")
-        .env("TMPDIR", "/tmp") // .cargo/config.toml points TMPDIR outside the repo
+    let mut command = Command::new("node");
+    command.env("TMPDIR", "/tmp"); // .cargo/config.toml points TMPDIR outside the repo
+    let dir = png_path.parent().unwrap_or(Path::new("."));
+    if let Some(conf) = crate::host::chrome_fontconfig(dir)? {
+        command.env("FONTCONFIG_FILE", conf);
+    }
+    let output = command
         .arg(script)
         .arg(chrome)
         .arg(crate::host::file_url(html_path))
