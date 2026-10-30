@@ -66,6 +66,75 @@ name, listed first; an author `@font-face` always wins over a same-named local f
 and native registers bundled blobs ahead of the generic list. The host static Pretendard is
 reached only as the second stack entry (e.g. when bundled-fonts is disabled).
 
+## Downloaded Noto fonts (decision 2026-10-30, owner)
+
+- Owner: no font bytes in any binary; fonts come from the official upstream as pinned
+  downloads, like the pinned Tailwind binary. `crates/meari-visual/src/fonts.rs` holds the
+  manifest: Google Fonts official repository `github.com/google/fonts` at revision
+  `6157dfaa640ca5738b4d1a7070fe389c3036d7fc`, per file URL, length and sha256, plus the
+  directory's `OFL.txt` (also pinned by length and sha256). All files are SIL OFL-1.1 with no
+  Reserved Font Name for the Noto families (the Noto Sans KR/JP notice also carries Adobe's
+  'Source' RFN line from Source Han Sans; the family name "Noto Sans KR/JP" is used unchanged).
+- `cargo xtask fonts-fetch [all|latin,hangul,kana,arabic,hebrew,devanagari,thai]` downloads
+  only the missing files with `curl -fsSL` into `runtime/fonts/noto/6157dfaa640c/` (git-ignored),
+  writes `<dir>-OFL.txt` beside them, and verifies every file. A cached, valid file is used
+  offline; a download failure with no cache, or any length/sha256 mismatch, is an error naming
+  expected and actual values (never skipped). `cargo xtask visual-test` runs the same step for
+  `latin` first and fails if it cannot.
+- visual-test: native registers the verified bytes (`generic_fonts::register_comparison_font`,
+  read at run time, not `include_bytes!`); Chrome gets `@font-face` (`format("truetype")`,
+  `font-display:block`, Roman + Italic, `font-weight:100 900`) on the same cached files for every
+  non-canonical fixture, so the `FONT_PIN` family "Noto Sans" never comes from the host.
+- Linux re-measure 2026-10-30: 48 MATCH / 0 MISMATCH / 0 ERROR, every row identical to the prior
+  run (canonical-font 1.597%, heading-text 0.764%, app-form 0.867%, tw-truncate-aspect 0.348%,
+  tw-typography 1.430%). The Italic file is required (Roman only: tw-typography 1.972%, fails).
+- **Remaining host dependence**: `generic-font-family` tests the bare `sans-serif` generic, which
+  Chrome resolves from the host (Linux Arimo, OFL-1.1; Windows Arial, Microsoft, not OFL).
+
+### Script → Noto family manifest (pinned, core scripts)
+
+| Script key | Covers | Sans file (bytes) | Serif file (bytes) |
+|---|---|---|---|
+| latin | Latin, Greek, Cyrillic | NotoSans[wdth,wght].ttf (2,049,096), NotoSans-Italic[wdth,wght].ttf (2,322,640) | NotoSerif[wdth,wght].ttf (1,887,192), NotoSerif-Italic[wdth,wght].ttf (2,448,496) |
+| hangul | Hangul, KS X 1001 hanja | NotoSansKR[wght].ttf (10,414,588) | NotoSerifKR[wght].ttf (23,795,420) |
+| kana | kana, JIS kanji | NotoSansJP[wght].ttf (9,589,900) | NotoSerifJP[wght].ttf (13,574,352) |
+| arabic | Arabic | NotoSansArabic[wdth,wght].ttf (844,676) | NotoNaskhArabic[wght].ttf (307,592) |
+| hebrew | Hebrew | NotoSansHebrew[wdth,wght].ttf (112,640) | NotoSerifHebrew[wdth,wght].ttf (183,600) |
+| devanagari | Devanagari | NotoSansDevanagari[wdth,wght].ttf (641,944) | NotoSerifDevanagari[wdth,wght].ttf (757,692) |
+| thai | Thai | NotoSansThai[wdth,wght].ttf (218,652) | NotoSerifThai[wdth,wght].ttf (292,188) |
+
+sha256 values live only in `fonts.rs` (single source). `all` = 69,440,668 bytes (67 MiB cache).
+
+### Extending to other scripts (not pinned yet)
+
+Add a `Pin` row per file from `github.com/google/fonts/tree/<revision>/ofl/<dir>` (length,
+sha256 of the file and of that directory's `OFL.txt`), then a test case. Candidates:
+Bengali `notosansbengali`/`notoserifbengali`, Tamil `notosanstamil`/`notoseriftamil`, Telugu,
+Kannada, Malayalam, Gujarati, Gurmukhi (`notosans<script>`/`notoserif<script>`), Armenian
+`notosansarmenian`/`notoserifarmenian`, Georgian `notosansgeorgian`/`notoserifgeorgian`,
+Ethiopic `notosansethiopic`/`notoserifethiopic`, Khmer `notosanskhmer`/`notoserifkhmer`,
+Lao `notosanslao`/`notoseriflao`, Myanmar `notosansmyanmar`/`notoserifmyanmar`, Sinhala
+`notosanssinhala`/`notoserifsinhala`, Simplified/Traditional Chinese `notosanssc`/`notoserifsc`,
+`notosanstc`/`notoseriftc`, symbols `notosanssymbols`/`notosanssymbols2`, math `notosansmath`,
+emoji `notocoloremoji` (OFL). Upstream sources: `github.com/notofonts/<script>` releases.
+
+### Shaping status of the native path (code-level, 2026-10-30)
+
+parley 0.12.0 shapes with harfrust 0.12.0 (HarfBuzz port: Arabic joining, Indic/Thai
+reordering) and runs Unicode bidi (unicode-bidi 0.3.18 / icu_properties), so RTL and complex
+scripts are shaped by the native text stack. **Unverified**: no meari fixture renders Arabic,
+Hebrew, Devanagari or Thai yet; blitz handling of CSS `direction` / `dir` is not checked.
+
+### Plan for the existing bundled faces (proposal, not executed)
+
+Pretendard / Pretendard JP / Source Serif 4 / Source Han Serif KR (and the Meari Serif KR
+slices) are still committed under `crates/meari/assets/fonts` and `include_bytes!`'d by
+`bundled-fonts`. Proposed: replace them with manifest pins (Noto Sans/Serif + KR/JP per the
+table), move `bundled-fonts` to a runtime font directory loaded from the cache, keep WOFF2 Web
+delivery by converting/subsetting the cached TTF at build time, then delete the committed files
+(38,643,519 bytes in git, of which 26,509,751 non-WOFF2) and regenerate the Linux baseline for canonical-font without
+changing its 1.7% limit. Needs owner go-ahead because it changes the shipped canonical stack.
+
 ## Files, versions, checksums
 
 | File (assets/fonts/…) | Upstream | Bytes | sha256 | Glyphs | Licence |
@@ -200,8 +269,7 @@ unmodified OTF under its original name.
   1 ADVISORY (canonical-font 4.839%), 18 LAYOUT-MISMATCH, 0 ERROR ⇒ exit 1. The 18 are the
   `Noto Sans`-pinned (FONT_PIN) fixtures: the desktop has only NotoSansKR/NotoSerifKR, no Latin
   Noto Sans, so native and Chrome fall back to different faces (line widths differ by 5–18 px).
-  This is a font-environment difference, not AA; not loosened. Fix options (owner): install Noto
-  Sans on Windows test hosts, or pin those fixtures to bundled faces. **Unverified**: macOS run.
+  This is a font-environment difference, not AA; not loosened. Addressed by the downloaded Noto fonts (section above). **Unverified**: macOS run.
 - Serif Hangul bold synthesized (only Regular bundled); JP 500 has no exact face.
 - The web slice glyph data is checked by fontTools at build time; Rust checks headers, sizes,
   sha256 and unicode-range coverage, not decoded outlines.
