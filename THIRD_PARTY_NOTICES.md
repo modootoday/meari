@@ -20,3 +20,9 @@ relicensed under this project's dual license. Host fonts named as fallbacks (App
 Neo, Malgun Gothic, Segoe UI, Arial, …) are never bundled.
 
 SIL OPEN FONT LICENSE Version 1.1 — full text in each cached `<dir>-OFL.txt`.
+
+# Third-party notices: vendored source
+
+| Directory | Upstream | Version / revision | Licence | Copyright | Meari changes |
+|---|---|---|---|---|---|
+| `crates/meari-dom` | `blitz-dom` (github.com/DioxusLabs/blitz, `packages/blitz-dom`) | 0.3.0-beta.4, `92b11f1bd8ab7975411328b0406a95a09445b4e7` | MIT OR Apache-2.0 (`LICENSE-MIT`, `LICENSE-APACHE` in the directory) | The Blitz / DioxusLabs contributors | 1/64px LayoutUnit inline-width rounding; OS checks via `meari-platform`; file split for lint-structure (see its README) |

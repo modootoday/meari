@@ -1,6 +1,6 @@
 ---
 id: sot:meari/fonts
-title: Canonical fonts, licensing and delivery (pinned Noto downloads, Native TTF / Web WOFF2)
+title: "Canonical fonts, licensing and delivery (pinned Noto downloads, Native TTF / Web WOFF2)"
 status: active
 verify: cargo test -p meari --lib fonts; cargo test -p meari-native --test font_catalog; cargo test -p meari-native --lib fonts; cargo xtask visual-test
 created: 2026-10-30
