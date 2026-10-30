@@ -19,6 +19,7 @@ updated: 2026-10-30T06:50:59Z
 - 루트 `[patch.crates-io]`를 지운다. meari-builder가 생성하던 앱 Cargo.toml의 `[patch]`도 지운다(meari-native가 path로 포크를 끌어온다).
 - 게시 대상: meari-platform, meari, meari-dom, meari-paint, meari-html, meari-shell, meari-native, meari-builder, meari-cli, meari-native-tools. meari-visual, meari-demo, xtask는 `publish = false` 유지.
 - `[workspace.package]`에 version, edition, license, repository를 모으고 1st-party 크레이트가 상속한다.
+- 린트 예외(원 님 승인 대기): 수정 없이 가져온 `meari-html`, `meari-shell`의 `src/`만 lint-structure 파일 길이·OS cfg 규칙에서 제외한다. 근거: `window.rs` 879줄과 android/ios/macOS winit 확장 트레이트의 컴파일 타임 cfg 19곳은 런타임 `CurrentOs`로 옮길 수 없고, 고치면 원본 대비 포크가 된다. 조건: `VENDORED.sha256`(crates.io `.crate` sha256과 rev `92b11f1` 기록, `src/` 전 파일 해시)과 일치하고 미등재 파일이 없을 때만 예외. 불일치는 `vendored drift` 위반으로 `--strict`를 실패시키고 예외도 풀린다. `scripts/vendored-upstream-diff.sh`가 crates.io 원본과 다시 대조한다. 원본을 고쳐야 하면 meari-dom처럼 포크로 전환하고 매니페스트를 지운다.
 
 ## Consequences
 
