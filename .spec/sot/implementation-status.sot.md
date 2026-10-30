@@ -20,6 +20,20 @@ Evidence: `cargo xtask visual-test` (Native blitz/vello_cpu offscreen vs headles
 Fixtures in `crates/meari-visual/fixtures/{supported,gaps}`. Last run 2026-10-30: 48 MATCH, 0 MISMATCH, 0 KNOWN-GAP (48 fixtures).
 This is automated pixel comparison only; **no human visual check, no Windows, no real wasm-bindgen glue run**.
 
+### CI (GitHub Actions, `.github/workflows/ci.yml`)
+
+2026-10-30에 추가했고 **아직 한 번도 실행되지 않았다**(저장소 remote 없음, push 안 함). 첫 실행 전까지 아래는 구성일 뿐 검증 결과가 아니다.
+
+| 잡 | 트리거 | 게이트 | PixelGate |
+|---|---|---|---|
+| Linux `ubuntu-24.04` | PR, main push, 수동 | fmt, clippy -D warnings, test, lint-structure, spec-check, visual-test | Strict |
+| Windows `windows-2022` | PR, main push, 수동 | clippy, test, visual-test | Advisory |
+| macOS `macos-15` (arm64) | main push, 수동만(비용) | clippy, test, visual-test | Advisory |
+
+모든 OS에서 렌더 실패(ERROR)와 레이아웃 불일치(LAYOUT-MISMATCH)는 실패다. 허용치는 픽스처의 `.tolerance`만 쓰고 CI에서 바꾸지 않는다.
+
+macOS 러너의 한계: macOS 실기기가 없어 GitHub 호스티드 가상 머신으로 대체한다. 이 잡은 오프스크린 CPU 렌더와 헤드리스 Chrome 비교만 검증한다. 실제 창(winit), GL, Retina 배율, 입력·접근성, 앱 번들 실행은 검증하지 않으며 macOS용 GL 부트스트랩 어댑터는 원래 없다. `#[ignore]` 테스트는 어느 OS에서도 돌지 않는다([[guide:meari/ignored-tests]]). Linux Strict 기준선은 이 박스에서 52 MATCH로 측정됐지만 러너의 시스템 폰트·Chrome 버전이 달라 첫 실행에서 차이가 날 수 있다. 차이가 나면 허용치를 올리지 말고 원인을 기록한다.
+
 ### Tailwind
 
 | Feature | Status | Evidence |
