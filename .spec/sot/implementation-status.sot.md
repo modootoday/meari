@@ -64,6 +64,7 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | input `defaultValue` | 구현됨 | app-form |
 | input placeholder (`::placeholder` color) | 구현됨 (meari-native projects `::placeholder{color}` onto the host as `text-decoration-color`, UA default #757575; meari-paint lays out the attribute with the editor's style when empty). Limits: only `color` from `::placeholder` (no font/opacity), placeholder layout uses system fonts only (no `@font-face`) | input-placeholder (0.349%, glyph AA), tests/pages/input_placeholder.rs |
 | input intrinsic width | 구현됨 (Chromium size=20, 0.244%) | supported/input-intrinsic-width |
+| inline content width rounding (1/64px LayoutUnit, Chrome FromFloatCeil) | 구현됨 (vendored blitz-dom in crates/meari-dom, [[adr:meari/20261030035135]]) | app-list, layout_unit_tests |
 | `<progress>` | 구현 (native/fallback 두 모양, 0.000%) | supported/html-progress, tests/rendering/html_progress.rs |
 
 
@@ -74,7 +75,7 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 | app-card-dashboard | supported | MATCH | 0.608% | 0.800% | tests/environment/dom.rs |
 | app-counter | supported | MATCH | 0.124% | 0.500% | visual-test pixel diff |
 | app-form | supported | MATCH | 0.867% | 1.000% | visual-test pixel diff |
-| app-list | supported | MATCH | 0.350% | 0.500% | visual-test pixel diff |
+| app-list | supported | MATCH | 0.329% | 0.500% | visual-test pixel diff |
 | button-input | supported | MATCH | 0.311% | 0.500% | visual-test pixel diff |
 | dark-scheme | supported | MATCH | 0.000% | 0.500% | visual-test pixel diff |
 | dark-tw-dark-mode | supported | MATCH | 0.117% | 0.500% | visual-test pixel diff |
