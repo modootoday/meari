@@ -1,44 +1,30 @@
-//! Generic CSS families (`sans-serif`, `serif`) for native documents.
+//! Generic CSS families (`sans-serif`, `serif`, `monospace`) for native documents.
 //!
-//! Canonical profile (default): the bundled OFL faces come first, Pretendard Variable /
-//! Pretendard JP for `sans-serif` and Source Serif 4 then an installed Source Han Serif KR /
-//! Noto Serif KR for `serif`, then the Chromium Linux defaults below, then the OS host fallbacks chosen by the
-//! `meari-platform` adapter.
+//! Both profiles register the pinned Noto faces from the verified font cache
+//! (`infrastructure::fonts`, never compiled in) and put them first: Noto Sans (+ KR, JP,
+//! Arabic, Hebrew, Devanagari, Thai) for `sans-serif`, Noto Serif (+ KR, JP, Naskh Arabic, ...)
+//! for `serif`, Noto Sans Mono for `monospace`.
 //!
-//! Chrome comparison profile (`meari-visual` only): Chromium does not ask fontconfig for
-//! generics; it uses per-platform preferences (Linux: Arial / Times New Roman) which
-//! fontconfig substitutes with metric-compatible host faces (Arimo / Liberation, Tinos). Those
-//! faces are never bundled; this profile exists only so a pixel comparison against an
-//! unmodified Chrome picks the same host faces.
-use meari_platform::{OsFamily, PlatformHost};
+//! Canonical profile (default): the OS host fallbacks of the `meari-platform` adapter follow the
+//! Noto faces, so an app whose cache was never fetched still renders (a single stderr line names
+//! `meari fonts fetch`).
+//! Chrome comparison profile (`meari-visual` only): no host names at all; the harness rewrites
+//! the same generics to the same Noto families on the Chrome side, so no system face is used.
+use meari::domain::design::fonts::{
+    MANIFEST, MONO_FAMILIES, SANS_FAMILIES, SERIF_FAMILIES, UI_SCRIPTS,
+};
+use meari_platform::PlatformHost;
 use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, GenericFamily, SourceCache};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, OnceLock};
 
-/// Chromium Linux defaults followed by fontconfig's metric-compatible substitutes.
-const CHROMIUM: &[(GenericFamily, &[&str])] = &[
-    (
-        GenericFamily::SansSerif,
-        &["Arial", "Arimo", "Liberation Sans"],
-    ),
-    (
-        GenericFamily::Serif,
-        &["Times New Roman", "Tinos", "Liberation Serif"],
-    ),
+const GENERICS: [GenericFamily; 3] = [
+    GenericFamily::SansSerif,
+    GenericFamily::Serif,
+    GenericFamily::Monospace,
 ];
 
 static CHROME_COMPARISON: AtomicBool = AtomicBool::new(false);
-static COMPARISON_FONTS: Mutex<Vec<&'static [u8]>> = Mutex::new(Vec::new());
-
-/// Registers a font blob in every later document of this process (comparison harness only:
-/// `meari-visual` embeds its environment-pin face so no run depends on a host install).
-pub fn register_comparison_font(bytes: &'static [u8]) {
-    let mut fonts = COMPARISON_FONTS.lock().unwrap_or_else(|e| e.into_inner());
-    if !fonts.iter().any(|f| std::ptr::eq(*f, bytes)) {
-        fonts.push(bytes);
-    }
-}
-
 /// Switches every later document of this process to the Chrome comparison profile.
 pub fn use_chrome_comparison_profile() {
     CHROME_COMPARISON.store(true, Ordering::SeqCst);
@@ -55,27 +41,16 @@ fn build(canonical: bool) -> parley::FontContext {
         system_fonts: true,
     });
     collection.register_fonts(Blob::new(Arc::new(blitz_dom::BULLET_FONT) as _), None);
-    register_bundled(&mut collection);
-    for bytes in COMPARISON_FONTS
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .iter()
-    {
+    for bytes in cached_faces() {
         collection.register_fonts(Blob::new(Arc::new(*bytes) as _), None);
     }
     let host = meari_platform::current();
-    for (generic, chromium) in CHROMIUM {
-        let mut names: Vec<&str> = Vec::new();
+    for generic in GENERICS {
+        let mut names = noto_names(generic);
         if canonical {
-            names.extend(canonical_names(*generic));
+            names.extend(host_names(&host, generic));
         }
-        if canonical || host.os_family() == OsFamily::Unix {
-            names.extend(chromium.iter().copied());
-        }
-        if canonical {
-            names.extend(host_names(&host, *generic));
-        }
-        prefer(&mut collection, *generic, &names);
+        prefer(&mut collection, generic, &names);
     }
     parley::FontContext {
         source_cache: SourceCache::new_shared(),
@@ -83,7 +58,16 @@ fn build(canonical: bool) -> parley::FontContext {
     }
 }
 
-/// OS host fallbacks from the platform adapter, after the canonical and Chromium names.
+fn noto_names(generic: GenericFamily) -> Vec<&'static str> {
+    match generic {
+        GenericFamily::SansSerif => SANS_FAMILIES.to_vec(),
+        GenericFamily::Serif => SERIF_FAMILIES.to_vec(),
+        GenericFamily::Monospace => MONO_FAMILIES.to_vec(),
+        _ => Vec::new(),
+    }
+}
+
+/// OS host fallbacks from the platform adapter, after the Noto names (canonical profile only).
 fn host_names(host: &impl PlatformHost, generic: GenericFamily) -> Vec<&'static str> {
     let fonts = host.font_fallbacks();
     match generic {
@@ -93,32 +77,33 @@ fn host_names(host: &impl PlatformHost, generic: GenericFamily) -> Vec<&'static 
     }
 }
 
-#[cfg(feature = "bundled-fonts")]
-fn canonical_names(generic: GenericFamily) -> Vec<&'static str> {
-    use meari::domain::design::fonts::{SANS_FAMILIES, SERIF_FAMILIES};
-    match generic {
-        GenericFamily::SansSerif => SANS_FAMILIES.to_vec(),
-        GenericFamily::Serif => SERIF_FAMILIES.to_vec(),
-        _ => Vec::new(),
-    }
+/// Verified files of the default font cache, loaded once per process. Every cached pin is
+/// registered; a missing or damaged canonical (Latin/Hangul/Japanese) file prints one line
+/// naming `meari fonts fetch` and the document falls back to host fonts. Never downloads.
+fn cached_faces() -> &'static [&'static [u8]] {
+    static FACES: OnceLock<Vec<&'static [u8]>> = OnceLock::new();
+    FACES.get_or_init(|| {
+        let cache = crate::infrastructure::fonts::FontCache::default_location();
+        let mut faces = Vec::new();
+        let mut problem = None;
+        for pin in MANIFEST {
+            match cache.load(pin) {
+                Ok(bytes) => faces.push(&*Box::leak(bytes.into_boxed_slice())),
+                Err(e) if UI_SCRIPTS.contains(&pin.script) => {
+                    problem.get_or_insert(e);
+                }
+                Err(_) => {}
+            }
+        }
+        if let Some(e) = problem {
+            eprintln!(
+                "meari: canonical Noto fonts unavailable in {} ({e}); using host fonts until `meari fonts fetch` is run",
+                cache.root().display()
+            );
+        }
+        faces
+    })
 }
-
-#[cfg(not(feature = "bundled-fonts"))]
-fn canonical_names(_: GenericFamily) -> Vec<&'static str> {
-    Vec::new()
-}
-
-#[cfg(feature = "bundled-fonts")]
-fn register_bundled(collection: &mut Collection) {
-    use meari::{application::fonts::face_bytes, domain::design::fonts::UI_FACES};
-    for face in UI_FACES {
-        let bytes: &'static [u8] = face_bytes(face);
-        collection.register_fonts(Blob::new(Arc::new(bytes) as _), None);
-    }
-}
-
-#[cfg(not(feature = "bundled-fonts"))]
-fn register_bundled(_: &mut Collection) {}
 
 /// Puts the installed names, in order, in front of the generic family; others keep order.
 fn prefer(collection: &mut Collection, generic: GenericFamily, names: &[&str]) {
@@ -144,46 +129,33 @@ fn prefer(collection: &mut Collection, generic: GenericFamily, names: &[&str]) {
 mod tests {
     use super::*;
 
-    #[cfg(feature = "bundled-fonts")]
     #[test]
-    fn canonical_generics_resolve_to_bundled_faces_first() {
-        let mut context = build(true);
-        let collection = &mut context.collection;
-        let pretendard = collection.family_id("Pretendard Variable").unwrap();
-        let jp = collection.family_id("Pretendard JP").unwrap();
-        let serif = collection.family_id("Source Serif 4 Variable").unwrap();
-        let sans = collection
-            .generic_families(GenericFamily::SansSerif)
-            .collect::<Vec<_>>();
-        assert_eq!(&sans[..2], &[pretendard, jp]);
-        let serifs = collection
-            .generic_families(GenericFamily::Serif)
-            .collect::<Vec<_>>();
-        assert_eq!(serifs[0], serif);
-        // The Arial-family host fallback, when installed, follows the canonical faces.
-        if let Some(arial) = ["Arial", "Arimo", "Liberation Sans"]
-            .iter()
-            .find_map(|name| collection.family_id(name))
-        {
-            assert_eq!(sans[2], arial);
-        }
-    }
-
-    #[test]
-    fn chrome_comparison_profile_prefers_the_chromium_face_when_installed() {
-        let mut context = build(false);
-        let collection = &mut context.collection;
-        let Some(expected) = ["Arial", "Arimo", "Liberation Sans"]
-            .iter()
-            .find_map(|name| collection.family_id(name))
-        else {
-            return; // no metric-compatible face installed: generics stay as fontconfig says
-        };
-        if meari_platform::current().os_family() == OsFamily::Unix {
-            assert_eq!(
-                collection.generic_families(GenericFamily::SansSerif).next(),
-                Some(expected)
-            );
+    fn both_profiles_resolve_generics_to_noto_first() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../runtime/fonts");
+        crate::infrastructure::fonts::FontCache::at(&root)
+            .ensure(&["latin", "hangul", "kana"])
+            .unwrap();
+        for canonical in [true, false] {
+            let mut context = build(canonical);
+            let collection = &mut context.collection;
+            for (generic, first) in [
+                (
+                    GenericFamily::SansSerif,
+                    ["Noto Sans", "Noto Sans KR", "Noto Sans JP"],
+                ),
+                (
+                    GenericFamily::Serif,
+                    ["Noto Serif", "Noto Serif KR", "Noto Serif JP"],
+                ),
+                (
+                    GenericFamily::Monospace,
+                    ["Noto Sans Mono", "Noto Sans KR", "Noto Sans JP"],
+                ),
+            ] {
+                let ids = first.map(|name| collection.family_id(name).unwrap());
+                let resolved = collection.generic_families(generic).collect::<Vec<_>>();
+                assert_eq!(&resolved[..3], &ids, "{generic:?}");
+            }
         }
     }
 }

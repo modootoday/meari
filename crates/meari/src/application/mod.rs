@@ -6,8 +6,6 @@ pub mod binding;
 pub mod builder;
 pub mod component_state;
 pub mod dom;
-#[cfg(feature = "bundled-fonts")]
-pub mod fonts;
 pub use self::bundling::hmr;
 pub mod hook_values;
 pub mod host_callbacks;

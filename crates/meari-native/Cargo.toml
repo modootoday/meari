@@ -17,16 +17,14 @@ include = [
 ]
 
 [features]
-default = ["bundled-fonts"]
-bundled-fonts = ["meari/bundled-fonts"]
+default = []
 test-support = ["window"]
 gl = ["meari-platform/gl", "dep:anyrender_skia", "dep:skia-safe", "dep:glow"]
 window = ["meari-platform/window", "dep:blitz-shell", "dep:winit", "dep:accesskit_xplat", "anyrender_vello_cpu/softbuffer_window_renderer"]
 
 [[test]]
-name = "bundled_font_catalog"
-path = "tests/pages/bundled_font_catalog.rs"
-required-features = ["bundled-fonts"]
+name = "font_catalog"
+path = "tests/pages/font_catalog.rs"
 
 [dependencies]
 meari = { workspace = true }
@@ -57,6 +55,11 @@ cssparser = "=0.38.0"
 roxmltree = "=0.21.1"
 usvg = "=0.48.1"
 ttf-parser = "=0.25.1"
+fontcull-klippa = "=0.1.2"
+fontcull-skrifa = "=0.39.2"
+fontcull-read-fonts = "=0.38.0"
+fontcull-write-fonts = "=0.44.3"
+ttf2woff2 = { version = "=0.14.1", default-features = false }
 image = { version = "=0.25.10", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
 style = { package = "stylo", version = "=0.22.0" }
 style_traits = { package = "stylo_traits", version = "=0.22.0" }

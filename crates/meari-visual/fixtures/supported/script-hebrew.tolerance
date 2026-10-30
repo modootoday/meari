@@ -1,0 +1,2 @@
+max_ratio=0.008
+reason=glyph rasterization only (vello_cpu vs Skia anti-aliasing); same face (Noto Sans Hebrew, RTL + European digits via Noto Sans; Chrome and native both from the pinned cached TTF), same shaping and direction, ink bbox equal (x 103-443 y 33-56). Measured 0.557% on Linux 2026-10-30.

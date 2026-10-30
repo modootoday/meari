@@ -44,7 +44,7 @@ pub(super) fn char_widths(data: &[u8], index: u32, size: f32, zero: f32) -> Opti
 pub(super) fn intrinsic(avg: f32, max: f32) -> f32 {
     let base = (avg * SIZE * 64.0).ceil() / 64.0; // LayoutUnit::FromFloatCeil
     // The text control then snaps up to whole pixels (measured against Chrome on 15
-    // family/size pairs: Noto Sans, Arimo, Tinos, DejaVu Sans, Pretendard at 13/16/17.5px).
+    // family/size pairs: Noto Sans, Arimo, Tinos, DejaVu Sans, Pretendard (former bundled face, removed) at 13/16/17.5px).
     (if max > 0.0 { base + max - avg } else { base }).ceil()
 }
 

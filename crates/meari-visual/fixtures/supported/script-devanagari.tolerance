@@ -1,0 +1,2 @@
+max_ratio=0.008
+reason=glyph rasterization only (vello_cpu vs Skia anti-aliasing); same face (Noto Sans Devanagari, conjuncts and matras (क्ष, त्र, न्दी); Chrome and native both from the pinned cached TTF), same shaping and direction, ink bbox equal (x 24-249 y 26-55). Measured 0.518% on Linux 2026-10-30.

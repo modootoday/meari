@@ -6,6 +6,7 @@ mod controlled_focus;
 mod disclosure;
 pub mod document;
 pub mod engine;
+pub mod fonts;
 pub use self::environment::file_picker;
 #[cfg(feature = "gl")]
 pub mod gl;

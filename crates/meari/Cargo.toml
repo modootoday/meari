@@ -10,7 +10,6 @@ readme = "../../README.md"
 include = [
     "src/**/*.rs", "tests/**/*.rs", "fixtures/**/*.rs", "fixtures/**/*.tsx",
     "fixtures/**/*.json", "fixtures/**/*.md", "assets/**/*.svg", "assets/**/LICENSE*",
-    "assets/fonts/**/*.ttf", "assets/fonts/**/*.otf", "assets/fonts/**/*.woff2", "assets/fonts/**/LICENSE*",
     "Cargo.toml", "LICENSE-MIT", "LICENSE-APACHE", "NOTICE",
     "!**/.spec/**", "!**/target/**", "!**/node_modules/**", "!**/.cache/**",
     "!**/downloads/**", "!**/captures/**", "!**/screenshots/**", "!**/cache/**",
@@ -21,7 +20,6 @@ include = [
 crate-type = ["rlib", "cdylib"]
 
 [features]
-bundled-fonts = []
 wasm = ["dep:wasm-bindgen", "dep:web-sys"]
 
 [dependencies]
@@ -204,10 +202,6 @@ path = "tests/platform/assets.rs"
 [[test]]
 name = "hmr"
 path = "tests/platform/hmr.rs"
-
-[[test]]
-name = "font_catalog"
-path = "tests/platform/font_catalog.rs"
 
 [[test]]
 name = "icons"

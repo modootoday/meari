@@ -6,13 +6,14 @@ their separately reviewed source revision and content hashes.
 Dependencies retain their own copyrights and licenses. Cargo.lock records
 resolved package versions; no dependency source is relicensed by this notice.
 
-The bundled font catalog (Pretendard Variable, Pretendard JP Regular,
-Source Serif 4 Variable) contains unchanged upstream files under SIL OFL-1.1
-only. Copyright holders, Reserved Font Names and sources are collected in
-THIRD_PARTY_NOTICES.md; complete original notices stay beside the fonts in
-assets/fonts. Font bytes and notices are content-pinned; they are not
-relicensed under this project's dual license. Catalog integrity does not
-certify shaping or fallback parity.
+No font files are committed or compiled into any binary. The canonical Noto
+fonts (Noto Sans/Serif, KR, JP and per-script families, SIL OFL-1.1, no
+Reserved Font Name) are downloaded at a pinned google/fonts revision, verified
+by length and sha256, and cached under runtime/fonts together with each
+family's unchanged OFL.txt; Web WOFF2 subsets are generated from that cache.
+Sources and copyright holders are listed in THIRD_PARTY_NOTICES.md. Font bytes
+are not relicensed under this project's dual license. Catalog integrity does
+not certify shaping or fallback parity.
 
 The native CSS engine includes Stylo and Stylo traits, whose published package
 metadata declares MPL-2.0. This project's dual license does not replace it.
