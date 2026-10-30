@@ -1,7 +1,9 @@
 //! Per-fixture run and summary report (report.md, index.html side-by-side sheet).
 use crate::host::PixelGate;
 use crate::render::{native, style, web};
-use crate::{compare, fixtures::Fixture, fixtures::Kind, sheet};
+pub mod sheet;
+
+use crate::{compare, fixtures::Fixture, fixtures::Kind};
 use std::path::Path;
 
 pub struct Row {

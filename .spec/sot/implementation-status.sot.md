@@ -26,7 +26,7 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 
 | 잡 | 트리거 | 게이트 | PixelGate |
 |---|---|---|---|
-| Linux `ubuntu-24.04` | PR, main push, 수동 | fmt, clippy -D warnings, test, lint-structure, spec-check, visual-test | Strict |
+| Linux `ubuntu-24.04` | PR, main push, 수동 | fmt, clippy -D warnings, test, lint-structure --strict(위반 0, OS cfg는 meari-platform·테스트 코드에만), spec-check, visual-test | Strict |
 | Windows `windows-2022` | PR, main push, 수동 | clippy, test, visual-test | Advisory |
 | macOS `macos-15` (arm64) | main push, 수동만(비용) | clippy, test, visual-test | Advisory |
 
