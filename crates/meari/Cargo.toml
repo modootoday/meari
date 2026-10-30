@@ -1,11 +1,10 @@
 [package]
 name = "meari"
-version = "0.1.0"
-edition = "2024"
-publish = false
-license = "MIT OR Apache-2.0"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 description = "Meari UI framework core: typed UI IR, Rust/TSX conversion and WASM adapters"
-repository = "https://github.com/modootoday/meari"
+repository.workspace = true
 readme = "../../README.md"
 include = [
     "src/**/*.rs", "tests/**/*.rs", "fixtures/**/*.rs", "fixtures/**/*.tsx",

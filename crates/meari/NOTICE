@@ -26,15 +26,22 @@ Collected upstream examples, internal research, generated captures, local
 compiler executables and runtime downloads are not public source assets.
 Library-authored fixtures and canonical SVG icons remain part of the source.
 
-packages/meari-paint retains the published blitz-paint 0.3.0-beta.4 Rust source
+crates/meari-paint (published as meari-paint) retains the blitz-paint 0.3.0-beta.4 Rust source
 from DioxusLabs/blitz revision 92b11f1bd8ab7975411328b0406a95a09445b4e7.
 Its original MIT OR Apache-2.0 license texts are included in that directory.
 Meari's vector SVG tiling and checked-frame modifications are identified in
 the changed source files and its README; this is a local implementation fork.
 
-crates/meari-dom retains the published blitz-dom 0.3.0-beta.4 Rust source
+crates/meari-dom (published as meari-dom) retains the blitz-dom 0.3.0-beta.4 Rust source
 from DioxusLabs/blitz revision 92b11f1bd8ab7975411328b0406a95a09445b4e7
 (Copyright the Blitz/DioxusLabs contributors). Its original MIT OR Apache-2.0
 license texts are included in that directory. Meari's 1/64px inline-width
 rounding, platform-query and file-layout modifications are identified in the
 changed source files and its README; this is a local implementation fork.
+
+crates/meari-html and crates/meari-shell (published as meari-html and
+meari-shell) retain the published blitz-html and blitz-shell 0.3.0-beta.4
+Rust source from DioxusLabs/blitz revision
+92b11f1bd8ab7975411328b0406a95a09445b4e7 (Copyright the Blitz/DioxusLabs
+contributors), unmodified except that their manifests depend on meari-dom and
+meari-paint by path. MIT OR Apache-2.0 license texts are in each directory.

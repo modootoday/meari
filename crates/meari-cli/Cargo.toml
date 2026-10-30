@@ -1,12 +1,12 @@
 [package]
 workspace = "../.."
 name = "meari-cli"
-version = "0.1.0"
-edition = "2024"
-publish = false
-license = "MIT OR Apache-2.0"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
 description = "Unified `meari` command line: convert, native, build"
-repository = "https://github.com/modootoday/meari"
+repository.workspace = true
+readme = "README.md"
 
 [features]
 window = ["meari-native/window"]
