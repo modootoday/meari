@@ -15,7 +15,20 @@ fn workspace(base: &Path, name: &str) -> std::path::PathBuf {
         "[package]\nname = \"xtask\"\n",
     )
     .unwrap();
-    root.canonicalize().unwrap()
+    plain(root.canonicalize().unwrap())
+}
+
+/// `canonicalize` resolves symlinks (macOS `/var` -> `/private/var`, as `current_dir` reports
+/// it) but on Windows also adds the verbatim `\\?\` prefix, which `current_dir` and
+/// `CARGO_MANIFEST_DIR` never carry. The binary must print the ordinary `D:\...` form, so
+/// compare against that: strip the prefix only for drive paths (`\\?\UNC\` stays as is).
+fn plain(path: std::path::PathBuf) -> std::path::PathBuf {
+    let stripped = path
+        .to_str()
+        .and_then(|text| text.strip_prefix(r"\\?\"))
+        .filter(|rest| rest.as_bytes().get(1) == Some(&b':'))
+        .map(std::path::PathBuf::from);
+    stripped.unwrap_or(path)
 }
 
 fn reported(cwd: &Path, manifest_dir: Option<&Path>) -> String {
