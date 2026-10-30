@@ -37,7 +37,7 @@ rel:
 
 - Location: `$MEARI_FONT_CACHE`, else the nearest ancestor `runtime/fonts`, else
   `./runtime/fonts` (`FontCache::default_location`). Layout: `noto/<rev12>/<file>` plus
-  `noto/<rev12>/<dir>-OFL.txt`; Web slices in `web/<rev12>-s4/`.
+  `noto/<rev12>/<dir>-OFL.txt`; Web slices in `web/<rev12>-s5/`.
 - **Explicit download only**: `meari fonts fetch [all|latin,hangul,kana,arabic,hebrew,devanagari,thai]`
   (or `cargo xtask fonts-fetch …`) downloads missing files with `curl -fsSL`, verifies length and
   sha256 and writes atomically. A valid cached file is used offline.
@@ -53,17 +53,23 @@ rel:
 ## Web delivery (WOFF2 subsets generated from the cache)
 
 - `meari_native::infrastructure::fonts::web_slices(cache, pin)` subsets each cached TTF with
-  fontcull-klippa 0.1.2 (default layout features of every script), encodes WOFF2 with
-  ttf2woff2 0.14.1 (pure Rust) and writes atomically to `web/<rev12>-s4/<Name>.<n>.woff2` plus
+  skera 0.9.0 (fontations' subsetter, formerly klippa; default layout features of every script), encodes WOFF2 with
+  ttf2woff2 0.14.1 (pure Rust) and writes atomically to `web/<rev12>-s5/<Name>.<n>.woff2` plus
   `<Name>.index` (`name\tsha256\tunicode-range`). Slicing: code points < U+1100 in slice 0, the
   rest in chunks of 2,000. Union of the slices = the TTF cmap (test
   `web_slices_cover_exactly_the_native_cmap`). Full cache: 66 files, 27.9 MB.
-- Subsetter workarounds (generator `s4`):
-  - klippa panics (hvar.rs:102) on an HVAR with an implicit advance map (Noto Sans KR).
+- Subsetter workarounds (generator `s5`):
+  - fontcull-klippa 0.1.2 (generator `s4`) did not collect GPOS variation indices, so subsetting
+    a variable GPOS with device tables failed and the table was silently dropped: the Latin,
+    Greek, Cyrillic and some CJK slices had no kerning or mark positioning on the Web side.
+    skera 0.9.0 collects them (HarfBuzz shaping of the slice equals the source TTF at wght
+    400/700/900), and `subset` now fails if GDEF/GPOS/GSUB present in the source is missing
+    from a slice.
+  - fontcull-klippa 0.1.2 panicked (hvar.rs:102) on an HVAR with an implicit advance map (Noto Sans KR).
     `explicit_hvar` rewrites that map as an equivalent explicit format-0 map first. HVAR cannot
     be dropped: Noto's gvar has no phantom-point advance deltas, so every weight would get the
     default-instance advances (measured: 'A' 574 vs 607.5 units at wght 400).
-  - vhea/vmtx/VVAR/VORG are dropped: klippa leaves `vhea.numberOfVMetrics` above the subset
+  - vhea/vmtx/VVAR/VORG are dropped (kept from s4): klippa 0.1.2 left `vhea.numberOfVMetrics` above the subset
     glyph count, Chrome's OTS rejects the slice and silently falls back to a host font
     (observed: tiny kana in canonical-font). Horizontal text only.
 - `prepare_font_catalog(cache, req)`: `css` (WOFF2 slices, `font-display:swap`) for Web,
@@ -92,7 +98,7 @@ so the fixtures omit it. Extending scripts: add `Pin` rows from
 ## Visual results (Linux, 2026-10-30)
 
 - 52 fixtures: 52 MATCH. `generic-font-family` 0.704% (≤1.0%).
-- **canonical-font 2.951% ≤ 3.1%** (raised from 1.7%, user approval 2026-10-30 11:11 KST).
+- **canonical-font 2.658% ≤ 3.1%** with s5 slices (GPOS kept; 2.951% with s4 slices that had lost GPOS; limit raised from 1.7%, user approval 2026-10-30 11:11 KST).
   Evidence: per-line ink bbox equal (±1 px); sub-pixel sweep best shift (0,0); ink coverage
   within ±2%; hinting on/off 2.951→2.943%; Chrome subpixel/LCD/hinting flags no gain; a
   brightness LUT fit removes only 2%. Chrome against itself shifted 0.25 px gives 2.916%, so

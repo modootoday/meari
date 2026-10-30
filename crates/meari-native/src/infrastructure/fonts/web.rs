@@ -6,7 +6,7 @@ use meari::domain::design::fonts::{Pin, REVISION};
 use std::path::PathBuf;
 
 /// Bumped whenever the slicing or encoding below changes, so stale outputs are never reused.
-const GENERATOR: &str = "s4";
+const GENERATOR: &str = "s5";
 /// Code points per slice after the first (Latin and friends below U+1100 always form slice 0).
 const SLICE_CODEPOINTS: usize = 2000;
 
@@ -99,18 +99,19 @@ fn read_index(dir: &std::path::Path, index: &std::path::Path) -> Result<Vec<WebS
     Ok(out)
 }
 
-/// Subset to `unicodes` with the default layout features of every script. HVAR must survive:
+/// Subset to `unicodes` with skera (keeps variable GPOS, which fontcull-klippa 0.1.2 silently
+/// dropped) and the default layout features of every script. HVAR must survive:
 /// Noto's gvar carries no phantom-point advance deltas, so without HVAR every weight would get
-/// the default-instance advances. klippa 0.1.2 panics (hvar.rs:102) on an HVAR with an implicit
+/// the default-instance advances. fontcull-klippa 0.1.2 panicked (hvar.rs:102) on an HVAR with an implicit
 /// advance map (Noto Sans KR), so [`explicit_hvar`] first writes that map out explicitly.
-/// Vertical metrics (vhea/vmtx/VVAR/VORG) are dropped: klippa leaves vhea.numberOfVMetrics
+/// Vertical metrics (vhea/vmtx/VVAR/VORG) are dropped: klippa 0.1.2 left vhea.numberOfVMetrics
 /// above the subset glyph count, which Chrome's OTS sanitizer rejects (the whole slice is then
 /// skipped and Chrome falls back to a host font); the harness only lays out horizontal text.
 fn subset(font: &[u8], unicodes: &[u32]) -> Result<Vec<u8>, String> {
-    use fontcull_klippa::{DEFAULT_LAYOUT_FEATURES, Plan, SubsetFlags, subset_font};
-    use fontcull_read_fonts::collections::IntSet;
-    use fontcull_skrifa::{FontRef, GlyphId, Tag};
-    use fontcull_write_fonts::types::NameId;
+    use read_fonts_subset::collections::IntSet;
+    use skera::{DEFAULT_LAYOUT_FEATURES, Plan, SubsetFlags, subset_font};
+    use skrifa_subset::{FontRef, GlyphId, Tag};
+    use write_fonts::types::NameId;
     let font = explicit_hvar(font)?;
     let font = FontRef::new(&font).map_err(|e| format!("{e:?}"))?;
     let plan = Plan::new(
@@ -131,8 +132,8 @@ fn subset(font: &[u8], unicodes: &[u32]) -> Result<Vec<u8>, String> {
 /// replaced by the equivalent explicit format-0 map. Fonts without HVAR, or with an explicit
 /// map already, come back unchanged.
 fn explicit_hvar(font: &[u8]) -> Result<Vec<u8>, String> {
-    use fontcull_read_fonts::{FontRef, TableProvider};
-    use fontcull_write_fonts::{
+    use read_fonts_subset::{FontRef, TableProvider};
+    use write_fonts::{
         FontBuilder,
         from_obj::ToOwnedTable,
         tables::{
@@ -214,5 +215,28 @@ mod tests {
             super::ranges(&[0x20, 0x21, 0x22, 0x41, 0xAC00]),
             "U+20-22,U+41,U+AC00"
         );
+    }
+
+    /// The Latin slice keeps the variable GPOS (kerning with device tables): fontcull-klippa
+    /// 0.1.2 silently dropped it, so Chrome laid Latin text out without kerning.
+    #[test]
+    fn latin_slice_keeps_variable_gpos() {
+        use read_fonts_subset::{FontRef, types::Tag};
+        let cache =
+            super::FontCache::at(concat!(env!("CARGO_MANIFEST_DIR"), "/../../runtime/fonts"));
+        let pins = cache.ensure(&["latin"]).unwrap();
+        assert!(!pins.is_empty());
+        for (pin, _) in pins {
+            let source = cache.load(&pin).unwrap();
+            let group = &super::groups(&source).unwrap()[0];
+            let out = super::subset(&source, group).unwrap();
+            let gpos = Tag::new(b"GPOS");
+            assert!(FontRef::new(&source).unwrap().table_data(gpos).is_some());
+            assert!(
+                FontRef::new(&out).unwrap().table_data(gpos).is_some(),
+                "{}",
+                pin.file
+            );
+        }
     }
 }

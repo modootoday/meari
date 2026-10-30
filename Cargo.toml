@@ -26,13 +26,13 @@ debug = false
 
 # Web font slicing and cache verification run in tests and the visual test; unoptimized they
 # take minutes on the CJK faces.
-[profile.dev.package.fontcull-skrifa]
+[profile.dev.package."skrifa@0.49.0"]
 opt-level = 3
-[profile.dev.package.fontcull-klippa]
+[profile.dev.package.skera]
 opt-level = 3
-[profile.dev.package.fontcull-read-fonts]
+[profile.dev.package."read-fonts@0.46.0"]
 opt-level = 3
-[profile.dev.package.fontcull-write-fonts]
+[profile.dev.package.write-fonts]
 opt-level = 3
 [profile.dev.package.ttf2woff2]
 opt-level = 3
