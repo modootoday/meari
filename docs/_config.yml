@@ -1,0 +1,24 @@
+# GitHub Pages can build this directory with Jekyll (classic build, no build step).
+# Theme: jekyll-theme-modootoday, pinned to a release tag.
+title: Meari
+description: "A Rust UI framework that renders one typed UI declaration natively and in the browser."
+url: https://modootoday.github.io
+baseurl: /meari
+lang: en
+permalink: pretty
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+remote_theme: modootoday/jekyll-theme-modootoday@v1.2.2
+plugins: [jekyll-remote-theme, jekyll-sitemap, jekyll-relative-links]
+modootoday:
+  color_scheme: auto
+  nav: main
+  edit_url: https://github.com/modootoday/meari/edit/main/docs/
+sass: { silence_deprecations: [import, global-builtin] }
+relative_links: { enabled: true }
+defaults:
+  - scope: { path: "" }
+    values: { layout: doc, lang: en }
+exclude: [Gemfile, Gemfile.lock, node_modules, vendor]
