@@ -188,7 +188,7 @@ impl WindowActions {
         }
         Ok(changed || transitioned)
     }
-    /// Only cursor setters have call-completion semantics instead of an OS observation.
+    /// Only cursor setters and resize starts have call-completion semantics instead of an OS observation.
     pub fn applied(&mut self, ticket: ActionTicket) -> Result<(), ActionError> {
         self.current(ticket.scope)?;
         let record = self
@@ -197,7 +197,10 @@ impl WindowActions {
             .find(|record| record.ticket == ticket)
             .ok_or(ActionError::StaleRequest)?;
         if record.status != ActionStatus::Issued
-            || !matches!(record.action, WindowAction::SetCursorVisible(_))
+            || !matches!(
+                record.action,
+                WindowAction::SetCursorVisible(_) | WindowAction::BeginResize(_)
+            )
         {
             return Err(ActionError::StaleRequest);
         }

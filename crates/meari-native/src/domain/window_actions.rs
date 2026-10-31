@@ -15,6 +15,22 @@ pub enum WindowAction {
     SetFullscreen(bool),
     /// Original window-local setter. Applied does not prove OS cursor visibility.
     SetCursorVisible(bool),
+    /// Starts an OS-driven interactive resize from the given edge, for apps that draw their own
+    /// title bar and borders. Call while the primary button is held (e.g. on pointer down).
+    /// Applied means the OS accepted the request; the resize itself is not observed.
+    BeginResize(ResizeDirection),
+}
+/// Window edge or corner an interactive resize starts from.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ResizeDirection {
+    East,
+    North,
+    NorthEast,
+    NorthWest,
+    South,
+    SouthEast,
+    SouthWest,
+    West,
 }
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ActionCapabilities {
@@ -28,7 +44,7 @@ impl ActionCapabilities {
             WindowAction::SetMinimized(_) => self.minimize,
             WindowAction::SetMaximized(_) => self.maximize,
             WindowAction::SetFullscreen(_) => self.borderless_fullscreen,
-            WindowAction::SetCursorVisible(_) => true,
+            WindowAction::SetCursorVisible(_) | WindowAction::BeginResize(_) => true,
         }
     }
 }
@@ -44,7 +60,7 @@ impl WindowObservation {
             WindowAction::SetMinimized(value) => self.minimized == Some(value),
             WindowAction::SetMaximized(value) => self.maximized == Some(value),
             WindowAction::SetFullscreen(value) => self.borderless_monitor_coverage == Some(value),
-            WindowAction::SetCursorVisible(_) => false,
+            WindowAction::SetCursorVisible(_) | WindowAction::BeginResize(_) => false,
         }
     }
 }

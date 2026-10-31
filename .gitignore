@@ -20,3 +20,4 @@
 **/*.dll
 **/*.onnx
 **/*.safetensors
+/.spec.local/
