@@ -5,14 +5,14 @@ exclude = ["verification/native-hmr"]
 resolver = "3"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/modootoday/meari"
 
 [workspace.dependencies]
-meari = { path = "crates/meari", version = "0.1.0" }
-meari-platform = { path = "crates/meari-platform", version = "0.1.0" }
+meari = { path = "crates/meari", version = "0.2.0" }
+meari-platform = { path = "crates/meari-platform", version = "0.2.0" }
 
 [profile.dev]
 debug = "line-tables-only"

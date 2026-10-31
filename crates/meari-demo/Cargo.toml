@@ -10,5 +10,5 @@ description = "Side-by-side demo: one TSX fixture in a meari-native window and i
 [dependencies]
 meari = { workspace = true }
 meari-platform = { workspace = true }
-meari-native = { path = "../meari-native", version = "0.1.0", features = ["window"] }
-meari-visual = { path = "../meari-visual", version = "0.1.0" }
+meari-native = { path = "../meari-native", version = "0.2.0", features = ["window"] }
+meari-visual = { path = "../meari-visual", version = "0.2.0" }

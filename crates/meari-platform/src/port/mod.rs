@@ -20,11 +20,14 @@ pub struct HostFallbacks {
 ///
 /// Skia's FreeType/Fontations backends report OS/2 `xAvgCharWidth`; Skia's DirectWrite
 /// backend (Windows) leaves `fAvgCharWidth` at 0, so Blink falls back to the advance of `x`
-/// (`SimpleFontData::PlatformInit`).
+/// (`SimpleFontData::PlatformInit`). On Apple, Blink always takes the `x` advance and sets
+/// the max char width to `max(avg, ascent)` instead of the head bbox width (crbug.com/420901).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AvgCharWidthSource {
     Os2XAvgCharWidth,
     XGlyphAdvance,
+    /// Apple: avg = advance of `x`, max = `max(avg, hhea ascent)`.
+    XGlyphAdvanceAscentMax,
 }
 
 /// Implemented by one adapter per OS.
