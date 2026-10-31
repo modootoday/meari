@@ -16,9 +16,9 @@ cargo test -p meari-native-tools --test cli_entrypoints -- --test-threads=1
 
 The Cargo package selector for the executable hosts changed from `meari-native`
 to `meari-native-tools`. Installed executable names and arguments are unchanged.
-Use `cargo install --path packages/meari-native-tools --bins` for both executables;
+Use `cargo install meari-native-tools --bins` (or `--path crates/meari-native-tools`) for both executables;
 add `--features window`, `--features gl` or both when those adapters are needed.
-Cargo publication remains disabled during framework acceptance.
+The unified `meari` command from `meari-cli` exposes the same tools as `meari native`.
 
 Library users keep the `meari-native` package and `meari_native` crate name.
 `cargo test -p meari-native --test source_callbacks` selects library integration
