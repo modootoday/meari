@@ -1,0 +1,5 @@
+---
+layout: twin
+twin_of: getting-started.md
+permalink: /getting-started/index.md
+---

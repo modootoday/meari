@@ -1,0 +1,5 @@
+---
+layout: twin
+twin_of: verification.md
+permalink: /verification/index.md
+---
