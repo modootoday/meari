@@ -7,7 +7,7 @@ From the repository root:
 ```text
 cargo test -j1 -p meari-native -- --test-threads=1
 cargo run -p meari-native-tools --bin meari-native -- --help
-cargo run -p meari-native-tools --bin meari-native -- styles packages/meari-native/fixtures/custom-css/raw.json NEW_OUTPUT_DIRECTORY
+cargo run -p meari-native-tools --bin meari-native -- styles crates/meari-native/fixtures/custom-css/raw.json NEW_OUTPUT_DIRECTORY
 cargo run -p meari-native-tools --bin meari-kitchen-sink -- screen-check NEW_REPORT.json
 cargo run -p meari-native-tools --features gl --bin meari-kitchen-sink -- library-check-gl TAILWIND_EXE NEW_OUTPUT_DIRECTORY
 cargo run -p meari-native-tools --features gl --bin meari-kitchen-sink -- gl-check NEW_REPORT.json
