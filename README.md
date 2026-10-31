@@ -4,7 +4,7 @@
 
 Meari (메아리, "echo"; Multi-platform Experience Across Renderers Interface) is a Rust UI framework and WASM-based Native+Web builder under development. Meari shares typed UI contracts across source conversion, native rendering and browser adapters. CLI tools exercise those same APIs.
 
-[![crates.io](https://img.shields.io/crates/v/meari.svg)](https://crates.io/crates/meari) [![docs.rs](https://docs.rs/meari/badge.svg)](https://docs.rs/meari)
+[![crates.io](https://img.shields.io/crates/v/meari.svg)](https://crates.io/crates/meari) [![docs.rs](https://docs.rs/meari/badge.svg)](https://docs.rs/meari) · [Documentation](https://modootoday.github.io/meari/)
 
 ## Install
 

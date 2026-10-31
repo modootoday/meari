@@ -2,7 +2,8 @@
 # Theme: jekyll-theme-modootoday, pinned to a release tag.
 title: Meari
 description: "A Rust UI framework that renders one typed UI declaration natively and in the browser."
-baseurl: ""
+url: https://modootoday.github.io
+baseurl: /meari
 lang: en
 permalink: pretty
 markdown: kramdown

@@ -17,3 +17,9 @@ limit forced into several sessions) therefore skips those crates instead of fail
 Package verification builds `yeslogic-fontconfig-sys`, so the `crates` job installs
 `libfontconfig1-dev libfreetype-dev pkg-config` before publishing (the first v0.2.0 attempt
 stopped at verification for lack of them; nothing was uploaded).
+
+## Documentation site
+
+The site in `docs/` is published by GitHub Pages (classic build, `main` branch, `/docs`) at
+<https://modootoday.github.io/meari/>. It is not part of a release: any push to `main` that
+changes `docs/` republishes it.
