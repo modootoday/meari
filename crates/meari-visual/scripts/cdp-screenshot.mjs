@@ -62,8 +62,19 @@ try {
       const clone = el.cloneNode(true);
       host.appendChild(clone); document.body.appendChild(host);
       const intrinsic = clone.getBoundingClientRect().width;
+      // Content width per HTML size (padding/border removed): Chromium sizes it as
+      // ceil(avg x size) + (max - avg), so two sizes give avg and max on each OS.
+      const contentBySize = {};
+      for (const size of [1, 2, 10, 20]) {
+        const probe = el.cloneNode(true);
+        probe.setAttribute("size", String(size));
+        probe.style.cssText = "width:auto;min-width:0;padding:0;border:0;box-sizing:content-box";
+        host.appendChild(probe);
+        contentBySize[size] = probe.getBoundingClientRect().width;
+        probe.remove();
+      }
       host.remove();
-      return { width: el.getBoundingClientRect().width, intrinsic, minWidth: cs.minWidth,
+      return { width: el.getBoundingClientRect().width, intrinsic, contentBySize, minWidth: cs.minWidth,
         flexShrink: cs.flexShrink, fontFamily: cs.fontFamily, fontSize: cs.fontSize,
         notoLoaded: document.fonts.check(cs.fontSize + " " + cs.fontFamily) };
     });

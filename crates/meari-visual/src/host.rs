@@ -105,31 +105,70 @@ pub fn file_url(path: &Path) -> String {
     }
 }
 
-/// Linux Chrome takes text anti-aliasing from the host fontconfig `rgba`: GitHub's
-/// ubuntu-24.04 runner reports `rgb` (subpixel LCD colour fringes), the box baseline `none`
-/// (grayscale). Pin grayscale by layering a config over the host's (`$FONTCONFIG_FILE` or
-/// `/etc/fonts/fonts.conf`), so every Linux host renders the reference the same way.
+/// Linux Chrome takes its text rasterization parameters (anti-aliasing, hinting, subpixel
+/// order, LCD filter, embedded bitmaps) from the host fontconfig, matched by family name.
+/// Layering over the host config was not enough: GitHub's ubuntu-24.04 runner and the box
+/// differ in conf.d rules and installed fonts, and the same Chrome 156.0.8078.47 drew the
+/// same fixtures with different glyph coverage (heading-text 2443 px apart), failing Strict.
+/// So the reference uses a self-contained config: only the pinned Noto cache as font
+/// directory (the faces the fixtures load) and every render parameter assigned explicitly
+/// to the box baseline the tolerances were measured on (grayscale, slight hinting).
 /// (`--disable-lcd-text` is not equivalent: it also changes text under opacity layers.)
 /// Returns the config path to pass as `FONTCONFIG_FILE`, or `None` off Linux/BSD.
 pub fn chrome_fontconfig(dir: &Path) -> Result<Option<PathBuf>, String> {
     if meari_platform::current().os_family() != OsFamily::Unix {
         return Ok(None);
     }
-    let base = std::env::var("FONTCONFIG_FILE").unwrap_or_else(|_| "/etc/fonts/fonts.conf".into());
+    let fonts = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../runtime/fonts");
     let path = dir.join("chrome-grayscale-fonts.conf");
-    let body = format!(
-        "<?xml version=\"1.0\"?>\n<!DOCTYPE fontconfig SYSTEM \"urn:fontconfig:fonts.dtd\">\n\
-<fontconfig>\n<include ignore_missing=\"no\">{base}</include>\n\
-<match target=\"font\"><edit name=\"rgba\" mode=\"assign\"><const>none</const></edit>\
-<edit name=\"antialias\" mode=\"assign\"><bool>true</bool></edit></match>\n</fontconfig>\n"
-    );
-    std::fs::write(&path, body).map_err(|e| format!("{}: {e}", path.display()))?;
+    std::fs::write(
+        &path,
+        fontconfig_body(&fonts, &dir.join("fontconfig-cache")),
+    )
+    .map_err(|e| format!("{}: {e}", path.display()))?;
     Ok(Some(path))
+}
+
+/// The host-independent fontconfig for the Chrome reference (see [`chrome_fontconfig`]).
+fn fontconfig_body(fonts: &Path, cache: &Path) -> String {
+    const RENDER: &str = "<edit name=\"antialias\" mode=\"assign\"><bool>true</bool></edit>\
+<edit name=\"hinting\" mode=\"assign\"><bool>true</bool></edit>\
+<edit name=\"hintstyle\" mode=\"assign\"><const>hintslight</const></edit>\
+<edit name=\"autohint\" mode=\"assign\"><bool>false</bool></edit>\
+<edit name=\"rgba\" mode=\"assign\"><const>none</const></edit>\
+<edit name=\"lcdfilter\" mode=\"assign\"><const>lcddefault</const></edit>\
+<edit name=\"embeddedbitmap\" mode=\"assign\"><bool>false</bool></edit>\
+<edit name=\"embolden\" mode=\"assign\"><bool>false</bool></edit>";
+    format!(
+        "<?xml version=\"1.0\"?>\n<!DOCTYPE fontconfig SYSTEM \"urn:fontconfig:fonts.dtd\">\n\
+<fontconfig>\n<dir>{}</dir>\n<cachedir>{}</cachedir>\n\
+<match target=\"font\">{RENDER}</match>\n</fontconfig>\n",
+        fonts.display(),
+        cache.display()
+    )
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{OsFamily, PixelGate, file_url};
+    use super::{OsFamily, PixelGate, file_url, fontconfig_body};
+
+    #[test]
+    fn chrome_fontconfig_is_host_independent() {
+        let body = fontconfig_body(Path::new("/r/runtime/fonts"), Path::new("/o/fc"));
+        assert!(
+            !body.contains("<include"),
+            "no host config may leak in: {body}"
+        );
+        assert!(body.contains("<dir>/r/runtime/fonts</dir>"));
+        for (name, value) in [
+            ("rgba", "<const>none</const>"),
+            ("hintstyle", "<const>hintslight</const>"),
+            ("antialias", "<bool>true</bool>"),
+            ("embeddedbitmap", "<bool>false</bool>"),
+        ] {
+            assert!(body.contains(&format!("name=\"{name}\" mode=\"assign\">{value}")));
+        }
+    }
 
     #[test]
     fn linux_is_the_strict_reference_gate() {
