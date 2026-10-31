@@ -19,7 +19,7 @@ gl = ["meari-native/gl"]
 window = ["meari-native/window"]
 
 [dependencies]
-meari-native = { path = "../meari-native", version = "0.1.0" }
+meari-native = { path = "../meari-native", version = "0.2.0" }
 
 [[bin]]
 name = "meari-native"

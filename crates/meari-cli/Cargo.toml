@@ -14,8 +14,8 @@ gl = ["meari-native/gl"]
 
 [dependencies]
 meari = { workspace = true }
-meari-native = { path = "../meari-native", version = "0.1.0" }
-meari-builder = { path = "../meari-builder", version = "0.1.0" }
+meari-native = { path = "../meari-native", version = "0.2.0" }
+meari-builder = { path = "../meari-builder", version = "0.2.0" }
 
 [[bin]]
 name = "meari"

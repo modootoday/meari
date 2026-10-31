@@ -13,7 +13,7 @@
 edition = "2024"
 rust-version = "1.91.0"
 name = "meari-dom"
-version = "0.1.0"
+version = "0.2.0"
 build = false
 autolib = false
 autobins = false
@@ -144,7 +144,7 @@ version = "0.13.1"
 version = "0.1"
 
 [dependencies.meari-platform]
-version = "0.1.0"
+version = "0.2.0"
 # Meari: OS branches (macOS key bindings, legacy Apple font names) go through the platform port.
 path = "../meari-platform"
 
