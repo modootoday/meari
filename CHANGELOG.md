@@ -18,10 +18,6 @@ All crates in this workspace share one version (`[workspace.package] version`).
   `file-dialog`); enable what you use. With the workspace default on, `meari-native` windows
   got a second AccessKit adapter and Windows panicked. See `adr:meari/20261031070804`.
 
-### Removed
-- npm distribution (never published); meari ships through cargo/crates.io only
-  (`adr:meari/20261031023000`).
-
 ## [0.1.0] - 2026-10-30
 
 First crates.io release.
