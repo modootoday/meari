@@ -1,6 +1,6 @@
 # Release meari to crates.io (workspace) with Trusted Publishing (OIDC). No registry token is
-# stored. meari is distributed through cargo only (`cargo install meari-cli`); npm distribution
-# was dropped on 2026-10-31 (adr:meari/20261031023000). The first publish of every crate is a
+# stored. meari is distributed through cargo only (`cargo install meari-cli`)
+# (adr:meari/20261031023000). The first publish of every crate is a
 # manual bootstrap (OIDC cannot create a new name) and the `crates` environment must exist
 # (.github/RELEASING.md).
 name: release

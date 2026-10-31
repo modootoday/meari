@@ -4,8 +4,8 @@ The procedure and its prerequisites live in `guide:meari/crates-io-trusted-publi
 (`.spec/guide/crates-io-trusted-publishing.guide.md`). In short: crates.io needs a
 first, manually authenticated publish per crate before Trusted Publishing can be attached;
 after that, a `v*` tag runs `.github/workflows/release.yml` and a reviewer approves the
-`crates` environment. meari ships through cargo only (`cargo install meari-cli`); there is no
-npm package (adr:meari/20261031023000).
+`crates` environment. meari ships through cargo only (`cargo install meari-cli`)
+(adr:meari/20261031023000).
 
 ## Versions published manually during bootstrap
 
