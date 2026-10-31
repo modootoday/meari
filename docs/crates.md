@@ -3,6 +3,8 @@ title: The crates
 description: "Which Meari packages to depend on, and what each one is for."
 layout: reference
 packages_title: "Published crates"
+packages_compact: true
+packages_position: after
 packages:
   - {name: "meari", version: "0.2.0", text: "The core: typed UI model, Rust/TSX conversion, media and hot-reload contracts, fonts, and the browser adapter.", url: "https://crates.io/crates/meari", links: [{label: "docs.rs", url: "https://docs.rs/meari"}, {label: "Source", url: "https://github.com/modootoday/meari/tree/main/crates/meari"}]}
   - {name: "meari-native", version: "0.2.0", text: "Renders the model in a native window: CSS, layout, paint, interaction and accessibility.", url: "https://crates.io/crates/meari-native", links: [{label: "docs.rs", url: "https://docs.rs/meari-native"}, {label: "Source", url: "https://github.com/modootoday/meari/tree/main/crates/meari-native"}]}
@@ -37,7 +39,8 @@ Meari's native renderer is built on the Blitz engine. To fix layout and paint de
 - **`meari-dom`** and **`meari-paint`** are forks of `blitz-dom` and `blitz-paint` 0.3.0-beta.4 with Meari's layout and paint corrections.
 - **`meari-html`** and **`meari-shell`** are unmodified copies of `blitz-html` and `blitz-shell`, republished so they build against those forks without `[patch]` sections.
 
-Since 0.2.0, `meari-shell` turns on no features by default. If you use it directly, enable `accessibility`, `clipboard` or `file-dialog` as you need them.
+> [!TIP]
+> Since 0.2.0, `meari-shell` turns on no features by default. If you use it directly, enable `accessibility`, `clipboard` or `file-dialog` as you need them.
 
 ## Links
 
