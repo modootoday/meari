@@ -290,6 +290,11 @@ impl ActionBinding {
                             window.set_cursor_visible(value);
                             self.cursor_hidden.set(!value);
                         }
+                        WindowAction::BeginResize(direction) => {
+                            window
+                                .drag_resize_window(resize_direction(direction))
+                                .map_err(|_| ActionError::Unsupported)?;
+                        }
                     }
                     Ok(())
                 },
@@ -312,7 +317,10 @@ impl ActionBinding {
                 model.fail(command.ticket, ActionError::StaleWindow)?;
                 return Ok(true);
             }
-            if matches!(command.action, WindowAction::SetCursorVisible(_)) {
+            if matches!(
+                command.action,
+                WindowAction::SetCursorVisible(_) | WindowAction::BeginResize(_)
+            ) {
                 model.applied(command.ticket)?;
                 self.cursor_hide_activity.set(None);
             }
@@ -364,6 +372,20 @@ impl Application {
                 binding.invalidate(error);
             }
         }
+    }
+}
+
+fn resize_direction(direction: ResizeDirection) -> winit::window::ResizeDirection {
+    use winit::window::ResizeDirection as Os;
+    match direction {
+        ResizeDirection::East => Os::East,
+        ResizeDirection::North => Os::North,
+        ResizeDirection::NorthEast => Os::NorthEast,
+        ResizeDirection::NorthWest => Os::NorthWest,
+        ResizeDirection::South => Os::South,
+        ResizeDirection::SouthEast => Os::SouthEast,
+        ResizeDirection::SouthWest => Os::SouthWest,
+        ResizeDirection::West => Os::West,
     }
 }
 

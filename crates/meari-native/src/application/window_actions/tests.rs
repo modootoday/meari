@@ -554,3 +554,25 @@ fn execution_guard_requires_issued_and_never_replays_terminal_or_queued_records(
     }
     assert_eq!(model.record(id(1)), Some(admitted.record));
 }
+#[test]
+fn resize_start_is_supported_without_window_state_and_completes_on_call() {
+    let mut model = ready(2);
+    model
+        .observe(
+            scope(1),
+            ActionCapabilities::default(),
+            WindowObservation::default(),
+            Duration::from_millis(1),
+        )
+        .unwrap();
+    let action = WindowAction::BeginResize(ResizeDirection::SouthEast);
+    assert!(ActionCapabilities::default().supports(action));
+    assert!(!WindowObservation::default().matches(action));
+    model.admit(scope(1), id(1), action).unwrap();
+    let issued = model.next(scope(1)).unwrap().unwrap();
+    model.applied(issued.ticket).unwrap();
+    assert_eq!(
+        model.take_result(id(1)).unwrap().status,
+        ActionStatus::Applied
+    );
+}
