@@ -14,6 +14,9 @@ All crates in this workspace share one version (`[workspace.package] version`).
 ### Changed (breaking)
 - `WindowAction` gained a variant and is not `#[non_exhaustive]`: an exhaustive `match` on it
   outside this crate must handle `BeginResize`. Hence 0.1 → 0.2.
+- `meari-shell` has no default features (upstream defaulted to `accessibility`, `clipboard`,
+  `file-dialog`); enable what you use. With the workspace default on, `meari-native` windows
+  got a second AccessKit adapter and Windows panicked. See `adr:meari/20261031070804`.
 
 ### Removed
 - npm distribution (never published); meari ships through cargo/crates.io only

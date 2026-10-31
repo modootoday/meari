@@ -45,11 +45,13 @@ accessibility = [
 clipboard = ["dep:arboard"]
 custom-widget = ["blitz-dom/custom-widget"]
 data-uri = ["dep:data-url"]
-default = [
-    "accessibility",
-    "clipboard",
-    "file-dialog",
-]
+# meari: no default features (upstream defaults to accessibility + clipboard + file-dialog).
+# As a workspace member, `cargo test --workspace` turns on a member's default features
+# and Cargo unifies them into every user of the crate. meari-native creates its own
+# AccessKit adapter per window, so the upstream default `accessibility` made the shell
+# create a second one: accesskit_windows panics ("subclassing adapter already
+# instantiated"). Consumers opt in explicitly (meari-native asks for `clipboard` only).
+default = []
 file-dialog = ["dep:rfd"]
 tracing = [
     "dep:tracing",
