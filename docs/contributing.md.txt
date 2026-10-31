@@ -1,0 +1,5 @@
+---
+layout: twin
+twin_of: contributing.md
+permalink: /contributing/index.md
+---

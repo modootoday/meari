@@ -1,0 +1,5 @@
+---
+layout: twin
+twin_of: index.md
+permalink: /index.md
+---
