@@ -1,6 +1,6 @@
 //! macOS adapter. Pure data, so it compiles on every host and its tables are checked on all
 //! of them; only [`crate::CurrentOs`] decides which adapter is live.
-use crate::port::{HostFallbacks, OsFamily, PlatformHost};
+use crate::port::{AvgCharWidthSource, HostFallbacks, OsFamily, PlatformHost};
 
 pub const FONT_FALLBACKS: HostFallbacks = HostFallbacks {
     sans: &["Apple SD Gothic Neo", "Hiragino Sans"],
@@ -16,5 +16,8 @@ impl PlatformHost for MacOsHost {
     }
     fn font_fallbacks(&self) -> HostFallbacks {
         FONT_FALLBACKS
+    }
+    fn avg_char_width_source(&self) -> AvgCharWidthSource {
+        AvgCharWidthSource::XGlyphAdvanceAscentMax
     }
 }

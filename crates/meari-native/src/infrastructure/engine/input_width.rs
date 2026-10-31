@@ -26,7 +26,7 @@ const SIZE: f32 = 20.0;
 /// Chromium's average and maximum char width for a font face at `size` px.
 ///
 /// `source` is the host's avgCharWidth origin: OS/2 `xAvgCharWidth`, or (Skia DirectWrite on
-/// Windows, which reports none) the advance of `x`.
+/// Windows, which reports none) the advance of `x`; on Apple also `max = max(avg, ascent)`.
 pub(super) fn char_widths(
     data: &[u8],
     index: u32,
@@ -43,7 +43,7 @@ pub(super) fn char_widths(
                 .table(ttf_parser::Tag::from_bytes(b"OS/2"))?;
             f32::from(i16::from_be_bytes([*os2.get(2)?, *os2.get(3)?])) // xAvgCharWidth
         }
-        AvgCharWidthSource::XGlyphAdvance => {
+        AvgCharWidthSource::XGlyphAdvance | AvgCharWidthSource::XGlyphAdvanceAscentMax => {
             let x = face.glyph_index('x')?;
             f32::from(face.glyph_hor_advance(x)?)
         }
@@ -53,8 +53,13 @@ pub(super) fn char_widths(
     if avg <= 0.0 || (zero > 0.0 && avg > zero * 1.7) {
         return Some((zero, 0.0));
     }
-    let bbox = face.global_bounding_box();
-    let max = (f32::from(bbox.x_max) - f32::from(bbox.x_min)) * scale;
+    let max = if source == AvgCharWidthSource::XGlyphAdvanceAscentMax {
+        // Blink on Apple: max(avg, ascent), CoreText ascent = hhea ascender (crbug.com/420901).
+        (f32::from(face.tables().hhea.ascender) * scale).max(avg)
+    } else {
+        let bbox = face.global_bounding_box();
+        (f32::from(bbox.x_max) - f32::from(bbox.x_min)) * scale
+    };
     Some((avg.max(avg.round()), max.round()))
 }
 
@@ -220,5 +225,15 @@ mod tests {
         // avg: Noto Sans 16px x = 529/1000 em = 8.464, max = round(3421/1000 em) = 55 → 216.
         let avg = 529.0 * 16.0 / 1000.0_f32;
         assert_eq!(intrinsic(avg.max(avg.round()), 55.0), 216.0);
+    }
+
+    #[test]
+    fn apple_hosts_take_the_ascent_as_max_char_width() {
+        // Chrome on macOS: avg = `x` advance 8.464, max = round(max(avg, hhea ascent
+        // 1069/1000 em = 17.104)) = 17 → 178 (measured on the macOS runner: size=20 → 178,
+        // size=10 → 94, size=2 → 26, size=1 → 17).
+        let avg = 529.0 * 16.0 / 1000.0_f32;
+        let max = (1069.0 * 16.0 / 1000.0_f32).max(avg).round();
+        assert_eq!(intrinsic(avg.max(avg.round()), max), 178.0);
     }
 }
