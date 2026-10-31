@@ -12,7 +12,7 @@ updated: 2026-10-31T06:20:00Z
 
 `v*` 태그 push가 `.github/workflows/release.yml`을 실행한다. 토큰을 저장하지 않고 OIDC(Trusted Publishing)로 게시한다. 구조는 modootoday/specfold를 따른다: `check` → `crates`(environment `crates`). environment는 필수 리뷰어와 `v*` 태그 정책을 가진다. 액션은 커밋 SHA로 고정하고 기본 권한은 `contents: read`다. 워크스페이스 구조는 [[adr:meari/20261030065055]]를 따른다.
 
-배포 경로는 cargo뿐이다([[adr:meari/20261031023000]]). 사용자는 `cargo install meari-cli`로 CLI를 설치하고, 라이브러리는 `Cargo.toml` 의존으로 쓴다. npm 패키지와 플랫폼 바이너리 빌드는 없다.
+배포 경로는 cargo뿐이다. 사용자는 `cargo install meari-cli`로 CLI를 설치하고, 라이브러리는 `Cargo.toml` 의존으로 쓴다.
 
 게시 대상: crates.io `meari-platform`, `meari`, `meari-dom`, `meari-paint`, `meari-html`, `meari-shell`, `meari-native`, `meari-builder`, `meari-cli`, `meari-native-tools`(`cargo publish --workspace`가 순서를 정한다). `meari-visual`, `meari-demo`, `meari-xtask`는 `publish = false`.
 
