@@ -37,11 +37,11 @@ This is automated pixel comparison only; **no human visual check, no Windows, no
 
 모든 OS에서 렌더 실패(ERROR)와 레이아웃 불일치(LAYOUT-MISMATCH)는 실패다. 허용치는 픽스처의 `.tolerance`만 쓰고 CI에서 바꾸지 않는다.
 
-macOS 러너의 한계: macOS 실기기가 없어 GitHub 호스티드 가상 머신으로 대체한다. 이 잡은 오프스크린 CPU 렌더와 헤드리스 Chrome 비교만 검증한다. 실제 창(winit), GL, Retina 배율, 입력·접근성, 앱 번들 실행은 검증하지 않으며 macOS용 GL 부트스트랩 어댑터는 원래 없다. `#[ignore]` 테스트는 어느 OS에서도 돌지 않는다([[guide:meari/ignored-tests]]). Linux Strict 기준선은 이 박스에서 52 MATCH로 측정됐지만 러너의 시스템 폰트·Chrome 버전이 달라 첫 실행에서 차이가 날 수 있다. 차이가 나면 허용치를 올리지 말고 원인을 기록한다.
+macOS 러너의 한계: macOS 실기기가 없어 GitHub 호스티드 가상 머신으로 대체한다. 이 잡은 오프스크린 CPU 렌더와 헤드리스 Chrome 비교만 검증한다. 실제 창(winit), GL, Retina 배율, 입력·접근성, 앱 번들 실행은 검증하지 않으며 macOS용 GL 부트스트랩 어댑터는 원래 없다. `#[ignore]` 테스트는 어느 OS에서도 돌지 않는다([[guide:meari/ignored-tests]]). Linux Strict 기준선은 이 개발 장비에서 52 MATCH로 측정됐지만 러너의 시스템 폰트·Chrome 버전이 달라 첫 실행에서 차이가 날 수 있다. 차이가 나면 허용치를 올리지 말고 원인을 기록한다.
 
 run 41013921431(dab9c74) 원인 기록:
-- Linux Strict 텍스트 픽스처 다수 MISMATCH: native.png는 박스와 동일, web.png만 다르다. Chrome 버전 차이가 아니다(박스 156.0.8078.47, ubuntu-24.04 이미지 README도 156.0.8078.47). 러너 fontconfig가 `rgba=rgb`라 Chrome이 서브픽셀 LCD 텍스트(색 번짐)로 그린다. 박스에서 `rgba=rgb`를 강제하면 러너 web.png와 0px 차이로 재현된다. → Linux에서는 호스트 설정 위에 `rgba=none`을 얹은 fontconfig(`host::chrome_fontconfig`)로 Chrome을 띄운다. 기준선·허용치 변경 없음. `--disable-lcd-text`는 opacity 레이어 아래 텍스트까지 바꿔 쓰지 않았다.
-- macOS input-intrinsic-width LAYOUT-MISMATCH: macOS native는 박스와 동일하고, Chrome 쪽 input border-box가 204px(박스 255px)이다. 행 합계가 정확히 가용 폭(432px)이라 flex 축소인지 CoreText 평균 글자폭 차이인지 미확정. `cdp-screenshot.mjs`가 픽스처마다 `web-metrics.json`(Chrome 버전, input 실측 폭·제약 없는 복제본의 고유 폭·해석된 폰트)을 남겨 다음 macOS 실행에서 판별한다.
+- Linux Strict 텍스트 픽스처 다수 MISMATCH: native.png는 개발 장비와 동일, web.png만 다르다. Chrome 버전 차이가 아니다(개발 장비 156.0.8078.47, ubuntu-24.04 이미지 README도 156.0.8078.47). 러너 fontconfig가 `rgba=rgb`라 Chrome이 서브픽셀 LCD 텍스트(색 번짐)로 그린다. 개발 장비에서 `rgba=rgb`를 강제하면 러너 web.png와 0px 차이로 재현된다. → Linux에서는 호스트 설정 위에 `rgba=none`을 얹은 fontconfig(`host::chrome_fontconfig`)로 Chrome을 띄운다. 기준선·허용치 변경 없음. `--disable-lcd-text`는 opacity 레이어 아래 텍스트까지 바꿔 쓰지 않았다.
+- macOS input-intrinsic-width LAYOUT-MISMATCH: macOS native는 개발 장비와 동일하고, Chrome 쪽 input border-box가 204px(개발 장비 255px)이다. 행 합계가 정확히 가용 폭(432px)이라 flex 축소인지 CoreText 평균 글자폭 차이인지 미확정. `cdp-screenshot.mjs`가 픽스처마다 `web-metrics.json`(Chrome 버전, input 실측 폭·제약 없는 복제본의 고유 폭·해석된 폰트)을 남겨 다음 macOS 실행에서 판별한다.
 
 ### Tailwind
 
