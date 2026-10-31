@@ -375,6 +375,20 @@ impl Application {
     }
 }
 
+fn resize_direction(direction: ResizeDirection) -> winit::window::ResizeDirection {
+    use winit::window::ResizeDirection as Os;
+    match direction {
+        ResizeDirection::East => Os::East,
+        ResizeDirection::North => Os::North,
+        ResizeDirection::NorthEast => Os::NorthEast,
+        ResizeDirection::NorthWest => Os::NorthWest,
+        ResizeDirection::South => Os::South,
+        ResizeDirection::SouthEast => Os::SouthEast,
+        ResizeDirection::SouthWest => Os::SouthWest,
+        ResizeDirection::West => Os::West,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::wake;
@@ -390,19 +404,5 @@ mod tests {
             wake::ACTIONS & (wake::COMPLETE | wake::CLOSE | wake::LIFECYCLE | wake::RETRY),
             0
         );
-    }
-}
-
-fn resize_direction(direction: ResizeDirection) -> winit::window::ResizeDirection {
-    use winit::window::ResizeDirection as Os;
-    match direction {
-        ResizeDirection::East => Os::East,
-        ResizeDirection::North => Os::North,
-        ResizeDirection::NorthEast => Os::NorthEast,
-        ResizeDirection::NorthWest => Os::NorthWest,
-        ResizeDirection::South => Os::South,
-        ResizeDirection::SouthEast => Os::SouthEast,
-        ResizeDirection::SouthWest => Os::SouthWest,
-        ResizeDirection::West => Os::West,
     }
 }
