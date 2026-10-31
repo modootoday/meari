@@ -1,9 +1,20 @@
 ---
 title: The crates
 description: "Which Meari packages to depend on, and what each one is for."
+layout: reference
+packages_title: "Published crates"
+packages:
+  - {name: "meari", version: "0.2.0", text: "The core: typed UI model, Rust/TSX conversion, media and hot-reload contracts, fonts, and the browser adapter.", url: "https://crates.io/crates/meari", links: [{label: "docs.rs", url: "https://docs.rs/meari"}, {label: "Source", url: "https://github.com/modootoday/meari/tree/main/crates/meari"}]}
+  - {name: "meari-native", version: "0.2.0", text: "Renders the model in a native window: CSS, layout, paint, interaction and accessibility.", url: "https://crates.io/crates/meari-native", links: [{label: "docs.rs", url: "https://docs.rs/meari-native"}, {label: "Source", url: "https://github.com/modootoday/meari/tree/main/crates/meari-native"}]}
+  - {name: "meari-cli", version: "0.2.0", text: "The `meari` command line.", url: "https://crates.io/crates/meari-cli", links: [{label: "docs.rs", url: "https://docs.rs/meari-cli"}, {label: "Source", url: "https://github.com/modootoday/meari/tree/main/crates/meari-cli"}]}
+  - {name: "meari-builder", version: "0.2.0", text: "Loads projects, runs compiler adapters and produces app bundles.", url: "https://crates.io/crates/meari-builder", links: [{label: "docs.rs", url: "https://docs.rs/meari-builder"}, {label: "Source", url: "https://github.com/modootoday/meari/tree/main/crates/meari-builder"}]}
+  - {name: "meari-native-tools", version: "0.2.0", text: "The `meari-native` showcase host and the `meari-kitchen-sink` verifier.", url: "https://crates.io/crates/meari-native-tools", links: [{label: "docs.rs", url: "https://docs.rs/meari-native-tools"}, {label: "Source", url: "https://github.com/modootoday/meari/tree/main/crates/meari-native-tools"}]}
+  - {name: "meari-platform", version: "0.2.0", text: "Every operating-system difference, in one place.", url: "https://crates.io/crates/meari-platform", links: [{label: "docs.rs", url: "https://docs.rs/meari-platform"}, {label: "Source", url: "https://github.com/modootoday/meari/tree/main/crates/meari-platform"}]}
+  - {name: "meari-dom", version: "0.2.0", text: "Fork of `blitz-dom` with Meari's layout fixes.", url: "https://crates.io/crates/meari-dom", links: [{label: "docs.rs", url: "https://docs.rs/meari-dom"}, {label: "Source", url: "https://github.com/modootoday/meari/tree/main/crates/meari-dom"}]}
+  - {name: "meari-paint", version: "0.2.0", text: "Fork of `blitz-paint` with Meari's paint fixes.", url: "https://crates.io/crates/meari-paint", links: [{label: "docs.rs", url: "https://docs.rs/meari-paint"}, {label: "Source", url: "https://github.com/modootoday/meari/tree/main/crates/meari-paint"}]}
+  - {name: "meari-html", version: "0.2.0", text: "Unmodified `blitz-html`, built against the forks.", url: "https://crates.io/crates/meari-html", links: [{label: "docs.rs", url: "https://docs.rs/meari-html"}, {label: "Source", url: "https://github.com/modootoday/meari/tree/main/crates/meari-html"}]}
+  - {name: "meari-shell", version: "0.2.0", text: "Unmodified `blitz-shell`, built against the forks.", url: "https://crates.io/crates/meari-shell", links: [{label: "docs.rs", url: "https://docs.rs/meari-shell"}, {label: "Source", url: "https://github.com/modootoday/meari/tree/main/crates/meari-shell"}]}
 ---
-
-# The crates
 
 Meari is split into small packages so that an app only pulls in what it renders. All of them share one version number, so upgrading means moving them together. Most apps need just one or two.
 
@@ -26,8 +37,7 @@ Meari's native renderer is built on the Blitz engine. To fix layout and paint de
 - **`meari-dom`** and **`meari-paint`** are forks of `blitz-dom` and `blitz-paint` 0.3.0-beta.4 with Meari's layout and paint corrections.
 - **`meari-html`** and **`meari-shell`** are unmodified copies of `blitz-html` and `blitz-shell`, republished so they build against those forks without `[patch]` sections.
 
-> [!TIP]
-> Since 0.2.0, `meari-shell` turns on no features by default. If you use it directly, enable `accessibility`, `clipboard` or `file-dialog` as you need them.
+Since 0.2.0, `meari-shell` turns on no features by default. If you use it directly, enable `accessibility`, `clipboard` or `file-dialog` as you need them.
 
 ## Links
 

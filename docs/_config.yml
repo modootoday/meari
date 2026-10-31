@@ -10,7 +10,7 @@ markdown: kramdown
 kramdown:
   input: GFM
   syntax_highlighter: rouge
-remote_theme: modootoday/jekyll-theme-modootoday@v1.2.3
+remote_theme: modootoday/jekyll-theme-modootoday@v1.3.0
 plugins: [jekyll-remote-theme, jekyll-sitemap, jekyll-relative-links]
 modootoday:
   color_scheme: auto
