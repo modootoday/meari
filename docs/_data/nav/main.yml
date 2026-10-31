@@ -1,0 +1,10 @@
+- {title: 'Get started', url: /getting-started/}
+- title: 'Guides'
+  items:
+    - {title: 'Using Meari in a Rust app', url: /guide/}
+    - {title: 'The crates', url: /crates/}
+    - {title: 'How Meari is tested', url: /verification/}
+- title: 'Project'
+  items:
+    - {title: 'Contributing', url: /contributing/}
+    - {title: 'Changelog', url: /changelog/}
