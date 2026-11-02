@@ -1,6 +1,6 @@
 [build]
 # One target dir shared by every repo and worktree under the same parent
-# (box: /workspace/.cargo-target). Relative to the repo root, so it means the
+# (e.g. <workspace>/.cargo-target). Relative to the repo root, so it means the
 # same on Linux and Windows; CARGO_TARGET_DIR overrides it per machine.
 target-dir = "../.cargo-target"
 jobs = 1

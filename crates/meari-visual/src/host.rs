@@ -187,8 +187,8 @@ mod tests {
             "file:///tmp/a%20b.html"
         );
         assert_eq!(
-            file_url(Path::new(r"C:\workspaces\meari\x.html")),
-            "file:///C:/workspaces/meari/x.html"
+            file_url(Path::new(r"C:\dev\meari\x.html")),
+            "file:///C:/dev/meari/x.html"
         );
         assert_eq!(
             file_url(Path::new(r"\\?\C:\w\x.woff2")),
