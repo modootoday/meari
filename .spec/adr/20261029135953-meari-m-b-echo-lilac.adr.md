@@ -25,4 +25,4 @@ updated: 2026-10-29
 
 ## Consequences
 
-원본 SVG·PNG는 아직 저장소 밖(box의 `/workspace/meari-brand/v3-color/`)에 있다. 저장소에 넣을 때는 `spec attach`로 이 문서에 붙인다. README 적용은 후속 작업이다.
+원본 SVG·PNG는 아직 저장소 밖(개발 호스트의 `<private-path>`)에 있다. 저장소에 넣을 때는 `spec attach`로 이 문서에 붙인다. README 적용은 후속 작업이다.
