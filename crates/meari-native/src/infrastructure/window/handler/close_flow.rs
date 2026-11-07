@@ -341,6 +341,34 @@ impl Application {
         let Some(view) = self.inner.windows.get_mut(&id) else {
             return;
         };
+        if access::handle(view.doc.as_ref()).is_some_and(|handle| !handle.can_enter_engine()) {
+            self.report(native_host::HostAccessError::Busy.to_string());
+            return;
+        }
+        if !resume {
+            match view.renderer.can_render() {
+                Ok(false) => return,
+                Ok(true) => {}
+                Err(error) => {
+                    let mut errors = self.errors.lock().expect("native diagnostics lock");
+                    if !errors.contains(&error) {
+                        errors.push(error);
+                    }
+                    return;
+                }
+            }
+        }
+        view.renderer.frame_timings.event_wait = view
+            .renderer
+            .resize_received
+            .map(|received| received.elapsed());
+        let resized = view.apply_pending_native_resize();
+        if resized {
+            self.refresh_host(id);
+        }
+        let Some(view) = self.inner.windows.get_mut(&id) else {
+            return;
+        };
         if let std::collections::hash_map::Entry::Vacant(entry) = self.frames.entry(id) {
             match super::super::super::checked_window::WindowFrames::new() {
                 Ok(frames) => {

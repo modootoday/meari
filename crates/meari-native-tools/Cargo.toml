@@ -16,6 +16,7 @@ include = [
 [features]
 test-support = ["meari-native/test-support"]
 gl = ["meari-native/gl"]
+window-gpu = ["window", "meari-native/window-gpu"]
 window = ["meari-native/window"]
 
 [dependencies]
@@ -32,3 +33,8 @@ path = "src/bin/kitchen_sink.rs"
 [[test]]
 name = "cli_entrypoints"
 path = "tests/cli/cli_entrypoints.rs"
+
+[[bin]]
+name = "meari-resize-probe"
+path = "src/bin/resize_probe.rs"
+required-features = ["window"]

@@ -40,6 +40,16 @@ impl InteractiveDocument {
         result.map(|()| initial)
     }
 
+    /// Refresh an observed window layout without reparsing/recompiling the source.
+    /// Retains DOM node identities, focus, input state and click/AX metadata. Media-bound
+    /// state may still project changes; this API does not acknowledge a requested OS resize.
+    pub fn refresh_window_layout(
+        &mut self,
+        environment: HostEnvironment,
+    ) -> Result<ResponsiveCommit, String> {
+        self.commit_host_environment(environment)
+    }
+
     pub fn commit_host_environment(
         &mut self,
         environment: HostEnvironment,
@@ -50,6 +60,7 @@ impl InteractiveDocument {
             Some(session) => session.clone(),
             None => ResponsiveSession::new(environment.clone())?,
         };
+        let layout_start = std::time::Instant::now();
         let commit = match session.apply(&mut self.renderer, environment) {
             Ok(commit) => commit,
             Err(error) => {
@@ -59,6 +70,8 @@ impl InteractiveDocument {
                 return Err(error);
             }
         };
+        let layout = layout_start.elapsed();
+        let source_start = std::time::Instant::now();
         if let Err(error) = self.apply_source_media(&commit) {
             let mut rollback = previous.ok_or("media state has no host rollback baseline")?;
             let restored = rollback.recover(&mut self.renderer);
@@ -73,6 +86,7 @@ impl InteractiveDocument {
                 )),
             };
         }
+        self.environment_timings = (layout, source_start.elapsed());
         self.responsive = Some(session);
         self.viewport = commit.environment.layout.clone();
         self.media_changes.extend(commit.media_changes.clone());
@@ -80,6 +94,11 @@ impl InteractiveDocument {
     }
 
     fn apply_source_media(&mut self, commit: &ResponsiveCommit) -> Result<(), String> {
+        // A size-only change with unchanged queries needs layout, not an entire
+        // retained-source projection/DOM patch. Bindings accept revision gaps.
+        if commit.media_changes.is_empty() {
+            return Ok(());
+        }
         let Some(mut bindings) = self.media_bindings.clone() else {
             return Ok(());
         };

@@ -18,8 +18,12 @@ impl Application {
         }
         let result = access::with_mut(view.doc.as_mut(), |document| {
             let zoom = f64::from(document.renderer.document.get_viewport().zoom);
-            let result = super::super::super::host::snapshot_with_zoom(view.window.as_ref(), zoom)
-                .and_then(|environment| document.commit_host_environment(environment));
+            let result = super::super::super::host::snapshot_with_zoom_and_theme(
+                view.window.as_ref(),
+                zoom,
+                view.theme_override,
+            )
+            .and_then(|environment| document.commit_host_environment(environment));
             if let Err(error) = &result {
                 document.last_error = Some(error.clone());
             }
@@ -33,6 +37,11 @@ impl Application {
                 .expect("native diagnostics lock")
                 .push(error);
         }
+        self.observe_host_geometry(id);
+    }
+
+    // Keep lightweight parent/child geometry notices timely even when document work coalesces.
+    pub(in super::super) fn observe_host_geometry(&self, id: WindowId) {
         // A separate observation after the mutable document guard has been released.
         let observation = self.inner.windows.get(&id).and_then(|view| {
             let handle = access::handle(view.doc.as_ref())?;
@@ -41,7 +50,11 @@ impl Application {
             Some((
                 handle.id(),
                 zoom.map_err(|error| error.to_string()).and_then(|zoom| {
-                    super::super::super::host::snapshot_with_zoom(view.window.as_ref(), zoom)
+                    super::super::super::host::snapshot_with_zoom_and_theme(
+                        view.window.as_ref(),
+                        zoom,
+                        view.theme_override,
+                    )
                 }),
             ))
         });
@@ -161,6 +174,20 @@ impl Application {
     }
 
     pub(in super::super) fn accessibility(&mut self, event: &A11yEvent) {
+        if self
+            .inner
+            .windows
+            .get(&event.window)
+            .and_then(|view| access::handle(view.doc.as_ref()))
+            .is_some_and(|handle| !handle.can_enter_engine())
+        {
+            return;
+        }
+        if let Some(view) = self.inner.windows.get_mut(&event.window)
+            && view.apply_pending_native_resize()
+        {
+            self.refresh_host(event.window);
+        }
         let mut dispatched = false;
         if let AccessibilityEvent::ActionRequested(request) = &event.event
             && let Some(view) = self.inner.windows.get_mut(&event.window)

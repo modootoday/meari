@@ -19,7 +19,7 @@ impl ApplicationHandler for Application {
             self.resume_window(id);
         }
         for config in std::mem::take(&mut self.inner.pending_windows) {
-            let view = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let mut view = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 blitz_shell::View::init(config, event_loop, &self.inner.proxy)
             })) {
                 Ok(view) => view,
@@ -30,6 +30,7 @@ impl ApplicationHandler for Application {
                     continue;
                 }
             };
+            view.renderer.observe_window(view.window.clone());
             let id = view.window_id();
             let host = access::handle(view.doc.as_ref()).map(|handle| handle.id());
             let window = view.window.clone();
@@ -83,6 +84,15 @@ impl ApplicationHandler for Application {
             }
             return;
         }
+        // Receipt time only: winit does not expose when the OS enqueued this event.
+        if matches!(event, WindowEvent::SurfaceResized(_))
+            && let Some(view) = self.inner.windows.get_mut(&id)
+        {
+            view.renderer.resize_received = Some(std::time::Instant::now());
+            let _ = access::with(view.doc.as_ref(), |document| {
+                document.renderer.invalidate_surface_paint()
+            });
+        }
         self.record_window_input(id, &event);
         if self
             .inner
@@ -94,11 +104,18 @@ impl ApplicationHandler for Application {
             self.report(native_host::HostAccessError::Busy.to_string());
             return;
         }
+        // Hit testing must use the newest known geometry even before the next paint.
+        if !matches!(
+            event,
+            WindowEvent::SurfaceResized(_) | WindowEvent::RedrawRequested
+        ) && let Some(view) = self.inner.windows.get_mut(&id)
+            && view.apply_pending_native_resize()
+        {
+            self.refresh_host(id);
+        }
         let host_changed = matches!(
             &event,
-            WindowEvent::SurfaceResized(_)
-                | WindowEvent::ScaleFactorChanged { .. }
-                | WindowEvent::ThemeChanged(_)
+            WindowEvent::ScaleFactorChanged { .. } | WindowEvent::ThemeChanged(_)
         );
         if let Some(adapter) = self.adapters.get_mut(&id) {
             if let WindowEvent::Focused(focused) = &event {
@@ -135,7 +152,11 @@ impl ApplicationHandler for Application {
             self.update(id);
             return;
         }
+        let size_changed = matches!(event, WindowEvent::SurfaceResized(_));
         self.inner.window_event(event_loop, id, event);
+        if size_changed {
+            self.observe_host_geometry(id);
+        }
         if host_changed {
             self.refresh_host(id);
         }
@@ -333,7 +354,28 @@ impl ApplicationHandler for Application {
             self.report(error.to_string());
         }
         let timer_next = self.poll_owned_timers();
-        let next = next.into_iter().chain(host_next).chain(timer_next).min();
+        let mut gpu_poll = false;
+        let mut gpu_errors = Vec::new();
+        for view in self.inner.windows.values_mut() {
+            if view.renderer.needs_completion_poll() {
+                match view.renderer.poll_completion() {
+                    Ok(true) => view.window.request_redraw(),
+                    Ok(false) => {}
+                    Err(error) => gpu_errors.push(error),
+                }
+                gpu_poll |= view.renderer.needs_completion_poll();
+            }
+        }
+        for error in gpu_errors {
+            self.report(error);
+        }
+        let gpu_next = gpu_poll.then(|| std::time::Instant::now() + Duration::from_millis(2));
+        let next = next
+            .into_iter()
+            .chain(host_next)
+            .chain(timer_next)
+            .chain(gpu_next)
+            .min();
         scheduling::apply_deadline(event_loop, next, &mut self.lifecycle_deadline);
     }
 }

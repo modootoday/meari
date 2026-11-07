@@ -20,7 +20,8 @@ include = [
 default = []
 test-support = ["window"]
 gl = ["meari-platform/gl", "dep:anyrender_skia", "dep:skia-safe", "dep:glow"]
-window = ["meari-platform/window", "dep:blitz-shell", "dep:winit", "dep:accesskit_xplat", "anyrender_vello_cpu/softbuffer_window_renderer"]
+window-gpu = ["window", "dep:anyrender_vello", "dep:vello", "dep:wgpu", "dep:pollster"]
+window = ["meari-platform/window", "dep:blitz-shell", "dep:softbuffer", "dep:kurbo", "dep:peniko", "dep:winit", "dep:accesskit_xplat", "anyrender_vello_cpu/softbuffer_window_renderer"]
 
 [[test]]
 name = "font_catalog"
@@ -41,6 +42,13 @@ accesskit = { version = "=0.25.1", features = ["serde"] }
 keyboard-types = "=0.8.3"
 anyrender = "=0.14.0"
 anyrender_vello_cpu = { version = "=0.18.0", features = ["filters"] }
+kurbo = { version = "=0.13.1", optional = true }
+peniko = { version = "=0.6.1", optional = true }
+softbuffer = { version = "=0.4.8", optional = true }
+anyrender_vello = { version = "=0.15.0", optional = true }
+vello = { version = "=0.11.0", optional = true }
+wgpu = { version = "=30.0.0", optional = true }
+pollster = { version = "=0.4.0", optional = true }
 anyrender_skia = { version = "=0.12.0", optional = true }
 skia-safe = { version = "=0.153.3", features = ["gl", "textlayout"], optional = true }
 glow = { version = "=0.16.0", optional = true }

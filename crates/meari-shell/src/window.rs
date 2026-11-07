@@ -47,6 +47,16 @@ pub struct WindowConfig<Rend: WindowRenderer> {
 }
 
 impl<Rend: WindowRenderer> WindowConfig<Rend> {
+    /// Configure window attributes before creating an OS window.
+    pub fn attributes_mut(&mut self) -> &mut WindowAttributes {
+        &mut self.attributes
+    }
+
+    /// Configure the renderer before creating an OS window.
+    pub fn renderer_mut(&mut self) -> &mut Rend {
+        &mut self.renderer
+    }
+
     pub fn new(doc: Box<dyn Document>, renderer: Rend) -> Self {
         Self::with_attributes(doc, renderer, WindowAttributes::default())
     }
@@ -97,6 +107,7 @@ pub struct View<Rend: WindowRenderer> {
     pub animation_timer: Option<Instant>,
     pub is_visible: bool,
     pub safe_area_insets: PhysicalInsets<u32>,
+    native_resize: crate::resize::LatestResize,
 
     #[cfg(target_arch = "wasm32")]
     pending_resize: Option<winit::dpi::PhysicalSize<u32>>,
@@ -144,6 +155,7 @@ impl<Rend: WindowRenderer> View<Rend> {
         // seed the viewport on platforms (winit-web) that report `surface_size() == 0×0`
         // until a layout pass fires.
         let requested_surface_size = config.attributes.surface_size;
+        let theme_override = config.attributes.preferred_theme;
         let attrs = config.attributes.with_visible(false);
 
         let winit_window: Arc<dyn Window> = Arc::from(event_loop.create_window(attrs).unwrap());
@@ -178,7 +190,9 @@ impl<Rend: WindowRenderer> View<Rend> {
             }
         }
         let safe_area_insets = get_safe_area_insets(&*winit_window);
-        let theme = winit_window.theme().unwrap_or(Theme::Light);
+        let theme = theme_override
+            .or(winit_window.theme())
+            .unwrap_or(Theme::Light);
         let color_scheme = theme_to_color_scheme(theme);
         // The viewport is the window surface minus the safe area insets
         let viewport_width = size
@@ -215,10 +229,11 @@ impl<Rend: WindowRenderer> View<Rend> {
             proxy: proxy.clone(),
             window: winit_window.clone(),
             doc,
-            theme_override: None,
+            theme_override,
             buttons: MouseEventButtons::None,
             active_events: Arc::new(AtomicRefCell::new(Vec::new())),
             safe_area_insets,
+            native_resize: Default::default(),
             #[cfg(target_arch = "wasm32")]
             pending_resize: None,
             #[cfg(target_arch = "wasm32")]
@@ -294,6 +309,7 @@ impl<Rend: WindowRenderer> View<Rend> {
     /// on wasm32. The embedder must call [`complete_resume`](Self::complete_resume)
     /// in response.
     pub fn resume(&mut self) {
+        self.apply_pending_native_resize();
         let window_id = self.window_id();
         let animation_time = self.current_animation_time();
 
@@ -319,6 +335,7 @@ impl<Rend: WindowRenderer> View<Rend> {
     /// [`BlitzShellEvent::ResumeReady`] event. Paints the first frame and
     /// installs the doc poll waker. Returns `true` if the renderer is now active.
     pub fn complete_resume(&mut self) -> bool {
+        self.apply_pending_native_resize();
         if !self.renderer.complete_resume() {
             return false;
         }
@@ -398,6 +415,7 @@ impl<Rend: WindowRenderer> View<Rend> {
     }
 
     pub fn redraw(&mut self) {
+        self.apply_pending_native_resize();
         #[cfg(target_os = "ios")]
         self.ios_request_redraw.set(false);
         let animation_time = self.current_animation_time();
@@ -500,6 +518,23 @@ impl<Rend: WindowRenderer> View<Rend> {
         active.len() != len_before
     }
 
+    /// Apply one latest native size immediately before layout/redraw or input hit testing.
+    /// Exclusive UI-thread ownership prevents an older layout submitting after a newer one.
+    pub fn apply_pending_native_resize(&mut self) -> bool {
+        let Some(size) = self.native_resize.take() else {
+            return false;
+        };
+        let insets = self.safe_area_insets;
+        let width = size
+            .width
+            .saturating_sub(insets.left.saturating_add(insets.right));
+        let height = size
+            .height
+            .saturating_sub(insets.top.saturating_add(insets.bottom));
+        self.with_viewport(|v| v.window_size = (width, height));
+        true
+    }
+
     #[inline]
     pub fn with_viewport(&mut self, cb: impl FnOnce(&mut Viewport)) {
         let mut inner = self.doc.inner_mut();
@@ -583,6 +618,12 @@ impl<Rend: WindowRenderer> View<Rend> {
     }
 
     pub fn handle_winit_event(&mut self, event: WindowEvent) {
+        if !matches!(
+            event,
+            WindowEvent::SurfaceResized(_) | WindowEvent::RedrawRequested
+        ) {
+            self.apply_pending_native_resize();
+        }
         // Update accessibility focus and window size state in response to a Winit WindowEvent
         #[cfg(feature = "accessibility")]
         self.accessibility
@@ -619,10 +660,7 @@ impl<Rend: WindowRenderer> View<Rend> {
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 {
-                    let insets = self.safe_area_insets;
-                    let width = physical_size.width - insets.left - insets.right;
-                    let height = physical_size.height - insets.top - insets.bottom;
-                    self.with_viewport(|v| v.window_size = (width, height));
+                    self.native_resize.replace(physical_size);
                     self.request_redraw();
                 }
             }

@@ -122,7 +122,7 @@ impl NativeWindowDriver {
         })
     }
     pub(super) fn from_shell(
-        inner: BlitzApplication<VelloCpuWindowRenderer>,
+        inner: BlitzApplication<NativeWindowRenderer>,
         wake: NativeWindowWake,
         port: Box<dyn native_host::window_port::WindowHostPort>,
     ) -> Self {
@@ -162,11 +162,33 @@ impl NativeWindowDriver {
         options: crate::application::WindowOptions,
         exit_when_empty: bool,
     ) -> Result<Self, String> {
+        Self::build_with_renderer(
+            event_loop,
+            runtime,
+            options,
+            exit_when_empty,
+            super::WindowRendererChoice::Cpu,
+        )
+    }
+    fn build_with_renderer<H: NativeWindowHost>(
+        event_loop: &blitz_shell::EventLoop,
+        runtime: Rc<RefCell<NativeHostRuntime<H>>>,
+        options: crate::application::WindowOptions,
+        exit_when_empty: bool,
+        choice: super::WindowRendererChoice,
+    ) -> Result<Self, String> {
         let handle: NativeDocumentHandle = runtime
             .try_borrow()
             .map_err(|_| "native host is borrowed".to_owned())?
             .document();
-        let (inner, wake) = shell(event_loop, &handle, options)?;
+        let (mut inner, wake) = shell(event_loop, &handle, options)?;
+        inner
+            .pending_windows
+            .first_mut()
+            .ok_or("missing pending window")?
+            .renderer_mut()
+            .select(choice)?;
+        // Reject unavailable choices before marking the caller's runtime attached.
         let port = native_host::window_port::port(runtime)?;
         Ok(Self {
             application: Application {
@@ -189,6 +211,32 @@ impl NativeWindowDriver {
             },
             wake,
         })
+    }
+    /// Select a real-window renderer for a plain runtime attachment.
+    pub fn attach_with_renderer<H: NativeWindowHost>(
+        event_loop: &blitz_shell::EventLoop,
+        runtime: Rc<RefCell<NativeHostRuntime<H>>>,
+        options: crate::application::WindowOptions,
+        choice: super::WindowRendererChoice,
+    ) -> Result<Self, String> {
+        Self::build_with_renderer(event_loop, runtime, options, false, choice)
+    }
+
+    pub fn renderer_status(&self) -> Option<super::WindowRendererStatus> {
+        self.application
+            .inner
+            .windows
+            .values()
+            .next()
+            .map(|view| view.renderer.status())
+    }
+    pub fn last_frame_timings(&self) -> Option<super::WindowFrameTimings> {
+        self.application
+            .inner
+            .windows
+            .values()
+            .next()
+            .map(|view| view.renderer.last_frame_timings())
     }
     pub fn wake_handle(&self) -> NativeWindowWake {
         self.wake.clone()
@@ -252,14 +300,14 @@ pub(super) fn shell(
     event_loop: &blitz_shell::EventLoop,
     handle: &NativeDocumentHandle,
     options: crate::application::WindowOptions,
-) -> Result<(BlitzApplication<VelloCpuWindowRenderer>, NativeWindowWake), String> {
+) -> Result<(BlitzApplication<NativeWindowRenderer>, NativeWindowWake), String> {
     let (proxy, events) = BlitzShellProxy::new(event_loop.create_proxy());
     let mut inner = BlitzApplication::new(proxy, events);
     let wake = configure_shell(&mut inner, handle, options)?;
     Ok((inner, wake))
 }
 pub(super) fn configure_shell(
-    inner: &mut BlitzApplication<VelloCpuWindowRenderer>,
+    inner: &mut BlitzApplication<NativeWindowRenderer>,
     handle: &NativeDocumentHandle,
     options: crate::application::WindowOptions,
 ) -> Result<NativeWindowWake, String> {
@@ -273,7 +321,7 @@ pub(super) fn configure_shell(
     let proxy = inner.proxy.clone();
     inner.add_window(WindowConfig::with_attributes(
         access::facade(handle.clone()),
-        VelloCpuWindowRenderer::new(),
+        NativeWindowRenderer::new(),
         WindowAttributes::default()
             .with_title(options.title)
             .with_surface_size(winit::dpi::LogicalSize::new(
