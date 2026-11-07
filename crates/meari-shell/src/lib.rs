@@ -217,3 +217,5 @@ impl ShellProvider for BlitzShellProvider {
         files.unwrap_or_default()
     }
 }
+
+mod resize;

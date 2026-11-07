@@ -155,3 +155,68 @@ fn failed_native_media_dom_patch_restores_host_and_never_publishes_state_or_noti
     );
     assert_eq!(document.media_changes.len(), notifications);
 }
+
+#[test]
+fn size_only_refresh_does_not_reproject_unchanged_media_bound_source() {
+    let mut document = document();
+    document
+        .subscribe_media_state("(min-width:600px)", "disabled".into())
+        .unwrap();
+    let before = document.component_state().unwrap();
+    let input = document
+        .renderer
+        .document
+        .get_element_by_id("name")
+        .unwrap();
+    // A missing projected text target makes a source projection fail. A pure
+    // layout update must not visit that target at all when media is unchanged.
+    let status = document
+        .renderer
+        .document
+        .get_element_by_id("status")
+        .unwrap();
+    document
+        .renderer
+        .document
+        .mutate()
+        .remove_and_drop_all_children(status);
+    let commit = document.refresh_window_layout(environment(700)).unwrap();
+    assert!(commit.media_changes.is_empty());
+    assert_eq!(document.component_state().unwrap(), before);
+    assert_eq!(
+        document.renderer.document.get_element_by_id("name"),
+        Some(input)
+    );
+    assert_eq!(document.viewport.width, 700);
+}
+
+#[test]
+fn media_changes_still_apply_after_many_size_only_revision_gaps() {
+    let mut document = document();
+    document
+        .subscribe_media_state("(min-width:600px)", "disabled".into())
+        .unwrap();
+    let before = document.component_state().unwrap();
+    for width in [790, 750, 700, 650] {
+        assert!(
+            document
+                .refresh_window_layout(environment(width))
+                .unwrap()
+                .media_changes
+                .is_empty()
+        );
+        assert_eq!(document.component_state().unwrap(), before);
+    }
+    assert_eq!(
+        document
+            .refresh_window_layout(environment(400))
+            .unwrap()
+            .media_changes
+            .len(),
+        1
+    );
+    assert_eq!(
+        document.component_state().unwrap().values["disabled"],
+        StateValue::Bool(false)
+    );
+}

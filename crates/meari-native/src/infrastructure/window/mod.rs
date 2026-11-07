@@ -1,7 +1,6 @@
 //! Winit/softbuffer surface with our AccessKit action handler, rather than the upstream TODO.
 use crate::infrastructure::native_host::{self, access};
 use accesskit_xplat::{Adapter, WindowEvent as AccessibilityEvent};
-use anyrender_vello_cpu::VelloCpuWindowRenderer;
 use blitz_shell::{BlitzApplication, BlitzShellProxy, WindowConfig};
 use std::{
     collections::{HashMap, HashSet},
@@ -23,6 +22,12 @@ struct Handler {
     proxy: BlitzShellProxy,
 }
 struct Stop;
+mod rendering;
+pub use rendering::run_resize_latency_probe;
+pub use rendering::{
+    NativeWindowRenderer, WindowBackend, WindowFrameTimings, WindowRendererChoice,
+    WindowRendererStatus,
+};
 mod actions;
 mod driver;
 mod input;
@@ -63,7 +68,7 @@ pub use preparation::{
 };
 pub use wake::NativeWindowWake;
 struct Application {
-    inner: BlitzApplication<VelloCpuWindowRenderer>,
+    inner: BlitzApplication<NativeWindowRenderer>,
     adapters: HashMap<WindowId, Adapter>,
     errors: Arc<std::sync::Mutex<Vec<String>>>,
     frames: HashMap<WindowId, super::checked_window::WindowFrames>,

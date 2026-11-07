@@ -13,6 +13,16 @@ pub fn snapshot_with_zoom(
     window: &dyn Window,
     layout_zoom: f64,
 ) -> Result<HostEnvironment, String> {
+    snapshot_with_zoom_and_theme(window, layout_zoom, None)
+}
+
+/// Snapshot with an explicitly application-selected theme (not an inferred OS theme).
+/// The default snapshot APIs continue to reject an unavailable system color scheme.
+pub fn snapshot_with_zoom_and_theme(
+    window: &dyn Window,
+    layout_zoom: f64,
+    selected_theme: Option<Theme>,
+) -> Result<HostEnvironment, String> {
     let device_scale = window.scale_factor();
     if !device_scale.is_finite()
         || device_scale <= 0.0
@@ -24,7 +34,7 @@ pub fn snapshot_with_zoom(
     let size = window.surface_size();
     let width = f64::from(size.width) / device_scale / layout_zoom;
     let height = f64::from(size.height) / device_scale / layout_zoom;
-    let dark = window.theme().ok_or("native color scheme is unavailable")? == Theme::Dark;
+    let dark = resolve_theme(selected_theme, window.theme())? == Theme::Dark;
     let host = HostEnvironment {
         target: HostTarget::Native,
         layout: measured_viewport(width, height, dark)?,
@@ -79,5 +89,26 @@ pub fn request_resize_with_zoom(
     match window.request_surface_size(size.into()) {
         Some(_) => snapshot_with_zoom(window, layout_zoom).map(Some),
         None => Ok(None),
+    }
+}
+
+fn resolve_theme(selected: Option<Theme>, reported: Option<Theme>) -> Result<Theme, &'static str> {
+    selected
+        .or(reported)
+        .ok_or("native color scheme is unavailable")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn unknown_theme_is_not_silently_defaulted_but_explicit_selection_is_honored() {
+        assert!(resolve_theme(None, None).is_err());
+        assert_eq!(resolve_theme(None, Some(Theme::Dark)), Ok(Theme::Dark));
+        assert_eq!(resolve_theme(Some(Theme::Light), None), Ok(Theme::Light));
+        assert_eq!(
+            resolve_theme(Some(Theme::Light), Some(Theme::Dark)),
+            Ok(Theme::Light)
+        );
     }
 }

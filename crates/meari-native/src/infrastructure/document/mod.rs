@@ -11,6 +11,7 @@ use std::collections::BTreeMap;
 
 /// One persistent native DOM. Widget updates patch attributes/text, preserving input/scroll nodes.
 pub struct InteractiveDocument {
+    pub(crate) environment_timings: (std::time::Duration, std::time::Duration),
     pub renderer: NativeRenderer,
     pub session: Session,
     pub source: Component,

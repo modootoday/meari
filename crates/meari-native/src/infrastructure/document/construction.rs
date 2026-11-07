@@ -183,6 +183,7 @@ impl InteractiveDocument {
             checked_values: BTreeMap::new(),
             elements: markup.elements,
             responsive: None,
+            environment_timings: Default::default(),
             media_bindings: None,
             media_changes: Vec::new(),
             state_program,

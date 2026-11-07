@@ -1,12 +1,12 @@
 //! A single-use assembly owner; a failed handoff returns the very same runtime and preparation.
 use super::{NativeWindowDriver, NativeWindowWake, driver, forwarding::ForwardingSeed, parent::*};
+use crate::infrastructure::window::NativeWindowRenderer;
 use crate::{
     application::{WindowOptions, window_lifecycle::*},
     infrastructure::native_host::{
         ChildWindowHost, HostLifecycle, NativeDocumentHandle, NativeHostRuntime, NativeWindowHost,
     },
 };
-use anyrender_vello_cpu::VelloCpuWindowRenderer;
 use blitz_shell::BlitzApplication;
 use std::{cell::RefCell, fmt, rc::Rc, task::Waker, time::Instant};
 
@@ -28,7 +28,7 @@ pub(super) use super::scheduling::NativeClock;
 /// }
 /// ```
 pub struct NativeWindowPreparation<C: NativeChild> {
-    pub(super) inner: Option<BlitzApplication<VelloCpuWindowRenderer>>,
+    pub(super) inner: Option<BlitzApplication<NativeWindowRenderer>>,
     pub(super) document: NativeDocumentHandle,
     pub(super) wake: NativeWindowWake,
     pub(super) children: Rc<WindowLifecycle<C>>,
@@ -113,6 +113,26 @@ impl<C: NativeChild> NativeWindowPreparation<C> {
             startup_authority: None,
             actions,
         })
+    }
+    /// Opt-in before attach. The default remains CPU with `features = ["window"]`.
+    /// GPU initialization errors are observable on the driver after surface creation.
+    pub fn with_renderer(
+        mut self,
+        choice: super::WindowRendererChoice,
+    ) -> Result<Self, NativeAttachProblem> {
+        let inner = self
+            .inner
+            .as_mut()
+            .ok_or(NativeAttachProblem::NotPristine)?;
+        let config = inner
+            .pending_windows
+            .first_mut()
+            .ok_or(NativeAttachProblem::NotPristine)?;
+        config
+            .renderer_mut()
+            .select(choice)
+            .map_err(NativeAttachProblem::Host)?;
+        Ok(self)
     }
     pub fn children(&self) -> Rc<WindowLifecycle<C>> {
         self.children.clone()

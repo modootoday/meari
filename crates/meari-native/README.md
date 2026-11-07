@@ -26,3 +26,13 @@ CSS-sized screens use `screen_element` in styles requests or `InteractiveDocumen
 GL is an opt-in host-owned vector backend on Windows; failures never count CPU fallback as GL success. Context generations, last-good readback and bounded Icon GPU cache have separate contracts. Embedding into an existing consumer GL host, forced device loss, complete provider/CSS parity and OS input/screen-reader acceptance remain unfinished.
 
 See [framework architecture](../../.spec/sot/architecture-and-support-boundaries.sot.md) and [custom CSS fixtures](fixtures/custom-css/README.md). External corpus tests require `MEARI_KITCHEN_SINK`; Tailwind tests require `BRIDGE_TAILWIND`. Use explicit ignored-test opt-in with the required data/hardware.
+
+### Real-window GPU selection
+
+The default `window` feature remains CPU-based. The opt-in `window-gpu` feature
+adds direct surface GPU presentation through
+`NativeWindowPreparation::with_renderer(WindowRendererChoice::Gpu)` or
+`NativeWindowDriver::attach_with_renderer`. Observe `renderer_status()` and
+`last_frame_timings()`; present-return is not an actual-display acknowledgement.
+See the [renderer and latency guide](../../.spec/guide/native-window-renderer-selection-and-latency-probe.guide.md)
+for fallback policy, resource lifetimes, platform limits and the release-mode probe.

@@ -80,9 +80,7 @@ fn host_commit_preserves_dpi_zoom_input_and_only_publishes_final_media_changes()
         "device_scale":1.5,"layout_zoom":1.25,"safe_area":null,
         "capabilities":{"client_resize":"supported","preview_resize":"unsupported","reduced_motion":"unknown","contrast":"unknown","pointer_hover":"unknown","accessibility":"unknown"}
     })).unwrap();
-    let first = document
-        .commit_host_environment(environment.clone())
-        .unwrap();
+    let first = document.refresh_window_layout(environment.clone()).unwrap();
     let viewport = document.renderer.document.get_viewport();
     assert_eq!(viewport.window_size, (1500, 1125));
     assert_eq!(viewport.logical_size(), (800.0, 600.0));
@@ -126,9 +124,7 @@ fn host_commit_preserves_dpi_zoom_input_and_only_publishes_final_media_changes()
     );
     environment.layout.width = 400;
     environment.visual.width = 400.0;
-    let commit = document
-        .commit_host_environment(environment.clone())
-        .unwrap();
+    let commit = document.refresh_window_layout(environment.clone()).unwrap();
     assert_eq!(commit.media_changes.len(), 1);
     assert!(!commit.media_changes[0].matches);
     assert_eq!(
@@ -140,6 +136,8 @@ fn host_commit_preserves_dpi_zoom_input_and_only_publishes_final_media_changes()
         document.renderer.document.get_element_by_id("name"),
         Some(node)
     );
+    let ax = accessibility::tree(&document);
+    assert!(ax.nodes.iter().any(|(id, _)| id.0 == node.as_u64()));
     assert_eq!(document.input_values[&path], "retained");
     assert_eq!(document.session.focus.as_deref(), Some(path.as_str()));
     let save = document

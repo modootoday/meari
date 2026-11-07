@@ -1,7 +1,7 @@
 use super::super::scheduling::NativeClock;
 use super::*;
 use crate::infrastructure::native_host::{HostScheduleLimits, NativeDocumentHandle};
-use anyrender_vello_cpu::VelloCpuWindowRenderer;
+use crate::infrastructure::window::NativeWindowRenderer;
 use blitz_shell::{BlitzApplication, BlitzShellProxy};
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -79,7 +79,7 @@ impl NativeLoopOwner {
 }
 pub struct NativeStartup {
     pub(super) authority: Rc<Authority>,
-    pub(super) inner: Option<BlitzApplication<VelloCpuWindowRenderer>>,
+    pub(super) inner: Option<BlitzApplication<NativeWindowRenderer>>,
     pub(super) signal: std::sync::Arc<wake::Shared>,
     pub(super) clock: NativeClock,
     pub(super) document: Option<NativeDocumentHandle>,

@@ -6,13 +6,13 @@ use super::super::{
     preparation::NativeWindowPreparation,
 };
 use super::*;
+use crate::infrastructure::window::NativeWindowRenderer;
 use crate::{
     application::{WindowOptions, window_lifecycle::*},
     infrastructure::native_host::{
         self, ChildWindowHost, HostLifecycle, HostScheduleLimits, NativeDocumentHandle,
     },
 };
-use anyrender_vello_cpu::VelloCpuWindowRenderer;
 use blitz_shell::BlitzApplication;
 use std::task::Waker;
 
@@ -72,7 +72,7 @@ impl<H: NativeWindowHost> NativeAttachment<H> {
     }
 }
 struct Plain<H: NativeWindowHost> {
-    inner: Option<BlitzApplication<VelloCpuWindowRenderer>>,
+    inner: Option<BlitzApplication<NativeWindowRenderer>>,
     runtime: Rc<RefCell<NativeHostRuntime<H>>>,
     document: NativeDocumentHandle,
     options: WindowOptions,

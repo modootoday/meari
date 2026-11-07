@@ -1,8 +1,8 @@
 //! First frame and redraw use the same checked scene transaction.
 use super::checked_scene::{PreparedScene, SceneSubmission};
 use crate::domain::graphics::FrameTicket;
+use crate::infrastructure::window::NativeWindowRenderer;
 use anyrender::WindowRenderer;
-use anyrender_vello_cpu::VelloCpuWindowRenderer;
 use blitz_shell::{BlitzShellEvent, BlitzShellProxy, View};
 use std::{
     cell::Cell,
@@ -90,7 +90,7 @@ impl Wake for PollWake {
 }
 
 pub(in super::super) fn render(
-    view: &mut View<VelloCpuWindowRenderer>,
+    view: &mut View<NativeWindowRenderer>,
     frames: &mut WindowFrames,
     resume: bool,
 ) -> Result<(), String> {
@@ -105,7 +105,10 @@ pub(in super::super) fn render(
         frames.authority = Rc::new(Cell::new(true));
         frames.retained = None;
         if !view.renderer.complete_resume() {
-            return Ok(());
+            return match view.renderer.take_error() {
+                Some(error) => Err(error),
+                None => Ok(()),
+            };
         }
         frames.generation = frames
             .generation
@@ -117,6 +120,18 @@ pub(in super::super) fn render(
         })));
     }
     if !view.renderer.is_active() || view.renderer.is_pending() || frames.generation == 0 {
+        return Ok(());
+    }
+    if !view.renderer.can_render()? {
+        return Ok(());
+    }
+    let layout_start = std::time::Instant::now();
+    let event_wait = view.renderer.frame_timings.event_wait;
+    let environment = super::super::native_host::access::with_mut(view.doc.as_mut(), |doc| {
+        std::mem::take(&mut doc.environment_timings)
+    })
+    .unwrap_or_default();
+    if view.window.surface_size().width == 0 || view.window.surface_size().height == 0 {
         return Ok(());
     }
     let time = view.current_animation_time();
@@ -167,6 +182,8 @@ pub(in super::super) fn render(
     if !view.is_visible || width == 0 || height == 0 || document.has_pending_critical_resources() {
         return Ok(());
     }
+    let layout = layout_start.elapsed() + environment.0;
+    let scene_start = std::time::Instant::now();
     let ticket = FrameTicket {
         context_id: frames.context.clone(),
         context_generation: frames.generation,
@@ -188,7 +205,41 @@ pub(in super::super) fn render(
     };
     // Keep document and view exclusively borrowed through submission. FrameTicket
     // is a correlation DTO; asynchronous use would require a fresh owner check.
+    let scene_build = scene_start.elapsed();
+    // The OS may have delivered a newer size while work was being requested. Do not
+    // open a presentation transaction for a target that no longer matches the window.
+    let physical = view.window.surface_size();
+    if frames.target != Some((physical.width, physical.height)) {
+        drop(document);
+        view.handle_winit_event(winit::event::WindowEvent::SurfaceResized(physical));
+        view.window.request_redraw();
+        return Ok(());
+    }
     let mut submitted = prepared.submit(&ticket, (width, height), &mut view.renderer)?;
+    if let Some(error) = view.renderer.take_error() {
+        return Err(error);
+    }
+    if !view.renderer.did_submit {
+        return Ok(());
+    }
+    let render = view.renderer.render_timings;
+    view.renderer.frame_timings = super::super::window::WindowFrameTimings {
+        event_wait,
+        source_update: environment.1,
+        layout,
+        scene_build,
+        raster: render.raster,
+        pixel_copy: render.pixel_copy,
+        surface_acquire: render.surface_acquire,
+        present_call: render.present_call,
+        resize_to_present: view.renderer.resize_received.take().and_then(|received| {
+            render
+                .present_returned_at
+                .map(|returned| returned.saturating_duration_since(received))
+        }),
+        present_returned_at: render.present_returned_at,
+        resize_to_displayed: None,
+    };
     let placement = super::super::engine::surface_slots::RendererClientPlacement {
         viewport: (width, height),
         insets: [insets.left, insets.top, insets.right, insets.bottom],
