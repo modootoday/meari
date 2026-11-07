@@ -20,7 +20,7 @@ window-gpu = ["window", "meari-native/window-gpu"]
 window = ["meari-native/window"]
 
 [dependencies]
-meari-native = { path = "../meari-native", version = "0.2.0" }
+meari-native = { path = "../meari-native", version = "0.3.0" }
 
 [[bin]]
 name = "meari-native"

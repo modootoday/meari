@@ -2129,7 +2129,7 @@ dependencies = [
 
 [[package]]
 name = "meari"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "meari-platform",
  "oxc_allocator",
@@ -2150,7 +2150,7 @@ dependencies = [
 
 [[package]]
 name = "meari-builder"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "getrandom",
  "meari",
@@ -2163,7 +2163,7 @@ dependencies = [
 
 [[package]]
 name = "meari-cli"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "meari",
  "meari-builder",
@@ -2172,7 +2172,7 @@ dependencies = [
 
 [[package]]
 name = "meari-demo"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "meari",
  "meari-native",
@@ -2182,7 +2182,7 @@ dependencies = [
 
 [[package]]
 name = "meari-dom"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "accesskit",
  "anyrender",
@@ -2233,7 +2233,7 @@ dependencies = [
 
 [[package]]
 name = "meari-html"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "blitz-traits",
  "html5ever",
@@ -2244,7 +2244,7 @@ dependencies = [
 
 [[package]]
 name = "meari-native"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "accesskit",
  "accesskit_xplat",
@@ -2298,14 +2298,14 @@ dependencies = [
 
 [[package]]
 name = "meari-native-tools"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "meari-native",
 ]
 
 [[package]]
 name = "meari-paint"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyrender",
  "anyrender_svg",
@@ -2327,7 +2327,7 @@ dependencies = [
 
 [[package]]
 name = "meari-platform"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "glutin",
  "raw-window-handle",
@@ -2338,7 +2338,7 @@ dependencies = [
 
 [[package]]
 name = "meari-shell"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "accesskit",
  "accesskit_xplat",
@@ -2362,7 +2362,7 @@ dependencies = [
 
 [[package]]
 name = "meari-visual"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "meari",
  "meari-dom",
