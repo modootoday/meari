@@ -41,13 +41,13 @@ meari fonts fetch
 
 ```toml
 [dependencies]
-meari = "0.2"
-meari-native = "0.2"
+meari = "0.3"
+meari-native = "0.3"
 ```
 
 ## Where it stands
 
-Meari is young and honest about it. Version 0.2.0 is a working foundation, not a finished framework.
+Meari is young and honest about it. Version 0.3.0 is a working foundation, not a finished framework.
 
 - **What works today** — parsing, conversion and native preparation; typed string, bool and array props; `useId` and primitive `useState`; keyed lists; persistent input and focus; custom title bars with OS-driven window resizing.
 - **What is still open** — general React hooks and effects, complete CSS parity, a full Native+Web builder and full per-OS acceptance. The [guide](guide.md) marks these boundaries as you go.
