@@ -33,16 +33,16 @@ Meari's native renderer is built on the Blitz engine. To fix layout and paint de
 
 | Crate | Version | What it is | Links |
 | --- | --- | --- | --- |
-| [`meari`](https://crates.io/crates/meari) | 0.2.0 | The core: typed UI model, Rust/TSX conversion, media and hot-reload contracts, fonts, and the browser adapter. | [docs.rs](https://docs.rs/meari) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari) |
-| [`meari-native`](https://crates.io/crates/meari-native) | 0.2.0 | Renders the model in a native window: CSS, layout, paint, interaction and accessibility. | [docs.rs](https://docs.rs/meari-native) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-native) |
-| [`meari-cli`](https://crates.io/crates/meari-cli) | 0.2.0 | The `meari` command line. | [docs.rs](https://docs.rs/meari-cli) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-cli) |
-| [`meari-builder`](https://crates.io/crates/meari-builder) | 0.2.0 | Loads projects, runs compiler adapters and produces app bundles. | [docs.rs](https://docs.rs/meari-builder) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-builder) |
-| [`meari-native-tools`](https://crates.io/crates/meari-native-tools) | 0.2.0 | The `meari-native` showcase host and the `meari-kitchen-sink` verifier. | [docs.rs](https://docs.rs/meari-native-tools) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-native-tools) |
-| [`meari-platform`](https://crates.io/crates/meari-platform) | 0.2.0 | Every operating-system difference, in one place. | [docs.rs](https://docs.rs/meari-platform) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-platform) |
-| [`meari-dom`](https://crates.io/crates/meari-dom) | 0.2.0 | Fork of `blitz-dom` with Meari's layout fixes. | [docs.rs](https://docs.rs/meari-dom) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-dom) |
-| [`meari-paint`](https://crates.io/crates/meari-paint) | 0.2.0 | Fork of `blitz-paint` with Meari's paint fixes. | [docs.rs](https://docs.rs/meari-paint) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-paint) |
-| [`meari-html`](https://crates.io/crates/meari-html) | 0.2.0 | Unmodified `blitz-html`, built against the forks. | [docs.rs](https://docs.rs/meari-html) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-html) |
-| [`meari-shell`](https://crates.io/crates/meari-shell) | 0.2.0 | Unmodified `blitz-shell`, built against the forks. | [docs.rs](https://docs.rs/meari-shell) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-shell) |
+| [`meari`](https://crates.io/crates/meari) | 0.3.0 | The core: typed UI model, Rust/TSX conversion, media and hot-reload contracts, fonts, and the browser adapter. | [docs.rs](https://docs.rs/meari) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari) |
+| [`meari-native`](https://crates.io/crates/meari-native) | 0.3.0 | Renders the model in a native window: CSS, layout, paint, interaction and accessibility. | [docs.rs](https://docs.rs/meari-native) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-native) |
+| [`meari-cli`](https://crates.io/crates/meari-cli) | 0.3.0 | The `meari` command line. | [docs.rs](https://docs.rs/meari-cli) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-cli) |
+| [`meari-builder`](https://crates.io/crates/meari-builder) | 0.3.0 | Loads projects, runs compiler adapters and produces app bundles. | [docs.rs](https://docs.rs/meari-builder) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-builder) |
+| [`meari-native-tools`](https://crates.io/crates/meari-native-tools) | 0.3.0 | The `meari-native` showcase host and the `meari-kitchen-sink` verifier. | [docs.rs](https://docs.rs/meari-native-tools) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-native-tools) |
+| [`meari-platform`](https://crates.io/crates/meari-platform) | 0.3.0 | Every operating-system difference, in one place. | [docs.rs](https://docs.rs/meari-platform) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-platform) |
+| [`meari-dom`](https://crates.io/crates/meari-dom) | 0.3.0 | Fork of `blitz-dom` with Meari's layout fixes. | [docs.rs](https://docs.rs/meari-dom) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-dom) |
+| [`meari-paint`](https://crates.io/crates/meari-paint) | 0.3.0 | Fork of `blitz-paint` with Meari's paint fixes. | [docs.rs](https://docs.rs/meari-paint) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-paint) |
+| [`meari-html`](https://crates.io/crates/meari-html) | 0.3.0 | Unmodified `blitz-html`, built against the forks. | [docs.rs](https://docs.rs/meari-html) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-html) |
+| [`meari-shell`](https://crates.io/crates/meari-shell) | 0.3.0 | Unmodified `blitz-shell`, built against the forks. | [docs.rs](https://docs.rs/meari-shell) · [Source](https://github.com/modootoday/meari/tree/main/crates/meari-shell) |
 
 ## Links
 

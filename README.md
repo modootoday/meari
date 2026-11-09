@@ -8,7 +8,7 @@ Meari (메아리, "echo"; Multi-platform Experience Across Renderers Interface) 
 
 ## Install
 
-Meari ships through Cargo and crates.io only. All crates share one version (0.2.0, see [CHANGELOG](CHANGELOG.md)).
+Meari ships through Cargo and crates.io only. All crates share one version (0.3.0, see [CHANGELOG](CHANGELOG.md)).
 
 ```text
 cargo install meari-cli          # the unified `meari` command: convert, native, build, fonts

@@ -46,8 +46,8 @@ sudo apt install libfontconfig1-dev libfreetype-dev pkg-config
 
 ```toml
 [dependencies]
-meari = "0.2"
-meari-native = "0.2"
+meari = "0.3"
+meari-native = "0.3"
 ```
 
 The browser adapter is part of the core behind the `wasm` feature:
